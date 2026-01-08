@@ -3,58 +3,8 @@ import { HiHome } from "react-icons/hi";
 import SignOutButton from "./SignOutButton";
 import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import {
-  HiOutlineArchiveBox,
-  HiOutlineBookOpen,
-  HiOutlineBuildingLibrary,
-  HiOutlineCog6Tooth,
-  HiOutlineCurrencyDollar,
-  HiOutlineGift,
-  HiOutlineSparkles,
-} from "react-icons/hi2";
-
-const navLinks = [
-  {
-    name: "Home",
-    href: "/account",
-    icon: <HiHome className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Vaults",
-    href: "/account/vaults",
-    icon: <HiOutlineBuildingLibrary className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Containers",
-    href: "/account/vaults/[vaultId]/containers",
-    icon: <HiOutlineArchiveBox className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Currencies",
-    href: "/account/profile",
-    icon: <HiOutlineCurrencyDollar className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Treasures",
-    href: "/account/profile",
-    icon: <HiOutlineGift className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Valuables",
-    href: "/account/profile",
-    icon: <HiOutlineSparkles className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Editions",
-    href: "/account/profile",
-    icon: <HiOutlineBookOpen className="h-5 w-5 text-primary-600" />,
-  },
-  {
-    name: "Settings",
-    href: "/account/profile",
-    icon: <HiOutlineCog6Tooth className="h-5 w-5 text-primary-600" />,
-  },
-];
+import { HiOutlinePlusCircle } from "react-icons/hi2";
+import NavLink from "./NavLink";
 
 function SideNavigation() {
   const params = useParams();
@@ -70,25 +20,23 @@ function SideNavigation() {
   return (
     <nav className="border-r border-primary-900">
       <ul className="flex flex-col gap-2 h-full text-lg">
-        {/* {navLinks.map((link) => (
-          <li key={link.name}>
-            <Link
-              className={`py-3 px-5 hover:bg-primary-900 hover:text-primary-100 transition-colors flex items-center gap-4 font-semibold text-primary-200 ${
-                pathname === link.href ? "bg-primary-900" : ""
-              }`}
-              href={link.href}
-            >
-              {link.icon}
-              <span>{link.name}</span>
-            </Link>
-          </li>
-        ))} */}
         <NavLink
           href="/account/vaults"
-          icon={HiOutlineBuildingLibrary}
+          icon="/svg/chest.svg"
           label="Vaults"
           active={pathname?.startsWith("/account/vaults")}
         />
+        {/* Link Scoped */}
+        {pathname === "/account/vaults" && !inVault ? (
+          <NavLink
+            href="/account/vaults/new"
+            icon={HiOutlinePlusCircle}
+            label="New Vault"
+            active={pathname?.startsWith("/account/vaults/new")}
+          />
+        ) : (
+          ""
+        )}
         {/* Vault scoped */}
         {inVault && (
           <div className="space-y-2">
@@ -98,43 +46,97 @@ function SideNavigation() {
 
             <NavLink
               href={`${vaultBase}`}
-              icon={HiOutlineBuildingLibrary}
+              icon="ra-scroll-unfurled"
               label="Overview"
               active={pathname === vaultBase}
             />
 
             <NavLink
               href={`${vaultBase}/containers`}
-              icon={HiOutlineArchiveBox}
+              icon="/svg/backpack.svg"
               label="Containers"
               active={pathname?.startsWith(`${vaultBase}/containers`)}
             />
-
+            {/* Link Scoped */}
+            {pathname?.startsWith(`${vaultBase}/containers`) ? (
+              <NavLink
+                href="/account/vaults/new"
+                icon={HiOutlinePlusCircle}
+                label="New Container"
+                active={pathname?.startsWith(`${vaultBase}/containers/new`)}
+              />
+            ) : (
+              ""
+            )}
             <NavLink
               href={`${vaultBase}/treasure`}
-              icon={HiOutlineGift}
+              icon="ra-sword"
               label="Treasure"
               active={pathname?.startsWith(`${vaultBase}/treasure`)}
             />
-
-            <NavLink
-              href={`${vaultBase}/currencies`}
-              icon={HiOutlineCurrencyDollar}
-              label="Currencies"
-              active={pathname?.startsWith(`${vaultBase}/currencies`)}
-            />
-
+            {/* Link Scoped */}
+            {pathname?.startsWith(`${vaultBase}/treasure`) ? (
+              <NavLink
+                href="/account/vaults/new"
+                icon={HiOutlinePlusCircle}
+                label="New Treasure"
+                active={pathname?.startsWith(`${vaultBase}/treasure/new`)}
+              />
+            ) : (
+              ""
+            )}
             <NavLink
               href={`${vaultBase}/valuables`}
-              icon={HiOutlineSparkles}
+              icon="ra-diamond"
               label="Valuables"
               active={pathname?.startsWith(`${vaultBase}/valuables`)}
             />
+            {/* Link Scoped */}
+            {pathname?.startsWith(`${vaultBase}/valuables`) ? (
+              <NavLink
+                href="/account/vaults/new"
+                icon={HiOutlinePlusCircle}
+                label="New Valuable"
+                active={pathname?.startsWith(`${vaultBase}/valuables/new`)}
+              />
+            ) : (
+              ""
+            )}
+            <NavLink
+              href={`${vaultBase}/currencies`}
+              icon="/svg/two-coins.svg"
+              label="Currencies"
+              active={pathname?.startsWith(`${vaultBase}/currencies`)}
+            />
+            <NavLink
+              href={`${vaultBase}/members`}
+              icon="ra-double-team"
+              label="Members"
+              active={pathname?.startsWith(`${vaultBase}/members`)}
+            />
+
+            <NavLink
+              href={`${vaultBase}/permissions`}
+              icon="ra-three-keys"
+              label="Permissions"
+              active={pathname?.startsWith(`${vaultBase}/permissions`)}
+            />
+            {/* Link Scoped */}
+            {pathname?.startsWith(`${vaultBase}/currencies`) ? (
+              <NavLink
+                href="/account/vaults/new"
+                icon={HiOutlinePlusCircle}
+                label="New Currency"
+                active={pathname?.startsWith(`${vaultBase}/currencies/new`)}
+              />
+            ) : (
+              ""
+            )}
           </div>
         )}
         <NavLink
           href="/account/settings"
-          icon={HiOutlineCog6Tooth}
+          icon="ra-cog"
           label="Settings"
           active={pathname === "/account/settings"}
         />
@@ -147,17 +149,3 @@ function SideNavigation() {
 }
 
 export default SideNavigation;
-
-function NavLink({ href, icon: Icon, label, active }) {
-  return (
-    <Link
-      href={href}
-      className={`py-3 px-5 hover:bg-primary-900 hover:text-primary-100 transition-colors flex items-center gap-4 font-semibold text-primary-200 ${
-        active ? "bg-primary-900" : ""
-      }`}
-    >
-      <Icon className="h-5 w-5" />
-      <span className="truncate">{label}</span>
-    </Link>
-  );
-}

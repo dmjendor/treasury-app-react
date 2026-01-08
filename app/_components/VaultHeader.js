@@ -1,5 +1,6 @@
 // app/account/vaults/[vaultId]/VaultHeader.jsx
 import { HiOutlineBuildingLibrary } from "react-icons/hi2";
+import CreateMenu from "./CreateMenu";
 
 export default function VaultHeader({ vault }) {
   return (
@@ -20,9 +21,7 @@ export default function VaultHeader({ vault }) {
       {/* Placeholder for future actions */}
       <div className="flex items-center gap-2">
         {/* Example future slot */}
-        {/* <button className="rounded-lg bg-white/5 px-3 py-2 text-sm text-ink-700 hover:bg-white/10">
-          Invite
-        </button> */}
+        <CreateMenu vaultId={vault.id} />
       </div>
     </div>
   );

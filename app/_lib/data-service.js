@@ -43,15 +43,25 @@ export const getVaults = async function () {
     // .eq("id", session.user.userId)
     .order("name");
 
-  if (error) {
-    console.error(error);
-    throw new Error("Vaults could not be loaded");
-  }
+  if (error) throw new Error("Vaults could not be loaded");
 
   const normalizedVaults = Array.isArray(vaults)
     ? vaults.map(normalizeVault)
     : [];
   return normalizedVaults;
+};
+
+export const getContainersForVault = async function (vaultId) {
+  const session = await auth();
+  if (!session) throw new Error("You must be logged in.");
+  const { data: containers, error } = await supabase
+    .from("containers")
+    .select("id,name,hidden, treasure(count), valuables(count)")
+    .eq("vault_id", vaultId);
+
+  if (error) throw new Error("Containers could not be loaded");
+
+  return containers;
 };
 
 // Users are uniquely identified by their email address
