@@ -22,7 +22,7 @@ export const metadata = {
     "Track shared loot without spreadsheets or arguments. Keep a shared ledger for treasure, items, and expenses so your party always knows what happened and who has what.",
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children, modal }) {
   return (
     <html lang="en">
       <body
@@ -30,6 +30,7 @@ export default function RootLayout({ children }) {
       >
         <Header />
         {children}
+        {modal}
       </body>
     </html>
   );

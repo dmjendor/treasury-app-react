@@ -1,3 +1,11 @@
+/**
+ * Global "Create" menu for the current vault.
+ *
+ * Lives in the VaultHeader and provides quick access to create
+ * containers, treasure, currencies, etc, without cluttering the sidebar.
+ * Uses simple client-side state to toggle visibility and closes on outside click.
+ */
+
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -5,6 +13,9 @@ import Link from "next/link";
 import ImgIcon from "@/app/_components/ImgIcon";
 import RaIcon from "@/app/_components/RaIcon";
 
+/**
+ * Determines whether an icon value is a path to an image asset.
+ */
 function isSvgPath(icon) {
   return (
     typeof icon === "string" &&
@@ -13,14 +24,23 @@ function isSvgPath(icon) {
   );
 }
 
+/**
+ * Determines whether an icon value is a path to an image asset.
+ */
 function isRAIcon(icon) {
   return typeof icon === "string" && icon.startsWith("ra");
 }
 
+/**
+ * Determines whether an icon value is a React component (e.g. HeroIcon).
+ */
 function isReactIcon(icon) {
   return typeof icon === "function";
 }
 
+/**
+ * Renders the appropriate icon type based on the icon input.
+ */
 function IconSlot({ icon }) {
   if (isSvgPath(icon)) {
     return (
@@ -53,6 +73,9 @@ function IconSlot({ icon }) {
   );
 }
 
+/**
+ * Hook that calls `handler` when the user clicks outside of the given element.
+ */
 function useOutsideClick(ref, handler) {
   useEffect(() => {
     function onDown(e) {
@@ -63,6 +86,9 @@ function useOutsideClick(ref, handler) {
   }, [ref, handler]);
 }
 
+/**
+ * Individual menu item inside the Create dropdown.
+ */
 function MenuItem({ href, label, icon, onSelect }) {
   return (
     <Link
@@ -76,6 +102,9 @@ function MenuItem({ href, label, icon, onSelect }) {
   );
 }
 
+/**
+ * Dropdown menu for creating new entities within a vault.
+ */
 export default function CreateMenu({ vaultId }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -92,7 +121,7 @@ export default function CreateMenu({ vaultId }) {
     {
       label: "New treasure",
       href: `${base}/treasure/new`,
-      icon: "ra ra-gold-bar",
+      icon: "ra ra-sword",
     },
     {
       label: "New currency",

@@ -1,5 +1,5 @@
-import { getVaultById } from "@/app/_lib/data-service";
 import VaultHeader from "@/app/_components/VaultHeader";
+import { getVaultById } from "@/app/_lib/data/vaults.data";
 
 export default async function VaultLayout({ children, params }) {
   const { vaultId } = await params;

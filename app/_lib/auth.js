@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "@auth/core/providers/google";
-import { createUser, getUser } from "./data-service";
+import { createUser, getUser } from "@/app/_lib/data/users.data";
 
 const authConfig = {
   secret: process.env.NEXTAUTH_SECRET,

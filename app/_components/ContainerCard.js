@@ -1,3 +1,4 @@
+import DeleteContainer from "@/app/_components/DeleteContainer";
 import Link from "next/link";
 import {
   HiOutlineArchiveBox,
@@ -17,7 +18,7 @@ function StatPill({ icon: Icon, label, value }) {
   );
 }
 
-export default function ContainerCard({ container, vaultId }) {
+export default function ContainerCard({ container, vaultId, onDelete }) {
   const treasuresCount =
     container.treasures_count ?? container.treasures?.[0]?.count ?? 0;
 
@@ -61,6 +62,10 @@ export default function ContainerCard({ container, vaultId }) {
           </div>
 
           <div className="flex items-center gap-2">
+            <DeleteContainer
+              containerId={container.id}
+              onDelete={onDelete}
+            />
             <Link
               href={`/account/vaults/${encodeURIComponent(
                 vaultId

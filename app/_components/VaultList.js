@@ -1,10 +1,11 @@
 import noStore from "next/cache";
-import { getVaults } from "../_lib/data-service";
+
 import VaultCard from "./VaultCard";
+import { getUserVaults } from "@/app/_lib/data/vaults.data";
 
 async function VaultList() {
   // noStore();
-  const vaults = await getVaults();
+  const vaults = await getUserVaults();
 
   if (!vaults.length) return null;
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createVault } from "@/app/_lib/data-service";
 import { auth } from "@/app/_lib/auth";
+import { createVault } from "@/app/_lib/data/vaults.data";
 
 function toBool(v) {
   return v === true || v === "true" || v === "on" || v === "1";

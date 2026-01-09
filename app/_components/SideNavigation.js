@@ -57,51 +57,21 @@ function SideNavigation() {
               label="Containers"
               active={pathname?.startsWith(`${vaultBase}/containers`)}
             />
-            {/* Link Scoped */}
-            {pathname?.startsWith(`${vaultBase}/containers`) ? (
-              <NavLink
-                href="/account/vaults/new"
-                icon={HiOutlinePlusCircle}
-                label="New Container"
-                active={pathname?.startsWith(`${vaultBase}/containers/new`)}
-              />
-            ) : (
-              ""
-            )}
+
             <NavLink
               href={`${vaultBase}/treasure`}
               icon="ra-sword"
               label="Treasure"
               active={pathname?.startsWith(`${vaultBase}/treasure`)}
             />
-            {/* Link Scoped */}
-            {pathname?.startsWith(`${vaultBase}/treasure`) ? (
-              <NavLink
-                href="/account/vaults/new"
-                icon={HiOutlinePlusCircle}
-                label="New Treasure"
-                active={pathname?.startsWith(`${vaultBase}/treasure/new`)}
-              />
-            ) : (
-              ""
-            )}
+
             <NavLink
               href={`${vaultBase}/valuables`}
               icon="ra-diamond"
               label="Valuables"
               active={pathname?.startsWith(`${vaultBase}/valuables`)}
             />
-            {/* Link Scoped */}
-            {pathname?.startsWith(`${vaultBase}/valuables`) ? (
-              <NavLink
-                href="/account/vaults/new"
-                icon={HiOutlinePlusCircle}
-                label="New Valuable"
-                active={pathname?.startsWith(`${vaultBase}/valuables/new`)}
-              />
-            ) : (
-              ""
-            )}
+
             <NavLink
               href={`${vaultBase}/currencies`}
               icon="/svg/two-coins.svg"
@@ -121,17 +91,6 @@ function SideNavigation() {
               label="Permissions"
               active={pathname?.startsWith(`${vaultBase}/permissions`)}
             />
-            {/* Link Scoped */}
-            {pathname?.startsWith(`${vaultBase}/currencies`) ? (
-              <NavLink
-                href="/account/vaults/new"
-                icon={HiOutlinePlusCircle}
-                label="New Currency"
-                active={pathname?.startsWith(`${vaultBase}/currencies/new`)}
-              />
-            ) : (
-              ""
-            )}
           </div>
         )}
         <NavLink
