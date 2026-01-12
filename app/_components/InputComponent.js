@@ -9,7 +9,7 @@ import FormField from "@/app/_components/FormField";
  * Styled <input> with optional label/hint/error.
  * Intended to be the default text field used across the app.
  */
-const Input = forwardRef(function Input(
+const InputComponent = forwardRef(function Input(
   { label, hint, error, className = "", id, type = "text", ...props },
   ref
 ) {
@@ -21,10 +21,13 @@ const Input = forwardRef(function Input(
       label={label}
       hint={hint}
       error={error}
+      type={type}
+      {...props}
     >
       <input
         ref={ref}
         id={fieldId}
+        name={fieldId}
         type={type}
         className={`
           w-full
@@ -44,4 +47,4 @@ const Input = forwardRef(function Input(
   );
 });
 
-export default Input;
+export default InputComponent;

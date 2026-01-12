@@ -12,7 +12,6 @@ const authConfig = {
   ],
   callbacks: {
     authorized({ auth, request }) {
-      console.log(auth);
       return !!auth?.user;
     },
     async signIn({ user, account, profiler }) {

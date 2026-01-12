@@ -1,20 +1,5 @@
 import Link from "next/link";
-import ImgIcon from "@/app/_components/ImgIcon";
-import RaIcon from "@/app/_components/RaIcon";
-
-function isSvgPath(icon) {
-  return (
-    typeof icon === "string" && icon.startsWith("/") && icon.endsWith(".svg")
-  );
-}
-
-function isRAIcon(icon) {
-  return typeof icon === "string" && icon.startsWith("ra-");
-}
-
-function isReactIcon(icon) {
-  return typeof icon === "function";
-}
+import IconComponent from "@/app/_components/IconComponent";
 
 export default function NavLink({ href, icon, label, active }) {
   return (
@@ -27,22 +12,7 @@ export default function NavLink({ href, icon, label, active }) {
           : "text-ink-700 hover:bg-white/5 hover:text-ink-900",
       ].join(" ")}
     >
-      {isSvgPath(icon) ? (
-        <ImgIcon
-          src={icon}
-          className="h-5 w-5 opacity-80"
-        />
-      ) : isRAIcon(icon) ? (
-        <RaIcon
-          name={icon}
-          className="text-lg opacity-80"
-        />
-      ) : isReactIcon(icon) ? (
-        (() => {
-          const IconComponent = icon;
-          return <IconComponent className="h-5 w-5 opacity-80" />;
-        })()
-      ) : null}
+      <IconComponent icon={icon} />
 
       <span className="truncate">{label}</span>
     </Link>

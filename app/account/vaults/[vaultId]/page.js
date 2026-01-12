@@ -9,31 +9,39 @@ import {
   HiOutlineSwatch,
 } from "react-icons/hi2";
 import Link from "next/link";
+import { LinkButton } from "@/app/_components/LinkButton";
+import IconComponent from "@/app/_components/IconComponent";
+import { getUserVaults, getVaultById } from "@/app/_lib/data/vaults.data";
 
 function Panel({ title, icon: Icon, children }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-surface-800/60 p-6 backdrop-blur">
+    <section className="rounded-2xl border border-(--border) bg-(--primary-400) p-6">
       <div className="flex items-center gap-2">
-        {Icon ? <Icon className="h-5 w-5 text-ink-700" /> : null}
-        <h2 className="text-sm font-semibold text-ink-900">{title}</h2>
+        {Icon ? <Icon className="h-5 w-5 text-(--accent-700)" /> : null}
+        <h2 className="text-sm font-semibold text-(--fg)">{title}</h2>
       </div>
       <div className="mt-4">{children}</div>
     </section>
   );
 }
 
-function StatCard({ label, value, icon: Icon, href }) {
+function StatCard({ label, value, icon, href }) {
   const content = (
-    <div className="rounded-2xl border border-white/10 bg-surface-800/60 p-5 backdrop-blur transition hover:bg-surface-800/75">
+    <div className="rounded-2xl border border-(--border) bg-(--card) p-5 transition-colors hover:bg-(--primary-600) hover:text-(--primary-50)">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs text-ink-600">{label}</div>
-          <div className="mt-1 text-2xl font-semibold text-ink-900">
-            {value}
+          <div className="text-xs text-(--muted-fg) group-hover:text-(--primary-100)">
+            {label}
           </div>
+          <div className="mt-1 text-2xl font-semibold">{value}</div>
         </div>
-        <div className="rounded-xl bg-white/5 p-2">
-          <Icon className="h-5 w-5 text-ink-700" />
+
+        <div className="rounded-xl bg-(--accent-700) p-2 text-(--accent-50)">
+          <IconComponent
+            icon={icon}
+            title={label}
+            size="lg"
+          />
         </div>
       </div>
     </div>
@@ -44,61 +52,73 @@ function StatCard({ label, value, icon: Icon, href }) {
 
 function EmptyList({ title, hint }) {
   return (
-    <div className="rounded-xl bg-white/5 p-4 text-sm text-ink-700">
-      <div className="font-semibold text-ink-900">{title}</div>
-      <div className="mt-1 text-ink-600">{hint}</div>
+    <div className="rounded-xl border border-(--border) bg-(--primary-100) p-4 text-sm">
+      <div className="font-semibold text-(--fg)">{title}</div>
+      <div className="mt-1 text-(--muted-fg)">{hint}</div>
     </div>
   );
 }
 
-function ActionButton({ href, children }) {
+function DetailCard({ icon, label, value, hint }) {
   return (
-    <Link
-      href={href}
-      className="inline-flex items-center justify-center rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-    >
-      {children}
-    </Link>
+    <div className="rounded-xl border border-(--border) bg-(--card) p-4">
+      <div className="flex items-center gap-2 text-xs text-(--muted-fg)">
+        {icon ? (
+          <IconComponent
+            icon={icon}
+            size="lg"
+            variant="accent"
+          />
+        ) : null}
+        {label}
+      </div>
+      <div className="mt-1 text-sm font-semibold text-(--fg)">{value}</div>
+      {hint ? (
+        <div className="mt-1 text-xs text-(--muted-fg)">{hint}</div>
+      ) : null}
+    </div>
   );
 }
 
 export default async function VaultOverviewPage({ params }) {
-  const { vaultId } = await params;
-
-  // Placeholder values for now. Replace with real counts later.
-  const counts = {
-    containers: 0,
-    treasure: 0,
-    currencies: 0,
-    valuables: 0,
-  };
+  const resolvedParams =
+    typeof params?.then === "function" ? await params : params;
+  const { vaultId } = resolvedParams;
+  const {
+    name,
+    containers_count,
+    treasure_count,
+    currencies_count,
+    valuables_count,
+  } = await getVaultById(vaultId);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-(--fg)">
       {/* Top: quick stats */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Containers"
-          value={counts.containers}
-          icon={HiOutlineArchiveBox}
-          href={`/account/vaults/${vaultId}/containers`}
-        />
-        <StatCard
-          label="Treasure"
-          value={counts.treasure}
-          icon={HiOutlineGift}
-          href={`/account/vaults/${vaultId}/treasure`}
-        />
-        <StatCard
           label="Currencies"
-          value={counts.currencies}
-          icon={HiOutlineCurrencyDollar}
+          value={currencies_count}
+          icon={"/svg/two-coins.svg"}
           href={`/account/vaults/${vaultId}/currencies`}
         />
         <StatCard
+          label="Containers"
+          value={containers_count}
+          icon={"/svg/backpack.svg"}
+          href={`/account/vaults/${vaultId}/containers`}
+        />
+        <StatCard
+          label="Treasures"
+          value={treasure_count}
+          icon={"ra-sword"}
+          href={`/account/vaults/${vaultId}/treasure`}
+        />
+
+        <StatCard
           label="Valuables"
-          value={counts.valuables}
-          icon={HiOutlineSparkles}
+          value={valuables_count}
+          icon={"ra-diamond"}
           href={`/account/vaults/${vaultId}/valuables`}
         />
       </div>
@@ -109,7 +129,6 @@ export default async function VaultOverviewPage({ params }) {
           title="Recent activity"
           icon={HiOutlineClock}
         >
-          {/* Later: activity feed component */}
           <div className="space-y-3">
             <EmptyList
               title="No activity yet"
@@ -122,37 +141,24 @@ export default async function VaultOverviewPage({ params }) {
           title="Vault details"
           icon={HiOutlineBolt}
         >
-          {/* Later: real vault metadata */}
           <div className="grid gap-3">
-            <div className="rounded-xl bg-white/5 p-4">
-              <div className="flex items-center gap-2 text-xs text-ink-600">
-                <HiOutlineBookOpen className="h-4 w-4" />
-                Edition
-              </div>
-              <div className="mt-1 text-sm font-semibold text-ink-900">
-                Not set
-              </div>
-            </div>
+            <DetailCard
+              icon={HiOutlineBookOpen}
+              label="Edition"
+              value="Not set"
+            />
 
-            <div className="rounded-xl bg-white/5 p-4">
-              <div className="flex items-center gap-2 text-xs text-ink-600">
-                <HiOutlineSwatch className="h-4 w-4" />
-                Theme
-              </div>
-              <div className="mt-1 text-sm font-semibold text-ink-900">
-                Default
-              </div>
-            </div>
+            <DetailCard
+              icon={HiOutlineSwatch}
+              label="Theme"
+              value="Default"
+            />
 
-            <div className="rounded-xl bg-white/5 p-4">
-              <div className="text-xs text-ink-600">Permissions</div>
-              <div className="mt-1 text-sm font-semibold text-ink-900">
-                GM only (for now)
-              </div>
-              <div className="mt-1 text-xs text-ink-600">
-                Later you can add players and set roles.
-              </div>
-            </div>
+            <DetailCard
+              label="Permissions"
+              value="GM only (for now)"
+              hint="Later you can add players and set roles."
+            />
           </div>
         </Panel>
       </div>
@@ -163,24 +169,36 @@ export default async function VaultOverviewPage({ params }) {
         icon={HiOutlineBolt}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <ActionButton href={`/account/vaults/${vaultId}/containers/new`}>
+          <LinkButton
+            href={`/account/vaults/${vaultId}/containers/new`}
+            variant="primary"
+          >
             Create container
-          </ActionButton>
-          <ActionButton href={`/account/vaults/${vaultId}/currencies/new`}>
+          </LinkButton>
+
+          <LinkButton
+            href={`/account/vaults/${vaultId}/currencies/new`}
+            variant="accent"
+          >
             Add currency
-          </ActionButton>
-          <ActionButton href={`/account/vaults/${vaultId}/treasure/new`}>
+          </LinkButton>
+
+          <LinkButton
+            href={`/account/vaults/${vaultId}/treasure/new`}
+            variant="primary"
+          >
             Add treasure
-          </ActionButton>
-          <Link
+          </LinkButton>
+
+          <LinkButton
             href={`/account/vaults/${vaultId}/settings`}
-            className="inline-flex items-center justify-center rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-ink-800 hover:bg-white/10"
+            variant="outline"
           >
             Vault settings
-          </Link>
+          </LinkButton>
         </div>
 
-        <div className="mt-4 text-xs text-ink-600">
+        <div className="mt-4 text-xs text-(--muted-fg)">
           These are placeholders now. Later, you can conditionally show the best
           next step based on what’s missing.
         </div>

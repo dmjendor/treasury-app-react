@@ -4,14 +4,20 @@
  */
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
+import { auth } from "@/app/_lib/auth";
+import { notFound } from "next/navigation";
+import { getThemes } from "@/app/_lib/data/themes.data";
+import { getEditions } from "@/app/_lib/data/editions.data";
+import { getCurrenciesForVault } from "@/app/_lib/data/currencies.data";
 
 function normalizeVault(vault) {
   return {
     ...vault,
     containers_count: vault.containers?.[0]?.count ?? 0,
     treasure_count: vault.treasure?.[0]?.count ?? 0,
-    currencies_count: vault.currency?.[0]?.count ?? 0,
+    currencies_count: vault.currencies?.[0]?.count ?? 0,
     valuables_count: vault.valuables?.[0]?.count ?? 0,
+    themeKey: vault.theme?.theme_key,
   };
 }
 
@@ -21,22 +27,37 @@ function normalizeVault(vault) {
  * - @returns {Promise<any>}
  */
 export async function getVaultById(id) {
+  if (!id) {
+    throw new Error("getVaultById: missing vault id");
+  }
   const supabase = await getSupabase();
-  const { data, error } = await supabase
+  const { data: vault, error } = await supabase
     .from("vaults")
-    .select("*")
+    .select(
+      "id, active, base_currency_id, common_currency_id, edition_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count), theme:themes ( id, theme_key )"
+    )
     .eq("id", id)
     .single();
 
-  // For testing
-  // await new Promise((res) => setTimeout(res, 1000));
+  const [themes, editions, currencies] = await Promise.all([
+    getThemes(),
+    getEditions(),
+    getCurrenciesForVault(id),
+  ]);
+
+  const normalizedVault = normalizeVault(vault);
+  const vaultCtx = {
+    ...normalizedVault,
+    themesList: themes,
+    editionsList: editions,
+    currenciesList: currencies,
+  };
 
   if (error) {
     console.error(error);
-    notFound();
   }
 
-  return data;
+  return vaultCtx;
 }
 
 /**
@@ -47,11 +68,10 @@ export const getUserVaults = async function () {
   const supabase = await getSupabase();
   const session = await auth();
   if (!session) throw new Error("You must be logged in.");
-  console.log("session", session.user.userId);
   const { data: vaults, error } = await supabase
     .from("vaults")
     .select(
-      "id, active, base_currency_id, common_currency_id, edition_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count)"
+      "id, active, base_currency_id, common_currency_id, edition_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count), theme:themes ( id, theme_key )"
     )
     .eq("user_id", session.user.userId)
     .order("name");
@@ -73,12 +93,11 @@ export const getUserVaults = async function () {
  */
 export async function assertVaultOwner(vaultId, userId) {
   const supabase = await getSupabase();
-
   const { data, error } = await supabase
     .from("vaults")
     .select("id")
     .eq("id", vaultId)
-    .eq("owner_id", userId)
+    .eq("user_id", userId)
     .single();
 
   if (error || !data) throw new Error("Vault access denied.");
@@ -97,5 +116,45 @@ export async function createVault(newVault) {
 
   if (error) throw new Error("Vault could not be created");
 
+  return data;
+}
+
+export async function updateVaultSettingsDb({ userId, id, ...patch }) {
+  // Supabase server client in here
+  // Only allow updating whitelisted columns
+  const allowed = {
+    active: patch.active,
+    allow_xfer_in: patch.allow_xfer_in,
+    allow_xfer_out: patch.allow_xfer_out,
+    base_currency_id: patch.base_currency_id,
+    common_currency_id: patch.common_currency_id,
+    edition_id: patch.edition_id,
+    vo_buy_markup: patch.vo_buy_markup,
+    vo_sell_markup: patch.vo_sell_markup,
+    item_buy_markup: patch.item_buy_markup,
+    item_sell_markup: patch.item_sell_markup,
+    merge_split: patch.merge_split,
+    name: patch.name,
+    reward_prep_enabled: patch.reward_prep_enabled,
+    theme_id: patch.theme_id,
+    treasury_split_enabled: patch.treasury_split_enabled,
+  };
+
+  // Remove undefined so we don’t overwrite unintentionally
+  Object.keys(allowed).forEach((k) => {
+    if (allowed[k] === undefined) delete allowed[k];
+  });
+
+  const { data, error } = await supabase
+    .from("vaults")
+    .update(allowed)
+    .eq("id", id)
+    .eq("user_id", userId)
+    .select(
+      "id, active, name, theme_id, edition_id, base_currency_id, common_currency_id, allow_xfer_in, allow_xfer_out, treasury_split_enabled, reward_prep_enabled, vo_buy_markup, vo_sell_markup, item_buy_markup, item_sell_markup, merge_split"
+    )
+    .single();
+
+  if (error) throw error;
   return data;
 }

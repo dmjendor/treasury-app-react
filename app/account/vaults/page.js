@@ -1,6 +1,6 @@
+import Spinner from "@/app/_components/Spinner";
+import VaultList from "@/app/_components/VaultList";
 import { Suspense } from "react";
-import Spinner from "../../_components/Spinner";
-import VaultList from "../../_components/VaultList";
 
 export const metadata = {
   title: "Vaults",

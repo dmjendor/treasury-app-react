@@ -17,9 +17,11 @@ export function useCurrencies({ vaultId }) {
       const res = await fetch(`/api/vaults/${vaultId}/currencies`, {
         cache: "no-store",
       });
+
       if (!res.ok) throw new Error(`Failed to load currencies (${res.status})`);
-      const data = await res.json();
-      setCurrencies(Array.isArray(data) ? data : data?.currencies ?? []);
+      const json = await res.json();
+
+      setCurrencies(Array.isArray(json?.data) ? json.data : []);
     } catch (e) {
       setError(e?.message || "Failed to load currencies.");
     } finally {

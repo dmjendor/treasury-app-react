@@ -55,7 +55,6 @@ export async function POST(req) {
 
     return NextResponse.json({ vault: created }, { status: 201 });
   } catch (err) {
-    console.log(err);
     return NextResponse.json(
       { error: "Failed to create vault." },
       { status: 500 },

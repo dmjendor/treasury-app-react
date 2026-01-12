@@ -1,13 +1,27 @@
-// app/account/vaults/[vaultId]/VaultHeader.jsx
-import { HiOutlineBuildingLibrary } from "react-icons/hi2";
-import CreateMenu from "./CreateMenu";
+"use client";
 
-export default function VaultHeader({ vault }) {
+import CreateMenu from "./CreateMenu";
+import IconComponent from "@/app/_components/IconComponent";
+import { useVault } from "@/app/_context/VaultProvider";
+
+/**
+ *
+- Render the vault heading and actions.
+- @returns {JSX.Element}
+ */
+export default function VaultHeader() {
+  const { vault } = useVault();
+  const vaultId = vault?.id ?? null;
   return (
     <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/10 pb-4">
       <div className="flex items-center gap-3">
-        <div className="rounded-xl bg-primary-500/15 p-2 text-primary-500">
-          <HiOutlineBuildingLibrary className="h-6 w-6" />
+        <div className="rounded-xl bg-accent-700 p-2 text-primary-500">
+          <IconComponent
+            size="2xl"
+            icon="/svg/chest.svg"
+            label="Treasure chest"
+            variant="accent"
+          />
         </div>
 
         <div className="min-w-0">
@@ -21,7 +35,7 @@ export default function VaultHeader({ vault }) {
       {/* Placeholder for future actions */}
       <div className="flex items-center gap-2">
         {/* Example future slot */}
-        <CreateMenu vaultId={vault.id} />
+        {vaultId ? <CreateMenu vaultId={vaultId} /> : null}
       </div>
     </div>
   );

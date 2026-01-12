@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { formatRate, normalizeCode } from "./currencyUtils";
+import { formatRate, normalizeCode } from "@/app/utils/currencyUtils";
+import { Button } from "@/app/_components/Button";
 
 function sortCurrencies(list, { sortKey, sortDir }) {
   const dir = sortDir === "asc" ? 1 : -1;
   return [...list].sort((a, b) => {
     const va =
-      sortKey === "multiplier"
-        ? Number(a.multiplier)
+      sortKey === "rate"
+        ? Number(a.rate)
         : String(a[sortKey] ?? "").toLowerCase();
     const vb =
-      sortKey === "multiplier"
-        ? Number(b.multiplier)
+      sortKey === "rate"
+        ? Number(b.rate)
         : String(b[sortKey] ?? "").toLowerCase();
 
     if (va < vb) return -1 * dir;
@@ -58,15 +59,16 @@ export function CurrenciesTable({
   }, [currencies, query, sortKey, sortDir, baseCurrency]);
 
   return (
-    <div className="mt-6 rounded-2xl border overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
+    <div className="mt-6 overflow-hidden rounded-2xl border border-(--border) bg-(--card) text-(--card-fg)">
+      <div className="flex items-center justify-between px-4 py-3 bg-(--primary-700) border-b border-(--border)">
+        <div className="text-sm text-(--muted-fg)">
           {loading
             ? "Loading..."
             : `${filteredAndSorted.length} currency${
                 filteredAndSorted.length === 1 ? "" : "ies"
               }`}
         </div>
+
         <div className="text-sm">
           Base:{" "}
           <span className="font-medium">
@@ -81,20 +83,23 @@ export function CurrenciesTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-white border-b">
+          <thead className="bg-(--primary-700) text-(--primary-50)">
             <tr className="text-left">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Rate</th>
-              <th className="px-4 py-3">Base</th>
-              <th className="px-4 py-3 w-40">Actions</th>
+              <th className="px-4 py-3 font-medium text-(--muted-fg)">Name</th>
+              <th className="px-4 py-3 font-medium text-(--muted-fg)">Code</th>
+              <th className="px-4 py-3 font-medium text-(--muted-fg)">Rate</th>
+              <th className="px-4 py-3 font-medium text-(--muted-fg)">Base</th>
+              <th className="px-4 py-3 w-40 font-medium text-(--muted-fg)">
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody>
+
+          <tbody className="divide-y divide-(--border)">
             {loading ? (
               <tr>
                 <td
-                  className="px-4 py-4 text-muted-foreground"
+                  className="px-4 py-4 text-(--muted-fg)"
                   colSpan={5}
                 >
                   Loading currencies...
@@ -103,7 +108,7 @@ export function CurrenciesTable({
             ) : filteredAndSorted.length === 0 ? (
               <tr>
                 <td
-                  className="px-4 py-6 text-muted-foreground"
+                  className="px-4 py-6 text-(--muted-fg)"
                   colSpan={5}
                 >
                   No currencies yet. Create your first one and set it as the
@@ -112,32 +117,36 @@ export function CurrenciesTable({
               </tr>
             ) : (
               filteredAndSorted.map((c) => {
-                const isBase = Number(c.multiplier) === 1;
+                const isBase = Number(c.rate) === 1;
+
                 return (
                   <tr
                     key={c.id}
-                    className="border-b last:border-b-0"
+                    className="bg-(--card) hover:bg-(--primary-500) hover:text-(--primary-900) transition-colors"
                   >
                     <td className="px-4 py-3 font-medium">{c.name}</td>
+
                     <td className="px-4 py-3 font-mono">
-                      {normalizeCode(c.abbreviation)}
+                      {normalizeCode(c.code)}
                     </td>
-                    <td className="px-4 py-3">{formatRate(c.multiplier)}</td>
+
+                    <td className="px-4 py-3">{formatRate(c.rate)}</td>
+
                     <td className="px-4 py-3">{isBase ? "⭐" : ""}</td>
+
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button
-                          type="button"
+                        <Button
+                          type="primary"
                           onClick={() => onEdit(c)}
-                          className="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                           disabled={busy}
                         >
                           Edit
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+
+                        <Button
+                          type="danger"
                           onClick={() => onDelete(c)}
-                          className="px-3 py-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                           disabled={busy || isBase}
                           title={
                             isBase
@@ -146,7 +155,7 @@ export function CurrenciesTable({
                           }
                         >
                           Delete
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>

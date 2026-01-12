@@ -44,3 +44,29 @@ export async function createVaultAction(formData) {
     return { ok: false, error: err?.message || "Failed to create vault." };
   }
 }
+
+export async function updateVaultSettingsAction(input) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id)
+      return { ok: false, error: "You must be logged in." };
+
+    // Minimal validation
+    if (!input?.id) return { ok: false, error: "Missing vault id." };
+    if (typeof input?.name === "string" && !input.name.trim()) {
+      return { ok: false, error: "Vault name is required." };
+    }
+
+    const updated = await updateVaultSettingsDb({
+      userId: session.user.id,
+      ...input,
+    });
+
+    return { ok: true, data: updated };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e?.message || "Failed to update vault settings.",
+    };
+  }
+}

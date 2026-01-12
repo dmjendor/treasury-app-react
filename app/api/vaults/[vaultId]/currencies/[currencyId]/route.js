@@ -1,8 +1,3 @@
-/**
- * API Routes: Vault Currency item
- * Thin handler: auth + validation + calls data service.
- */
-
 import { NextResponse } from "next/server";
 import { auth } from "@/app/_lib/auth";
 import { assertVaultOwner } from "@/app/_lib/data/vaults.data";
@@ -22,17 +17,20 @@ function json(body, status = 200) {
 }
 
 /**
- * GET /api/vaults/:vaultId/currencies/:currencyId
+ *
+ * - Fetch a currency in a vault.
+ * - @param {Request} _request
+ * - @param {{ params: Promise<{ vaultId: string, currencyId: string }> }} context
+ * - @returns {Promise<Response>}
  */
 export async function GET(_request, { params }) {
+  console.log("A");
   try {
     const session = await auth();
     if (!session) throw new Error("You must be logged in.");
-
     const userId = session.user.userId;
-    const vaultId = params?.vaultId;
-    const currencyId = params?.currencyId;
 
+    const { vaultId, currencyId } = await params;
     if (!vaultId)
       return json({ ok: false, error: "vaultId is required." }, 400);
     if (!currencyId)
@@ -40,6 +38,7 @@ export async function GET(_request, { params }) {
 
     await assertVaultOwner(vaultId, userId);
 
+    console.log("reached this point");
     const data = await getCurrencyForVaultById(vaultId, currencyId);
     if (!data) return json({ ok: false, error: "Currency not found." }, 404);
 
@@ -54,7 +53,11 @@ export async function GET(_request, { params }) {
 }
 
 /**
- * PATCH /api/vaults/:vaultId/currencies/:currencyId
+ *
+ * - Update a currency in a vault.
+ * - @param {Request} request
+ * - @param {{ params: Promise<{ vaultId: string, currencyId: string }> }} context
+ * - @returns {Promise<Response>}
  */
 export async function PATCH(request, { params }) {
   try {
@@ -62,8 +65,7 @@ export async function PATCH(request, { params }) {
     if (!session) throw new Error("You must be logged in.");
 
     const userId = session.user.userId;
-    const vaultId = params?.vaultId;
-    const currencyId = params?.currencyId;
+    const { vaultId, currencyId } = await params;
 
     if (!vaultId)
       return json({ ok: false, error: "vaultId is required." }, 400);
@@ -91,7 +93,11 @@ export async function PATCH(request, { params }) {
 }
 
 /**
- * DELETE /api/vaults/:vaultId/currencies/:currencyId
+ *
+ * - Delete a currency in a vault.
+ * - @param {Request} _request
+ * - @param {{ params: Promise<{ vaultId: string, currencyId: string }> }} context
+ * - @returns {Promise<Response>}
  */
 export async function DELETE(_request, { params }) {
   try {
@@ -99,8 +105,7 @@ export async function DELETE(_request, { params }) {
     if (!session) throw new Error("You must be logged in.");
 
     const userId = session.user.userId;
-    const vaultId = params?.vaultId;
-    const currencyId = params?.currencyId;
+    const { vaultId, currencyId } = await params;
 
     if (!vaultId)
       return json({ ok: false, error: "vaultId is required." }, 400);

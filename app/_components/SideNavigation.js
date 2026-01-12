@@ -78,6 +78,7 @@ function SideNavigation() {
               label="Currencies"
               active={pathname?.startsWith(`${vaultBase}/currencies`)}
             />
+
             <NavLink
               href={`${vaultBase}/members`}
               icon="ra-double-team"
@@ -91,14 +92,15 @@ function SideNavigation() {
               label="Permissions"
               active={pathname?.startsWith(`${vaultBase}/permissions`)}
             />
+
+            <NavLink
+              href={`${vaultBase}/settings`}
+              icon="ra-cog"
+              label="Settings"
+              active={pathname === "/account/settings"}
+            />
           </div>
         )}
-        <NavLink
-          href="/account/settings"
-          icon="ra-cog"
-          label="Settings"
-          active={pathname === "/account/settings"}
-        />
         <li className="mt-auto">
           <SignOutButton />
         </li>

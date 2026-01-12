@@ -8,7 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/app/_lib/auth";
 import { requireUserId, toBool } from "@/app/_lib/actions/_utils";
-import { deleteContainerDb } from "@/app/_lib/containers.data";
+import { deleteContainerDb } from "@/app/_lib/data/containers.data";
 
 /**
  * Create a container in a vault.

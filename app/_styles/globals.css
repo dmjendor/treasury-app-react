@@ -108,7 +108,18 @@
     /* Status */
     --success: oklch(72% 0.19 145);
     --warning: oklch(85% 0.18 85);
-    --danger: oklch(62% 0.22 25);
+
+    /* Danger (warm red) */
+    --danger-50: oklch(96% 0.03 25);
+    --danger-100: oklch(92% 0.05 25);
+    --danger-200: oklch(86% 0.08 25);
+    --danger-300: oklch(78% 0.12 25);
+    --danger-400: oklch(70% 0.16 25);
+    --danger-500: oklch(62% 0.2 25);
+    --danger-600: oklch(54% 0.22 25);
+    --danger-700: oklch(46% 0.2 25);
+    --danger-800: oklch(38% 0.16 25);
+    --danger-900: oklch(30% 0.12 25);
 
     /* Semantic roles (components should use these) */
     --bg: var(--surface-900);
@@ -123,10 +134,30 @@
     --muted-fg: var(--surface-200);
 
     --overlay: color-mix(in oklch, black 65%, transparent);
+
+    /* Buttons (semantic roles) */
+    --btn-primary-bg: var(--primary-700);
+    --btn-primary-fg: var(--primary-50);
+    --btn-primary-hover: var(--primary-600);
+
+    --btn-accent-bg: var(--accent-700);
+    --btn-accent-fg: var(--accent-50);
+    --btn-accent-hover: var(--accent-600);
+
+    --btn-danger-bg: var(--danger-700);
+    --btn-danger-fg: var(--danger-50);
+    --btn-danger-hover: var(--danger-600);
+
+    --btn-ghost-fg: var(--fg);
+    --btn-ghost-hover: var(--primary-600); /* or accent-600 if you prefer */
+
+    --btn-outline-fg: var(--fg);
+    --btn-outline-border: var(--border);
+    --btn-outline-hover: var(--primary-600); /* tint on hover */
   }
 
   .theme-parchment {
-    /* Primary (ink brown) */
+    /* Primary (ink brown) KEEP as-is or close */
     --primary-50: oklch(97% 0.015 75);
     --primary-100: oklch(94% 0.02 75);
     --primary-200: oklch(89% 0.03 75);
@@ -138,51 +169,67 @@
     --primary-800: oklch(30% 0.05 75);
     --primary-900: oklch(22% 0.04 75);
 
-    /* Accent (rune teal) */
+    /* Accent (shift slightly greener, a bit more presence in 300-600) */
     --accent-50: oklch(98% 0.02 175);
     --accent-100: oklch(94% 0.04 175);
-    --accent-200: oklch(88% 0.06 175);
-    --accent-300: oklch(80% 0.08 175);
-    --accent-400: oklch(72% 0.1 175);
-    --accent-500: oklch(62% 0.12 175);
-    --accent-600: oklch(52% 0.11 175);
-    --accent-700: oklch(42% 0.1 175);
-    --accent-800: oklch(32% 0.08 175);
+    --accent-200: oklch(88% 0.065 175);
+    --accent-300: oklch(80% 0.095 175);
+    --accent-400: oklch(72% 0.12 175);
+    --accent-500: oklch(62% 0.14 175);
+    --accent-600: oklch(52% 0.13 175);
+    --accent-700: oklch(42% 0.11 175);
+    --accent-800: oklch(32% 0.085 175);
     --accent-900: oklch(24% 0.06 175);
 
-    /* Surfaces (parchment paper) */
-    --surface-50: oklch(98% 0.01 85);
-    --surface-100: oklch(96% 0.012 85);
-    --surface-200: oklch(93% 0.014 85);
-    --surface-300: oklch(89% 0.016 85);
-    --surface-400: oklch(84% 0.018 85);
+    /* Surfaces (make them warmer and less “gray slab”) */
+    --surface-50: oklch(97% 0.012 85);
+    --surface-100: oklch(95% 0.014 85);
+    --surface-200: oklch(92% 0.016 85);
+    --surface-300: oklch(88% 0.018 85);
+    --surface-400: oklch(84% 0.02 85);
     --surface-500: oklch(78% 0.02 85);
     --surface-600: oklch(70% 0.018 85);
     --surface-700: oklch(60% 0.014 85);
-    --surface-800: oklch(52% 0.012 85);
-    --surface-900: oklch(38% 0.01 85);
+    --surface-800: oklch(48% 0.012 85);
+    --surface-900: oklch(22% 0.01 85);
 
-    --muted: oklch(84% 0.02 85);
-    --border: oklch(70% 0.02 85);
+    --muted: oklch(86% 0.018 85);
+    --border: oklch(72% 0.018 85);
 
-    /* Status (same idea, slightly warmer) */
-    --success: oklch(70% 0.18 145);
-    --warning: oklch(85% 0.18 85);
-    --danger: oklch(60% 0.2 25);
+    /* Semantic roles */
+    --bg: var(--surface-100);
+    --fg: var(--primary-900);
 
-    /* Semantic roles (light parchment UI) */
-    --bg: var(--surface-50);
-    --fg: var(--surface-900);
-
-    --card: var(--surface-100);
-    --card-fg: var(--surface-900);
+    --card: var(--surface-200);
+    --card-fg: var(--primary-900);
 
     --input: var(--surface-100);
-    --input-fg: var(--surface-900);
+    --input-fg: var(--primary-900);
 
-    --muted-fg: var(--surface-700);
+    /* Muted text should still be dark enough on paper */
+    --muted-fg: var(--primary-700);
 
     --overlay: color-mix(in oklch, black 35%, transparent);
+
+    /* Buttons */
+    --btn-primary-bg: var(--primary-700);
+    --btn-primary-fg: var(--primary-50);
+    --btn-primary-hover: var(--primary-600);
+
+    --btn-accent-bg: var(--accent-700);
+    --btn-accent-fg: var(--accent-50);
+    --btn-accent-hover: var(--accent-600);
+
+    --btn-danger-bg: var(--danger-700);
+    --btn-danger-fg: var(--danger-50);
+    --btn-danger-hover: var(--danger-600);
+
+    --btn-ghost-fg: var(--fg);
+    --btn-ghost-hover: var(--primary-600);
+
+    --btn-outline-fg: var(--fg);
+    --btn-outline-border: var(--border);
+    --btn-outline-hover: var(--primary-600);
   }
 
   .theme-light {
@@ -228,7 +275,18 @@
     /* Status */
     --success: oklch(70% 0.18 145);
     --warning: oklch(85% 0.18 85);
-    --danger: oklch(60% 0.2 25);
+
+    /* Danger (warm red) */
+    --danger-50: oklch(96% 0.03 25);
+    --danger-100: oklch(92% 0.05 25);
+    --danger-200: oklch(86% 0.08 25);
+    --danger-300: oklch(78% 0.12 25);
+    --danger-400: oklch(70% 0.16 25);
+    --danger-500: oklch(62% 0.2 25);
+    --danger-600: oklch(54% 0.22 25);
+    --danger-700: oklch(46% 0.2 25);
+    --danger-800: oklch(38% 0.16 25);
+    --danger-900: oklch(30% 0.12 25);
 
     /* Semantic roles (true light UI) */
     --bg: var(--surface-50);
@@ -243,6 +301,25 @@
     --muted-fg: var(--surface-700);
 
     --overlay: color-mix(in oklch, black 30%, transparent);
+    /* Buttons (semantic roles) */
+    --btn-primary-bg: var(--primary-700);
+    --btn-primary-fg: var(--primary-50);
+    --btn-primary-hover: var(--primary-600);
+
+    --btn-accent-bg: var(--accent-700);
+    --btn-accent-fg: var(--accent-50);
+    --btn-accent-hover: var(--accent-600);
+
+    --btn-danger-bg: var(--danger-700);
+    --btn-danger-fg: var(--danger-50);
+    --btn-danger-hover: var(--danger-600);
+
+    --btn-ghost-fg: var(--fg);
+    --btn-ghost-hover: var(--primary-600); /* or accent-600 if you prefer */
+
+    --btn-outline-fg: var(--fg);
+    --btn-outline-border: var(--border);
+    --btn-outline-hover: var(--primary-600); /* tint on hover */
   }
 }
 
@@ -293,4 +370,11 @@ html {
   --rdp-background-color: var(--color-accent-600) !important;
 
   margin: 0 !important;
+}
+
+/* Ensure RPG Awesome icons inherit the same color rules as React SVG icons */
+.ra,
+[class^="ra-"],
+[class*=" ra-"] {
+  color: currentColor;
 }

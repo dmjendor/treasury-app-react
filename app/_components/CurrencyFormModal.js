@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeCode, findBaseCurrency } from "@/app/utils/currencyUtils";
-import Input from "@/app/_components/Input";
+import InputComponent from "@/app/_components/InputComponent";
 
 export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
   const [allCurrencies, setAllCurrencies] = useState([]);
 
   const [name, setName] = useState("");
-  const [abbreviation, setAbbreviation] = useState("");
+  const [code, setCode] = useState("");
   const [rate, setRate] = useState("1");
   const [setAsBase, setSetAsBase] = useState(false);
 
@@ -51,7 +51,7 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
         if (!isEdit) {
           const hasBase = Boolean(findBaseCurrency(list));
           setName("");
-          setAbbreviation("");
+          setCode("");
           setSetAsBase(!hasBase);
           setRate(!hasBase ? "1" : "0.1");
           return;
@@ -67,11 +67,11 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
 
         if (cancelled) return;
 
-        const isBase = Number(cur?.multiplier) === 1;
+        const isBase = Number(cur?.rate) === 1;
         setName(cur?.name ?? "");
-        setAbbreviation(cur?.abbreviation ?? "");
+        setCode(cur?.code ?? "");
         setSetAsBase(isBase);
-        setRate(isBase ? "1" : String(cur?.multiplier ?? ""));
+        setRate(isBase ? "1" : String(cur?.rate ?? ""));
       } catch (e) {
         if (!cancelled) setError(e?.message || "Failed to load currency.");
       } finally {
@@ -96,20 +96,20 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
 
   function validate() {
     const trimmedName = String(name ?? "").trim();
-    const code = normalizeCode(abbreviation);
+    const normalizedCode = normalizeCode(code);
     const parsedRate = Number(rate);
 
     if (!trimmedName) return "Name is required.";
-    if (!code) return "Abbreviation is required.";
+    if (!normalizedCode) return "Code is required.";
     if (!Number.isFinite(parsedRate) || parsedRate <= 0)
       return "Rate must be a number greater than 0.";
 
     const existing = allCurrencies.find(
       (c) =>
-        normalizeCode(c.abbreviation) === code &&
+        normalizeCode(c.code) === normalizedCode &&
         String(c.id) !== String(currencyId ?? "")
     );
-    if (existing) return `Abbreviation "${code}" is already used.`;
+    if (existing) return `Code "${normalizedCode}" is already used.`;
 
     const currentBase = baseCurrency;
     const editingIsBase =
@@ -136,7 +136,7 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ multiplier: 0.1 }),
+        body: JSON.stringify({ rate: 0.1 }),
       }
     );
 
@@ -154,13 +154,13 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
     const payload = {
       vault_id: vaultId, // important for create
       name: String(name).trim(),
-      abbreviation: normalizeCode(abbreviation),
-      multiplier: setAsBase ? 1 : Number(rate),
+      code: normalizeCode(code),
+      rate: setAsBase ? 1 : Number(rate),
     };
 
     setBusy(true);
     try {
-      await demoteExistingBaseIfNeeded();
+      // await demoteExistingBaseIfNeeded();
 
       if (isEdit) {
         const res = await fetch(
@@ -233,7 +233,7 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
           onSubmit={onSubmit}
           className="mt-4 space-y-4"
         >
-          <Input
+          <InputComponent
             label="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -241,16 +241,16 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
             required
           />
 
-          <Input
+          <InputComponent
             label="Code"
-            value={abbreviation}
-            onChange={(e) => setAbbreviation(e.target.value)}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
             disabled={busy}
             required
           />
 
           <div className="flex items-center gap-3">
-            <Input
+            <InputComponent
               id="setAsBase"
               type="checkbox"
               label="Set as base currency (rate = 1)"
@@ -261,7 +261,7 @@ export default function CurrencyFormModal({ mode, vaultId, currencyId }) {
           </div>
 
           <div>
-            <Input
+            <InputComponent
               label="Rate"
               value={rate}
               onChange={(e) => setRate(e.target.value)}

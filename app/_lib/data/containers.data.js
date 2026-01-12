@@ -4,6 +4,7 @@
  */
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
+import { auth } from "@/app/_lib/auth";
 
 /**
  * - List containers for a vault.
@@ -60,3 +61,21 @@ export async function deleteContainerDb(containerId, vaultId) {
 
   return { ok: true };
 }
+
+/**
+ * - List default containers
+ * - @param {string} vaultId
+ * - @returns {Promise<any[]>}
+ */
+export const getDefaultContainers = async function () {
+  const session = await auth();
+  if (!session) throw new Error("You must be logged in.");
+  const supabase = await getSupabase();
+  const { data: containers, error } = await supabase
+    .from("defaultcontainers")
+    .select("name");
+
+  if (error) throw new Error("Default Containers could not be loaded");
+
+  return containers;
+};

@@ -1,6 +1,3 @@
-// app/currencies/currencyUtils.js
-"use client";
-
 export function normalizeCode(code) {
   return String(code ?? "")
     .trim()

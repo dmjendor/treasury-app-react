@@ -1,4 +1,4 @@
-export default function RaIcon({ name = "", className = "", label }) {
+export default function RaIcon({ name = "", className = "", title }) {
   if (typeof name !== "string") return null;
   const hasRaPrefix = name?.includes("ra ");
   const classNames = hasRaPrefix ? name : `ra ${name}`;
@@ -6,9 +6,9 @@ export default function RaIcon({ name = "", className = "", label }) {
   return (
     <i
       className={`${classNames} ${className}`}
-      aria-hidden={!label}
-      aria-label={label}
-      role={label ? "img" : undefined}
+      aria-hidden={!title}
+      aria-label={title}
+      role={title ? "img" : undefined}
     />
   );
 }
