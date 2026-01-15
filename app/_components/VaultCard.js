@@ -1,3 +1,4 @@
+import IconComponent from "@/app/_components/IconComponent";
 import Link from "next/link";
 import {
   HiOutlineArchiveBox,
@@ -14,8 +15,10 @@ function VaultCard({ vault }) {
   const {
     id,
     active,
-    edition,
     name,
+    system_id,
+    theme_id,
+    system,
     theme,
     containers_count,
     treasure_count,
@@ -42,11 +45,11 @@ function VaultCard({ vault }) {
             <div className="mt-2 flex flex-wrap gap-2">
               <Pill
                 icon={HiOutlineBookOpen}
-                text={edition || "Edition"}
+                text={vault?.system?.name || "Game System"}
               />
               <Pill
                 icon={HiOutlineSwatch}
-                text={theme || "Theme"}
+                text={vault?.theme?.name || "Theme"}
               />
             </div>
           </div>
@@ -75,22 +78,22 @@ function VaultCard({ vault }) {
         {/* Stats */}
         <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat
-            icon={HiOutlineArchiveBox}
+            icon={"/svg/backpack.svg"}
             label="Containers"
             value={containers_count}
           />
           <Stat
-            icon={HiOutlineGift}
+            icon={"ra-sword"}
             label="Treasure"
             value={treasure_count}
           />
           <Stat
-            icon={HiOutlineCurrencyDollar}
+            icon={"/svg/two-coins.svg"}
             label="Currencies"
             value={currencies_count}
           />
           <Stat
-            icon={HiOutlineSparkles}
+            icon={"ra-diamond"}
             label="Valuables"
             value={valuables_count}
           />
@@ -115,10 +118,10 @@ function VaultCard({ vault }) {
 
 export default VaultCard;
 
-function Stat({ icon: Icon, label, value }) {
+function Stat({ icon, label, value }) {
   return (
     <div className="flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2">
-      <Icon className="h-4 w-4 text-ink-700" />
+      <IconComponent icon={icon} />
       <div className="leading-tight">
         <div className="text-xs text-ink-600">{label}</div>
         <div className="text-sm font-semibold text-ink-900">{value ?? 0}</div>
@@ -127,10 +130,10 @@ function Stat({ icon: Icon, label, value }) {
   );
 }
 
-function Pill({ icon: Icon, text }) {
+function Pill({ icon, text }) {
   return (
     <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs text-ink-700">
-      <Icon className="h-4 w-4" />
+      <IconComponent icon={icon} />
       <span className="truncate">{text || "Unknown"}</span>
     </div>
   );

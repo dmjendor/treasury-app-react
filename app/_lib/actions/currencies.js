@@ -13,7 +13,7 @@ import { revalidatePath } from "next/cache";
 export async function deleteCurrencyAction({ vaultId, currencyId }) {
   try {
     await requireUserId(auth);
-    console.log("currencies.js", vaultId, currencyId);
+
     if (!currencyId || !vaultId) return { ok: false, error: "Missing id." };
 
     await deleteCurrencyForVaultById(vaultId, currencyId);

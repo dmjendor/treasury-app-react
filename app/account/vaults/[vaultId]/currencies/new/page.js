@@ -1,4 +1,4 @@
-import CurrencyFormModal from "@/app/_components/CurrencyFormModal";
+import CurrencyFormModal from "@/app/_components/CurrencyForm";
 import React from "react";
 
 export default async function Page({ params }) {

@@ -24,7 +24,6 @@ function json(body, status = 200) {
  * - @returns {Promise<Response>}
  */
 export async function GET(_request, { params }) {
-  console.log("A");
   try {
     const session = await auth();
     if (!session) throw new Error("You must be logged in.");
@@ -38,7 +37,6 @@ export async function GET(_request, { params }) {
 
     await assertVaultOwner(vaultId, userId);
 
-    console.log("reached this point");
     const data = await getCurrencyForVaultById(vaultId, currencyId);
     if (!data) return json({ ok: false, error: "Currency not found." }, 404);
 

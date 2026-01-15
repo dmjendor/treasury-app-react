@@ -27,7 +27,7 @@ export default function VaultSettingsClient() {
   const [active, setActive] = useState(!!vault.active);
 
   const [themeId, setThemeId] = useState(vault.theme_id ?? "");
-  const [editionId, setEditionId] = useState(vault.edition_id ?? "");
+  const [systemId, setSystemId] = useState(vault.system_id ?? "");
 
   const [allowXferIn, setAllowXferIn] = useState(!!vault.allow_xfer_in);
   const [allowXferOut, setAllowXferOut] = useState(!!vault.allow_xfer_out);
@@ -64,7 +64,7 @@ export default function VaultSettingsClient() {
   // These lists need to come from somewhere.
   // Best place: fetch them in the vault layout and include them in the provider value.
   const themes = useMemo(() => vault.themesList ?? [], [vault]);
-  const editions = useMemo(() => vault.editionsList ?? [], [vault]);
+  const systems = useMemo(() => vault.systemsList ?? [], [vault]);
   const currencies = useMemo(() => vault.currenciesList ?? [], [vault]);
 
   if (!vault) {
@@ -94,7 +94,7 @@ export default function VaultSettingsClient() {
       active,
 
       theme_id: themeId || null,
-      edition_id: editionId || null,
+      system_id: systemId || null,
 
       allow_xfer_in: allowXferIn,
       allow_xfer_out: allowXferOut,
@@ -193,13 +193,13 @@ export default function VaultSettingsClient() {
           </Select>
 
           <Select
-            id="edition_id"
-            label="Edition"
-            value={editionId}
-            onChange={(e) => setEditionId(e.target.value)}
+            id="system_id"
+            label="System"
+            value={systemId}
+            onChange={(e) => setSystemId(e.target.value)}
           >
             <option value="">Not set</option>
-            {editions.map((ed) => (
+            {systems.map((ed) => (
               <option
                 key={ed.id}
                 value={ed.id}

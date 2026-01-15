@@ -17,6 +17,7 @@
 export default function FormField({
   id,
   label,
+  labelRight,
   hint,
   error,
   type,
@@ -64,12 +65,16 @@ export default function FormField({
       {...rest}
     >
       {label ? (
-        <label
-          htmlFor={id}
-          className="text-sm font-semibold text-(--fg)"
-        >
-          {label}
-        </label>
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <label
+            htmlFor={id}
+            className="text-sm font-semibold text-(--fg)"
+          >
+            {label}
+          </label>
+
+          {labelRight ? <div className="shrink-0">{labelRight}</div> : null}
+        </div>
       ) : null}
 
       {hint ? <div className="text-xs text-(--muted-fg)">{hint}</div> : null}

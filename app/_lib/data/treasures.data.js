@@ -10,7 +10,7 @@ export async function getTreasuresForVault(vaultId) {
   const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from("treasure")
+    .from("treasures")
     .select("*")
     .eq("vault_id", vaultId)
     .order("name", { ascending: true });
@@ -23,7 +23,7 @@ export async function getTreasuresForContainer(vaultId, containerId) {
   const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from("treasure")
+    .from("treasures")
     .select("*")
     .eq("vault_id", vaultId)
     .eq("container_id", containerId)
@@ -34,23 +34,27 @@ export async function getTreasuresForContainer(vaultId, containerId) {
 }
 
 export async function createTreasureDb(treasureObj) {
+  console.log(treasureObj);
   const supabase = await getSupabase();
   const { data, error } = await supabase
-    .from("treasure")
+    .from("treasures")
     .insert([treasureObj])
     .select();
+  console.log("e:", error);
+  console.log("d:", data);
   if (error) throw new Error(error.message);
   return data;
 }
 
 export async function getDefaultTreasures(vaultId) {
-  const { edition_id } = await getVaultById(vaultId);
+  const { system_id } = await getVaultById(vaultId);
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("defaulttreasures")
     .select("*")
-    .eq("edition_id", edition_id);
+    .eq("system_id", system_id);
+
   if (error) throw new Error(error.message);
   return data;
 }

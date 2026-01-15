@@ -120,7 +120,7 @@ export default function CreateMenu({ vaultId }) {
     },
     {
       label: "New treasure",
-      href: `${base}/treasure/new`,
+      href: `${base}/treasures/new`,
       icon: "ra ra-sword",
     },
     {

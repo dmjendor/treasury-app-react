@@ -15,10 +15,10 @@ import { getUserVaults, getVaultById } from "@/app/_lib/data/vaults.data";
 
 function Panel({ title, icon: Icon, children }) {
   return (
-    <section className="rounded-2xl border border-(--border) bg-(--primary-400) p-6">
+    <section className="rounded-2xl border border-border) bg-primary-400) p-6">
       <div className="flex items-center gap-2">
-        {Icon ? <Icon className="h-5 w-5 text-(--accent-700)" /> : null}
-        <h2 className="text-sm font-semibold text-(--fg)">{title}</h2>
+        {Icon ? <Icon className="h-5 w-5 text-accent-700" /> : null}
+        <h2 className="text-sm font-semibold text-fg">{title}</h2>
       </div>
       <div className="mt-4">{children}</div>
     </section>
@@ -27,16 +27,16 @@ function Panel({ title, icon: Icon, children }) {
 
 function StatCard({ label, value, icon, href }) {
   const content = (
-    <div className="rounded-2xl border border-(--border) bg-(--card) p-5 transition-colors hover:bg-(--primary-600) hover:text-(--primary-50)">
+    <div className="rounded-2xl border border-border) bg-card) p-5 transition-colors hover:bg-primary-600) hover:text-primary-50">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs text-(--muted-fg) group-hover:text-(--primary-100)">
+          <div className="text-xs text-muted-fg) group-hover:text-primary-100">
             {label}
           </div>
           <div className="mt-1 text-2xl font-semibold">{value}</div>
         </div>
 
-        <div className="rounded-xl bg-(--accent-700) p-2 text-(--accent-50)">
+        <div className="rounded-xl bg-accent-700) p-2 text-accent-50">
           <IconComponent
             icon={icon}
             title={label}
@@ -52,17 +52,17 @@ function StatCard({ label, value, icon, href }) {
 
 function EmptyList({ title, hint }) {
   return (
-    <div className="rounded-xl border border-(--border) bg-(--primary-100) p-4 text-sm">
-      <div className="font-semibold text-(--fg)">{title}</div>
-      <div className="mt-1 text-(--muted-fg)">{hint}</div>
+    <div className="rounded-xl border border-border) bg-primary-100) p-4 text-sm">
+      <div className="font-semibold text-fg">{title}</div>
+      <div className="mt-1 text-muted-fg">{hint}</div>
     </div>
   );
 }
 
 function DetailCard({ icon, label, value, hint }) {
   return (
-    <div className="rounded-xl border border-(--border) bg-(--card) p-4">
-      <div className="flex items-center gap-2 text-xs text-(--muted-fg)">
+    <div className="rounded-xl border border-border) bg-card) p-4">
+      <div className="flex items-center gap-2 text-xs text-muted-fg">
         {icon ? (
           <IconComponent
             icon={icon}
@@ -72,10 +72,8 @@ function DetailCard({ icon, label, value, hint }) {
         ) : null}
         {label}
       </div>
-      <div className="mt-1 text-sm font-semibold text-(--fg)">{value}</div>
-      {hint ? (
-        <div className="mt-1 text-xs text-(--muted-fg)">{hint}</div>
-      ) : null}
+      <div className="mt-1 text-sm font-semibold text-fg">{value}</div>
+      {hint ? <div className="mt-1 text-xs text-muted-fg">{hint}</div> : null}
     </div>
   );
 }
@@ -85,7 +83,13 @@ export default async function VaultOverviewPage({ params }) {
     typeof params?.then === "function" ? await params : params;
   const { vaultId } = resolvedParams;
   const {
+    id,
+    active,
     name,
+    system_id,
+    theme_id,
+    system,
+    theme,
     containers_count,
     treasure_count,
     currencies_count,
@@ -93,7 +97,7 @@ export default async function VaultOverviewPage({ params }) {
   } = await getVaultById(vaultId);
 
   return (
-    <div className="space-y-8 text-(--fg)">
+    <div className="space-y-8 text-fg">
       {/* Top: quick stats */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -112,7 +116,7 @@ export default async function VaultOverviewPage({ params }) {
           label="Treasures"
           value={treasure_count}
           icon={"ra-sword"}
-          href={`/account/vaults/${vaultId}/treasure`}
+          href={`/account/vaults/${vaultId}/treasures`}
         />
 
         <StatCard
@@ -144,19 +148,19 @@ export default async function VaultOverviewPage({ params }) {
           <div className="grid gap-3">
             <DetailCard
               icon={HiOutlineBookOpen}
-              label="Edition"
-              value="Not set"
+              label="System"
+              value={system?.name}
             />
 
             <DetailCard
               icon={HiOutlineSwatch}
               label="Theme"
-              value="Default"
+              value={theme?.name}
             />
 
             <DetailCard
               label="Permissions"
-              value="GM only (for now)"
+              value="GM only (for now"
               hint="Later you can add players and set roles."
             />
           </div>
@@ -184,7 +188,7 @@ export default async function VaultOverviewPage({ params }) {
           </LinkButton>
 
           <LinkButton
-            href={`/account/vaults/${vaultId}/treasure/new`}
+            href={`/account/vaults/${vaultId}/treasures/new`}
             variant="primary"
           >
             Add treasure
@@ -198,7 +202,7 @@ export default async function VaultOverviewPage({ params }) {
           </LinkButton>
         </div>
 
-        <div className="mt-4 text-xs text-(--muted-fg)">
+        <div className="mt-4 text-xs text-muted-fg">
           These are placeholders now. Later, you can conditionally show the best
           next step based on what’s missing.
         </div>

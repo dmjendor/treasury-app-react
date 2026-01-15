@@ -2,11 +2,17 @@
 
 import { useRouter } from "next/navigation";
 
-export default function Modal({ title, children }) {
+export default function Modal({ title, children, themeKey }) {
   const router = useRouter();
+  const theme = `theme-${themeKey ?? "light"}`;
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div
+      className={["fixed inset-0 z-50", theme, "bg-(--bg) text-(--fg)"].join(
+        " "
+      )}
+    >
+      {/* Overlay */}
       <button
         type="button"
         aria-label="Close modal"
@@ -14,21 +20,41 @@ export default function Modal({ title, children }) {
         className="absolute inset-0 bg-(--color-overlay)"
       />
 
-      <div className="absolute left-1/2 top-1/2 w-[min(42rem,92vw)] -translate-x-1/2 -translate-y-1/2">
-        <div className="rounded-2xl border border-white/10 bg-surface-900/95 p-6 shadow-xl backdrop-blur">
-          <div className="flex items-start justify-between gap-4">
-            <h2 className="text-lg font-semibold text-ink-900">{title}</h2>
+      {/* Centering + safe padding */}
+      <div className="relative flex min-h-full items-center justify-center p-4">
+        {/* Panel */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          className={[
+            "w-full max-w-2xl",
+            "rounded-2xl border border-(--border)",
+            "bg-(--card) shadow-xl",
+            // Keep panel within viewport
+            "max-h-[calc(100vh-2rem)]",
+            "flex flex-col",
+          ].join(" ")}
+        >
+          {/* Header (sticky so you always have Close) */}
+          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-(--border) bg-(--card) px-6 py-4">
+            <h2 className="text-lg font-semibold text-(--fg)">{title}</h2>
 
             <button
               type="button"
               onClick={() => router.back()}
-              className="rounded-lg bg-white/5 px-3 py-2 text-sm text-ink-800 hover:bg-white/10"
+              className={[
+                "rounded-lg border border-(--border)",
+                "bg-(--btn-secondary-bg) text-(--btn-secondary-fg)",
+                "px-3 py-2 text-sm",
+                "hover:bg-(--btn-secondary-hover-bg) cursor-pointer",
+              ].join(" ")}
             >
               Close
             </button>
           </div>
 
-          <div className="mt-5">{children}</div>
+          {/* Scrollable body */}
+          <div className="overflow-y-auto">{children}</div>
         </div>
       </div>
     </div>

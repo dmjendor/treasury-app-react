@@ -1,13 +1,23 @@
 "use client";
+import CurrencyForm from "@/app/_components/CurrencyForm";
+import Modal from "@/app/_components/Modal";
+import { useParams } from "next/navigation";
+import React from "react";
 
-import CurrencyFormModal from "@/app/_components/CurrencyFormModal";
+export default function Page() {
+  const params = useParams();
+  const currencyId = params?.currencyId ? String(params.currencyId) : "";
 
-export default function Page({ params }) {
+  const vault = useVault();
+  if (!vault) return null;
+
   return (
-    <CurrencyFormModal
-      mode="edit"
-      vaultId={params.vaultId}
-      currencyId={params.currencyId}
-    />
+    <Modal title="Edit Currency">
+      <CurrencyForm
+        mode="edit"
+        vault={vault}
+        currencyId={currencyId}
+      />
+    </Modal>
   );
 }

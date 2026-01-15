@@ -10,7 +10,17 @@ import FormField from "@/app/_components/FormField";
  * Intended to be the default text field used across the app.
  */
 const InputComponent = forwardRef(function Input(
-  { label, hint, error, className = "", id, type = "text", ...props },
+  {
+    label,
+    hint,
+    error,
+    className = "",
+    id,
+    type = "text",
+    labelRight,
+    children,
+    ...props
+  },
   ref
 ) {
   const fieldId = id || props.name;
@@ -20,27 +30,22 @@ const InputComponent = forwardRef(function Input(
       id={fieldId}
       label={label}
       hint={hint}
+      labelRight={labelRight}
       error={error}
       type={type}
       {...props}
     >
+      {children ? <div className="mb-2">{children}</div> : null}
       <input
         ref={ref}
         id={fieldId}
         name={fieldId}
         type={type}
-        className={`
-          w-full
-          rounded-xl
-          border border-white/10
-          bg-white/5
+        className={`w-full rounded-xl border border-border
+          bg-input text-fg placeholder:text-muted-fg
           px-4 py-3
-          text-sm text-ink-900
-          placeholder:text-ink-600
-          focus:outline-none focus:ring-2 focus:ring-primary-500/50
-          disabled:opacity-60 disabled:cursor-not-allowed
-          ${className}
-        `}
+          focus:outline-none focus:ring-2 focus:ring-accent
+          ${className}`}
         {...props}
       />
     </FormField>

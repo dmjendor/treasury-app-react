@@ -1,0 +1,108 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { LinkButton } from "@/app/_components/LinkButton";
+import TreasuresForm from "@/app/_components/TreasuresForm";
+import {
+  createTreasureAction,
+  getDefaultTreasuresAction,
+} from "@/app/_lib/actions/treasures";
+
+export default function NewTreasureClient({ vault, isModal }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [defaultTreasures, setDefaultTreasures] = useState([]);
+  const systemId = vault?.system_id;
+  console.log(vault);
+  useEffect(() => {
+    if (systemId) return;
+
+    async function load() {
+      setError("");
+      const res = await getDefaultTreasuresAction({ systemId });
+
+      if (!res.ok) {
+        setDefaultTreasures([]);
+        setError(res.error || "Failed to load default treasures.");
+        return;
+      }
+
+      setDefaultTreasures(Array.isArray(res.data) ? res.data : []);
+    }
+
+    load();
+  }, [systemId]);
+
+  async function handleCreate(payload) {
+    setError("");
+
+    if (!payload.name?.trim()) {
+      setError("Name is required.");
+      return;
+    }
+
+    if (!payload.container_id?.trim()) {
+      setError("Container is required.");
+      return;
+    }
+
+    setBusy(true);
+
+    const res = await createTreasureAction(payload);
+
+    if (!res?.ok) {
+      setError(res?.error || "Failed to create treasure.");
+      setBusy(false);
+      return;
+    }
+
+    setBusy(false);
+
+    if (isModal) {
+      router.back(); // close modal
+      router.refresh(); // refresh underlying page data
+      return;
+    }
+
+    router.replace(`/account/vaults/${vault.id}/treasures`);
+    router.refresh();
+  }
+
+  return (
+    <div className="p-6 max-w-3xl mx-auto text-(--fg) space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          {!isModal && <h1 className="text-2xl font-semibold">Add treasure</h1>}
+          <p className="text-sm text-(--muted-fg)">
+            Create treasure manually, or pick from your system defaults.
+          </p>
+        </div>
+        {!isModal && (
+          <LinkButton
+            href={`/account/vaults/${vault.id}/treasures`}
+            variant="outline"
+          >
+            Back
+          </LinkButton>
+        )}
+      </header>
+
+      <TreasuresForm
+        isEdit={false}
+        vaultId={vault?.id}
+        baseCurrencyId={vault?.base_currency_id}
+        commonCurrencyId={vault?.common_currency_id}
+        systemId={vault?.system_id}
+        containers={vault?.containerList}
+        defaultTreasures={defaultTreasures}
+        currencyList={vault?.currencyList}
+        submitting={busy}
+        error={error}
+        onSubmit={handleCreate}
+        onCancel={() => router.replace(`/account/vaults/${vault.id}/treasures`)}
+      />
+    </div>
+  );
+}

@@ -18,7 +18,7 @@ export function Button({
       className={`${getButtonClasses({
         variant,
         size,
-      })} disabled:opacity-50 disabled:pointer-events-none ${className}`}
+      })} disabled:opacity-50 cursor-pointer disabled:pointer-events-none ${className}`}
       {...props}
     />
   );

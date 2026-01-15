@@ -7,14 +7,15 @@ import { getSupabase } from "@/app/_lib/supabase";
 import { auth } from "@/app/_lib/auth";
 import { notFound } from "next/navigation";
 import { getThemes } from "@/app/_lib/data/themes.data";
-import { getEditions } from "@/app/_lib/data/editions.data";
+import { getSystems } from "@/app/_lib/data/systems.data";
 import { getCurrenciesForVault } from "@/app/_lib/data/currencies.data";
+import { getContainersForVault } from "@/app/_lib/data/containers.data";
 
 function normalizeVault(vault) {
   return {
     ...vault,
     containers_count: vault.containers?.[0]?.count ?? 0,
-    treasure_count: vault.treasure?.[0]?.count ?? 0,
+    treasures_count: vault.treasures?.[0]?.count ?? 0,
     currencies_count: vault.currencies?.[0]?.count ?? 0,
     valuables_count: vault.valuables?.[0]?.count ?? 0,
     themeKey: vault.theme?.theme_key,
@@ -34,23 +35,26 @@ export async function getVaultById(id) {
   const { data: vault, error } = await supabase
     .from("vaults")
     .select(
-      "id, active, base_currency_id, common_currency_id, edition_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count), theme:themes ( id, theme_key )"
+      "id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )"
     )
     .eq("id", id)
     .single();
 
-  const [themes, editions, currencies] = await Promise.all([
-    getThemes(),
-    getEditions(),
-    getCurrenciesForVault(id),
-  ]);
+  const [containerList, themeList, systemList, currencyList] =
+    await Promise.all([
+      getContainersForVault(id),
+      getThemes(),
+      getSystems(),
+      getCurrenciesForVault(id),
+    ]);
 
   const normalizedVault = normalizeVault(vault);
   const vaultCtx = {
     ...normalizedVault,
-    themesList: themes,
-    editionsList: editions,
-    currenciesList: currencies,
+    containerList,
+    themeList,
+    systemList,
+    currencyList,
   };
 
   if (error) {
@@ -71,7 +75,7 @@ export const getUserVaults = async function () {
   const { data: vaults, error } = await supabase
     .from("vaults")
     .select(
-      "id, active, base_currency_id, common_currency_id, edition_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count), theme:themes ( id, theme_key )"
+      "id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system: systems( id, name)"
     )
     .eq("user_id", session.user.userId)
     .order("name");
@@ -128,7 +132,7 @@ export async function updateVaultSettingsDb({ userId, id, ...patch }) {
     allow_xfer_out: patch.allow_xfer_out,
     base_currency_id: patch.base_currency_id,
     common_currency_id: patch.common_currency_id,
-    edition_id: patch.edition_id,
+    system_id: patch.system_id,
     vo_buy_markup: patch.vo_buy_markup,
     vo_sell_markup: patch.vo_sell_markup,
     item_buy_markup: patch.item_buy_markup,
@@ -151,7 +155,7 @@ export async function updateVaultSettingsDb({ userId, id, ...patch }) {
     .eq("id", id)
     .eq("user_id", userId)
     .select(
-      "id, active, name, theme_id, edition_id, base_currency_id, common_currency_id, allow_xfer_in, allow_xfer_out, treasury_split_enabled, reward_prep_enabled, vo_buy_markup, vo_sell_markup, item_buy_markup, item_sell_markup, merge_split"
+      "id, active, name, theme_id, system_id, base_currency_id, common_currency_id, allow_xfer_in, allow_xfer_out, treasury_split_enabled, reward_prep_enabled, vo_buy_markup, vo_sell_markup, item_buy_markup, item_sell_markup, merge_split"
     )
     .single();
 

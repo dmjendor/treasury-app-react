@@ -17,9 +17,8 @@ export const getContainersForVault = async function (vaultId) {
   const supabase = await getSupabase();
   const { data: containers, error } = await supabase
     .from("containers")
-    .select("id,name,is_hidden, treasure(count), valuables(count)")
+    .select("id,name,is_hidden, treasures(count), valuables(count)")
     .eq("vault_id", vaultId);
-
   if (error) throw new Error("Containers could not be loaded");
 
   return containers;

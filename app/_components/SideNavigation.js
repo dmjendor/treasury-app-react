@@ -62,7 +62,7 @@ function SideNavigation() {
               href={`${vaultBase}/treasure`}
               icon="ra-sword"
               label="Treasure"
-              active={pathname?.startsWith(`${vaultBase}/treasure`)}
+              active={pathname?.startsWith(`${vaultBase}/treasures`)}
             />
 
             <NavLink

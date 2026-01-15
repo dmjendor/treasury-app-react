@@ -29,8 +29,7 @@ const Textarea = forwardRef(function Textarea(
         className={`
           w-full
           rounded-xl
-          border border-white/10
-          bg-white/5
+          border border-(--border) bg-(--input)
           px-4 py-3
           text-sm text-ink-900
           placeholder:text-ink-600

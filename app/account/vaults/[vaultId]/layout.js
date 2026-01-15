@@ -11,7 +11,7 @@ export default async function VaultLayout({ children, params }) {
   const vault = await getVaultById(vaultId);
 
   const themeKey = vault?.themeKey ? `theme-${vault.themeKey}` : "theme-night";
-  console.log(themeKey);
+
   return (
     <VaultProvider
       vault={vault}

@@ -1,4 +1,4 @@
-import CurrenciesClient from "./CurrenciesClient";
+import CurrenciesClient from "@/app/_components/CurrenciesClient";
 
 export default async function Page({ params }) {
   const { vaultId } = await params;

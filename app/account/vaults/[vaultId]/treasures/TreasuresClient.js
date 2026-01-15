@@ -14,7 +14,7 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
   );
 
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState("name"); // name | value | quantity | location
+  const [sortKey, setSortKey] = useState("name"); // name | value | quantity
   const [sortDir, setSortDir] = useState("asc"); // asc | desc
 
   const visibleTreasures = useMemo(() => {
@@ -26,7 +26,7 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
         return false;
       if (!q) return true;
 
-      const hay = [t.name, t.genericname, t.description, t.location]
+      const hay = [t.name, t.genericname, t.description]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -80,7 +80,7 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
 
         <div className="flex gap-2">
           <LinkButton
-            href={`/account/vaults/${vaultId}/treasure/new`}
+            href={`/account/vaults/${vaultId}/treasures/new`}
             variant="accent"
           >
             Add treasure
@@ -95,7 +95,7 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
         </div>
       </header>
 
-      <section className="rounded-2xl border border-(--border) bg-(--surface-800) p-4 space-y-4">
+      <section className="rounded-2xl border border-(--border) bg-(--primary-400) p-4 space-y-4">
         <ContainerTabs
           containers={containers}
           activeId={activeContainerId}
@@ -108,9 +108,10 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
             <label className="text-sm text-(--muted-fg)">Search</label>
             <div className="mt-1 w-full max-w-md">
               <InputComponent
+                name="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Name, description, location"
+                placeholder="Name, description"
               />
             </div>
           </div>
@@ -140,14 +141,6 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
                 onClick={() => toggleSort("quantity")}
               >
                 {sortLabel("quantity", "Qty")}
-              </Button>
-
-              <Button
-                variant={sortKey === "location" ? "accent" : "outline"}
-                size="sm"
-                onClick={() => toggleSort("location")}
-              >
-                {sortLabel("location", "Location")}
               </Button>
             </div>
           </div>

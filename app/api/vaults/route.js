@@ -28,7 +28,7 @@ export async function POST(req) {
       name: body.name.trim(),
 
       // IDs are optional for now
-      edition_id: body.edition_id || null,
+      system_id: body.system_id || null,
       theme_id: body.theme_id || null,
 
       // Transfer permissions

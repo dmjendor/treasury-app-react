@@ -6,7 +6,7 @@ import { Button } from "@/app/_components/Button";
 
 export default function DefaultTreasurePicker({ items, onPick }) {
   const rows = useMemo(() => (Array.isArray(items) ? items : []), [items]);
-  console.log("ros", rows);
+
   const [categoryId, setCategoryId] = useState("");
   const [itemId, setItemId] = useState("");
 

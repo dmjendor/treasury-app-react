@@ -24,7 +24,7 @@ export default function TreasuresTable({
         </div>
 
         <LinkButton
-          href={`/account/vaults/${vaultId}/treasure/new${
+          href={`/account/vaults/${vaultId}/treasures/new${
             activeContainerId ? `?containerId=${activeContainerId}` : ""
           }`}
           variant="accent"
@@ -36,12 +36,11 @@ export default function TreasuresTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-(--surface-800) border-b border-(--border)">
+          <thead className="bg-(--accent-600) border-b border-(--border)">
             <tr className="text-left text-(--fg)">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Value</th>
               <th className="px-4 py-3">Qty</th>
-              <th className="px-4 py-3">Location</th>
               <th className="px-4 py-3 w-40">Actions</th>
             </tr>
           </thead>
@@ -65,11 +64,10 @@ export default function TreasuresTable({
                   <td className="px-4 py-3 font-medium">{t.name}</td>
                   <td className="px-4 py-3">{fmtMoney(t.value)}</td>
                   <td className="px-4 py-3">{t.quantity ?? 0}</td>
-                  <td className="px-4 py-3">{t.location ?? ""}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <LinkButton
-                        href={`/account/vaults/${vaultId}/treasure/${t.id}/edit`}
+                        href={`/account/vaults/${vaultId}/treasures/${t.id}/edit`}
                         variant="outline"
                         size="sm"
                       >
@@ -77,7 +75,7 @@ export default function TreasuresTable({
                       </LinkButton>
 
                       <LinkButton
-                        href={`/account/vaults/${vaultId}/treasure/${t.id}/delete`}
+                        href={`/account/vaults/${vaultId}/treasures/${t.id}/delete`}
                         variant="danger"
                         size="sm"
                       >

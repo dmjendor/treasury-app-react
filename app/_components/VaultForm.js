@@ -31,7 +31,7 @@ export default function VaultForm({
 }) {
   const defaults = {
     name: vault?.name ?? "",
-    edition_id: vault?.edition_id ?? "",
+    system_id: vault?.system_id ?? "",
     theme_id: vault?.theme_id ?? "",
 
     base_currency_id: vault?.base_currency_id ?? "",
@@ -80,10 +80,10 @@ export default function VaultForm({
         </Field>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Field label="Edition (optional)">
+          <Field label="System (optional)">
             <input
-              name="edition_id"
-              defaultValue={defaults.edition_id}
+              name="system_id"
+              defaultValue={defaults.system_id}
               className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-600"
             />
           </Field>
