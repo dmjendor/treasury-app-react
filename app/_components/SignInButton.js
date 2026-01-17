@@ -8,7 +8,7 @@ function SignInButton() {
     <button
       type="button"
       onClick={() => signIn("google", { callbackUrl: "/account" })}
-      className="flex items-center gap-6 text-lg border border-primary-300 px-10 py-4 font-medium"
+      className="flex items-center gap-6 text-lg border border-border bg-btn-secondary-bg px-10 py-4 font-medium text-btn-secondary-fg hover:bg-btn-secondary-hover-bg transition-colors"
     >
       <Image
         src="https://authjs.dev/img/providers/google.svg"

@@ -1,22 +1,24 @@
 "use client";
-import CurrencyForm from "@/app/_components/CurrencyForm";
+
+import { useParams, useRouter } from "next/navigation";
 import Modal from "@/app/_components/Modal";
-import { useParams } from "next/navigation";
-import React from "react";
+import CurrencyFormWithVault from "@/app/_components/CurrencyFormWithVault";
 
 export default function Page() {
-  const params = useParams();
-  const currencyId = params?.currencyId ? String(params.currencyId) : "";
+  const router = useRouter();
+  const { currencyId } = useParams();
 
-  const vault = useVault();
-  if (!vault) return null;
+  function handleClose() {
+    router.back();
+    router.refresh();
+  }
 
   return (
     <Modal title="Edit Currency">
-      <CurrencyForm
+      <CurrencyFormWithVault
         mode="edit"
-        vault={vault}
         currencyId={currencyId}
+        onClose={handleClose}
       />
     </Modal>
   );

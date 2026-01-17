@@ -1,12 +1,8 @@
-import CurrencyFormModal from "@/app/_components/CurrencyForm";
+import CurrencyFormWithVault from "@/app/_components/CurrencyFormWithVault";
 import React from "react";
 
-export default async function Page({ params }) {
-  const { vaultId } = await params;
+export default function Page() {
   return (
-    <CurrencyFormModal
-      mode="create"
-      vaultId={vaultId}
-    />
+    <CurrencyFormWithVault mode="create" />
   );
 }

@@ -110,7 +110,7 @@ export default function ContainerForm({
       ) : null}
 
       <div className="space-y-1">
-        <div className="text-sm font-semibold text-ink-900">Container name</div>
+        <div className="text-sm font-semibold text-fg">Container name</div>
         <div className="mt-2">
           <InputComponent
             name="name"
@@ -134,7 +134,7 @@ export default function ContainerForm({
           </datalist>
 
           {/* Optional helper text */}
-          <div className="mt-2 text-xs text-ink-700">
+          <div className="mt-2 text-xs text-muted-fg">
             Pick a suggestion or type your own.
           </div>
         </div>
@@ -148,7 +148,7 @@ export default function ContainerForm({
       />
 
       {state?.error ? (
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-800">
+        <div className="rounded-xl border border-danger-600 bg-danger-100 px-4 py-3 text-sm text-danger-700">
           {state.error}
         </div>
       ) : null}
@@ -157,7 +157,7 @@ export default function ContainerForm({
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-xl bg-primary-500 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-600 disabled:opacity-60"
+          className="rounded-xl bg-btn-primary-bg px-5 py-2 text-sm font-semibold text-btn-primary-fg hover:bg-btn-primary-hover-bg disabled:opacity-60"
         >
           {isPending ? "Saving…" : submitLabel}
         </button>

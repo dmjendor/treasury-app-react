@@ -2,8 +2,8 @@
 function Field({ label, hint, children }) {
   return (
     <div className="space-y-1">
-      <div className="text-sm font-semibold text-ink-900">{label}</div>
-      {hint ? <div className="text-xs text-ink-600">{hint}</div> : null}
+      <div className="text-sm font-semibold text-fg">{label}</div>
+      {hint ? <div className="text-xs text-muted-fg">{hint}</div> : null}
       <div className="mt-2">{children}</div>
     </div>
   );
@@ -11,14 +11,14 @@ function Field({ label, hint, children }) {
 
 function Toggle({ name, defaultChecked, label }) {
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-surface-800/60 px-4 py-3">
+    <label className="flex items-center gap-3 rounded-xl border border-border bg-input px-4 py-3">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="h-4 w-4 accent-primary-500"
+        className="h-4 w-4 accent-accent-500"
       />
-      <span className="text-sm text-ink-800">{label}</span>
+      <span className="text-sm text-fg">{label}</span>
     </label>
   );
 }
@@ -64,7 +64,7 @@ export default function VaultForm({
       ) : null}
 
       {/* Basics */}
-      <section className="rounded-2xl border border-white/10 bg-surface-800/60 p-6 backdrop-blur">
+      <section className="rounded-2xl border border-border bg-card p-6 backdrop-blur">
         <Field
           label="Vault name"
           hint="Example: The Emerald Hoard"
@@ -75,7 +75,7 @@ export default function VaultForm({
             minLength={2}
             maxLength={80}
             defaultValue={defaults.name}
-            className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </Field>
 
@@ -84,7 +84,7 @@ export default function VaultForm({
             <input
               name="system_id"
               defaultValue={defaults.system_id}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-600"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg placeholder:text-muted-fg"
             />
           </Field>
 
@@ -92,15 +92,15 @@ export default function VaultForm({
             <input
               name="theme_id"
               defaultValue={defaults.theme_id}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-600"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg placeholder:text-muted-fg"
             />
           </Field>
         </div>
       </section>
 
       {/* Currency rules */}
-      <section className="rounded-2xl border border-white/10 bg-surface-800/60 p-6 backdrop-blur">
-        <h3 className="text-sm font-semibold text-ink-900">Currency rules</h3>
+      <section className="rounded-2xl border border-border bg-card p-6 backdrop-blur">
+        <h3 className="text-sm font-semibold text-fg">Currency rules</h3>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <Field
@@ -110,7 +110,7 @@ export default function VaultForm({
             <input
               name="base_currency_id"
               defaultValue={defaults.base_currency_id}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-600"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg placeholder:text-muted-fg"
             />
           </Field>
 
@@ -121,7 +121,7 @@ export default function VaultForm({
             <input
               name="common_currency_id"
               defaultValue={defaults.common_currency_id}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900 placeholder:text-ink-600"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg placeholder:text-muted-fg"
             />
           </Field>
         </div>
@@ -131,7 +131,7 @@ export default function VaultForm({
             <select
               name="merge_split"
               defaultValue={defaults.merge_split}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             >
               <option value="base">
                 Merge all into base currency before splitting
@@ -145,8 +145,8 @@ export default function VaultForm({
       </section>
 
       {/* Markups */}
-      <section className="rounded-2xl border border-white/10 bg-surface-800/60 p-6 backdrop-blur">
-        <h3 className="text-sm font-semibold text-ink-900">Markups</h3>
+      <section className="rounded-2xl border border-border bg-card p-6 backdrop-blur">
+        <h3 className="text-sm font-semibold text-fg">Markups</h3>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <Field label="Valuable buy markup (percent)">
@@ -155,7 +155,7 @@ export default function VaultForm({
               type="number"
               step="0.01"
               defaultValue={defaults.vo_buy_markup}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             />
           </Field>
 
@@ -165,7 +165,7 @@ export default function VaultForm({
               type="number"
               step="0.01"
               defaultValue={defaults.vo_sell_markup}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             />
           </Field>
 
@@ -175,7 +175,7 @@ export default function VaultForm({
               type="number"
               step="0.01"
               defaultValue={defaults.item_buy_markup}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             />
           </Field>
 
@@ -185,15 +185,15 @@ export default function VaultForm({
               type="number"
               step="0.01"
               defaultValue={defaults.item_sell_markup}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-ink-900"
+              className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             />
           </Field>
         </div>
       </section>
 
       {/* Toggles */}
-      <section className="rounded-2xl border border-white/10 bg-surface-800/60 p-6 backdrop-blur">
-        <h3 className="text-sm font-semibold text-ink-900">
+      <section className="rounded-2xl border border-border bg-card p-6 backdrop-blur">
+        <h3 className="text-sm font-semibold text-fg">
           Permissions and features
         </h3>
 
@@ -224,14 +224,14 @@ export default function VaultForm({
       <div className="flex items-center justify-end gap-3">
         <a
           href={cancelHref}
-          className="rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-ink-800 hover:bg-white/10"
+          className="rounded-xl bg-btn-secondary-bg px-4 py-2 text-sm font-semibold text-btn-secondary-fg hover:bg-btn-secondary-hover-bg"
         >
           Cancel
         </a>
 
         <button
           type="submit"
-          className="rounded-xl bg-primary-500 px-5 py-2 text-sm font-semibold text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+          className="rounded-xl bg-btn-primary-bg px-5 py-2 text-sm font-semibold text-btn-primary-fg hover:bg-btn-primary-hover-bg focus:outline-none focus:ring-2 focus:ring-accent"
         >
           {submitLabel}
         </button>

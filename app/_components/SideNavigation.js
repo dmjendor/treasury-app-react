@@ -18,7 +18,7 @@ function SideNavigation() {
     : null;
 
   return (
-    <nav className="border-r border-primary-900">
+    <nav className="border-r border-border">
       <ul className="flex flex-col gap-2 h-full text-lg">
         <NavLink
           href="/account/vaults"
@@ -40,7 +40,7 @@ function SideNavigation() {
         {/* Vault scoped */}
         {inVault && (
           <div className="space-y-2">
-            <div className="px-3 text-xs uppercase tracking-wide text-ink-600">
+            <div className="px-3 text-xs uppercase tracking-wide text-muted-fg">
               Current vault
             </div>
 

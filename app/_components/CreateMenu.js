@@ -94,7 +94,7 @@ function MenuItem({ href, label, icon, onSelect }) {
     <Link
       href={href}
       onClick={onSelect}
-      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-800 hover:bg-white/10"
+      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-fg hover:bg-surface"
     >
       <IconSlot icon={icon} />
       <span className="truncate">{label}</span>
@@ -143,7 +143,7 @@ export default function CreateMenu({ vaultId }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-xl bg-primary-500 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+        className="flex items-center gap-2 rounded-xl bg-btn-primary-bg px-4 py-2 text-sm font-semibold text-btn-primary-fg hover:bg-btn-primary-hover-bg focus:outline-none focus:ring-2 focus:ring-accent"
         aria-haspopup="menu"
         aria-expanded={open}
       >
@@ -153,7 +153,7 @@ export default function CreateMenu({ vaultId }) {
 
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-white/10 bg-surface-900/95 p-2 shadow-lg backdrop-blur"
+          className="absolute right-0 z-50 mt-2 w-60 rounded-xl border border-border bg-card p-2 shadow-lg backdrop-blur"
           role="menu"
         >
           {items.map((item) => (

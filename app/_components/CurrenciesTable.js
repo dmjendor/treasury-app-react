@@ -26,13 +26,15 @@ export function CurrenciesTable({
   currencies,
   loading,
   busy,
-  baseCurrency,
+  baseCurrencyId,
+  commonCurrencyId,
   query,
   sortKey,
   sortDir,
   onEdit,
   onDelete,
 }) {
+  const baseCurrency = currencies.find((c) => c.id === baseCurrencyId);
   const filteredAndSorted = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = currencies ?? [];
@@ -48,20 +50,18 @@ export function CurrenciesTable({
     list = sortCurrencies(list, { sortKey, sortDir });
 
     // Pin base on top
-    const baseId = baseCurrency?.id;
-    if (baseId)
-      list = [
-        list.find((c) => c.id === baseId),
-        ...list.filter((c) => c.id !== baseId),
-      ].filter(Boolean);
+    list = [
+      list.find((c) => c.id === baseCurrencyId),
+      ...list.filter((c) => c.id !== baseCurrencyId),
+    ].filter(Boolean);
 
     return list;
-  }, [currencies, query, sortKey, sortDir, baseCurrency]);
+  }, [currencies, query, sortKey, sortDir, baseCurrencyId]);
 
   return (
-    <div className="mt-6 overflow-hidden rounded-2xl border border-(--border) bg-(--card) text-(--card-fg)">
-      <div className="flex items-center justify-between px-4 py-3 bg-(--primary-700) border-b border-(--border)">
-        <div className="text-sm text-(--muted-fg)">
+    <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-card text-card-fg">
+      <div className="flex items-center justify-between px-4 py-3 bg-surface text-fg border-b border-border">
+        <div className="text-sm text-muted-fg">
           {loading
             ? "Loading..."
             : `${filteredAndSorted.length} currency${
@@ -73,9 +73,7 @@ export function CurrenciesTable({
           Base:{" "}
           <span className="font-medium">
             {baseCurrency
-              ? `${baseCurrency.name} (${normalizeCode(
-                  baseCurrency.abbreviation
-                )})`
+              ? `${baseCurrency.name} (${normalizeCode(baseCurrency.code)})`
               : "Not set"}
           </span>
         </div>
@@ -83,23 +81,22 @@ export function CurrenciesTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-(--primary-700) text-(--primary-50)">
+          <thead className="bg-surface text-fg">
             <tr className="text-left">
-              <th className="px-4 py-3 font-medium text-(--muted-fg)">Name</th>
-              <th className="px-4 py-3 font-medium text-(--muted-fg)">Code</th>
-              <th className="px-4 py-3 font-medium text-(--muted-fg)">Rate</th>
-              <th className="px-4 py-3 font-medium text-(--muted-fg)">Base</th>
-              <th className="px-4 py-3 w-40 font-medium text-(--muted-fg)">
-                Actions
-              </th>
+              <th className="px-4 py-3 font-medium">Name</th>
+              <th className="px-4 py-3 font-medium">Code</th>
+              <th className="px-4 py-3 font-medium">Rate</th>
+              <th className="px-4 py-3 font-medium">Base</th>
+              <th className="px-4 py-3 font-medium">Common</th>
+              <th className="px-4 py-3 w-40 font-medium">Actions</th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-(--border)">
+          <tbody className="divide-y divide-border">
             {loading ? (
               <tr>
                 <td
-                  className="px-4 py-4 text-(--muted-fg)"
+                  className="px-4 py-4 text-muted-fg"
                   colSpan={5}
                 >
                   Loading currencies...
@@ -108,7 +105,7 @@ export function CurrenciesTable({
             ) : filteredAndSorted.length === 0 ? (
               <tr>
                 <td
-                  className="px-4 py-6 text-(--muted-fg)"
+                  className="px-4 py-6 text-muted-fg"
                   colSpan={5}
                 >
                   No currencies yet. Create your first one and set it as the
@@ -117,12 +114,12 @@ export function CurrenciesTable({
               </tr>
             ) : (
               filteredAndSorted.map((c) => {
-                const isBase = Number(c.rate) === 1;
-
+                const isBase = c.id === baseCurrencyId;
+                const isCommon = c.id === commonCurrencyId;
                 return (
                   <tr
                     key={c.id}
-                    className="bg-(--card) hover:bg-(--primary-500) hover:text-(--primary-900) transition-colors"
+                    className="hover:bg-surface hover:text-fg transition-colors"
                   >
                     <td className="px-4 py-3 font-medium">{c.name}</td>
 
@@ -132,12 +129,12 @@ export function CurrenciesTable({
 
                     <td className="px-4 py-3">{formatRate(c.rate)}</td>
 
-                    <td className="px-4 py-3">{isBase ? "⭐" : ""}</td>
-
+                    <td className="px-4 py-3">{isBase ? "🪙" : ""}</td>
+                    <td className="px-4 py-3">{isCommon ? "🪙" : ""}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <Button
-                          type="primary"
+                          variant="primary"
                           onClick={() => onEdit(c)}
                           disabled={busy}
                         >
@@ -145,7 +142,7 @@ export function CurrenciesTable({
                         </Button>
 
                         <Button
-                          type="danger"
+                          variant="danger"
                           onClick={() => onDelete(c)}
                           disabled={busy || isBase}
                           title={

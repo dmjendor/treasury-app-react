@@ -15,3 +15,9 @@ export function formatRate(value) {
 export function findBaseCurrency(currencies) {
   return (currencies ?? []).find((c) => Number(c.multiplier) === 1);
 }
+
+export function findCommonCurrency(currencies, commonCurrencyId) {
+  if (commonCurrencyId == null) return undefined;
+  const target = String(commonCurrencyId);
+  return (currencies ?? []).find((c) => String(c.id) === target);
+}

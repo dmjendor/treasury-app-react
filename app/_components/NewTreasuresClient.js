@@ -8,14 +8,20 @@ import {
   createTreasureAction,
   getDefaultTreasuresAction,
 } from "@/app/_lib/actions/treasures";
+import { useVault } from "@/app/_context/VaultProvider";
 
-export default function NewTreasureClient({ vault, isModal }) {
+/**
+- Render the new treasure form.
+- @param {{ isModal?: boolean }} props
+- @returns {JSX.Element}
+  */
+export default function NewTreasureClient({ isModal }) {
+  const { vault } = useVault();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [defaultTreasures, setDefaultTreasures] = useState([]);
   const systemId = vault?.system_id;
-  console.log(vault);
   useEffect(() => {
     if (systemId) return;
 
@@ -71,11 +77,11 @@ export default function NewTreasureClient({ vault, isModal }) {
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto text-(--fg) space-y-6">
+    <div className="p-6 max-w-3xl mx-auto text-fg space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           {!isModal && <h1 className="text-2xl font-semibold">Add treasure</h1>}
-          <p className="text-sm text-(--muted-fg)">
+          <p className="text-sm text-muted-fg">
             Create treasure manually, or pick from your system defaults.
           </p>
         </div>

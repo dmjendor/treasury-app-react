@@ -4,6 +4,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import InputComponent from "@/app/_components/InputComponent";
 import { normalizeCode } from "@/app/utils/currencyUtils";
+import { Button } from "@/app/_components/Button";
+import { updateVaultSettingsAction } from "@/app/_lib/actions";
+import { useVault } from "@/app/_context/VaultProvider";
 
 /**
  * CurrencyForm
@@ -26,17 +29,25 @@ import { normalizeCode } from "@/app/utils/currencyUtils";
 export default function CurrencyForm({
   mode,
   vault,
+  updateVault,
   currencyId,
   onClose,
   onSaved,
 }) {
   const router = useRouter();
+  const { vault: vaultFromContext, updateVault: updateVaultFromContext } =
+    useVault();
+  const resolvedVault = vault ?? vaultFromContext;
+  const applyVaultUpdate = updateVault ?? updateVaultFromContext;
   const isEdit = mode === "edit";
 
-  const vaultId = vault?.id ? String(vault.id) : "";
+  const vaultId = resolvedVault?.id ? String(resolvedVault.id) : "";
   const list = useMemo(
-    () => (Array.isArray(vault?.currencyList) ? vault.currencyList : []),
-    [vault]
+    () =>
+      Array.isArray(resolvedVault?.currencyList)
+        ? resolvedVault.currencyList
+        : [],
+    [resolvedVault]
   );
 
   const [busy, setBusy] = useState(false);
@@ -47,11 +58,23 @@ export default function CurrencyForm({
   const [code, setCode] = useState("");
   const [rate, setRate] = useState("1");
   const [setAsBase, setSetAsBase] = useState(false);
+  const [setAsCommon, setSetAsCommon] = useState(false);
 
   const baseId =
-    vault?.base_currency_id != null ? String(vault.base_currency_id) : "";
+    resolvedVault?.base_currency_id != null
+      ? String(resolvedVault.base_currency_id)
+      : "";
   const commonId =
-    vault?.common_currency_id != null ? String(vault.common_currency_id) : "";
+    resolvedVault?.common_currency_id != null
+      ? String(resolvedVault.common_currency_id)
+      : "";
+  const editingIsBase = isEdit && String(currencyId) === String(baseId);
+  const editingIsCommon = isEdit && String(currencyId) === String(commonId);
+
+  // Hide base checkbox when:
+  // - editing a currency that is NOT base
+  // - and a base currency already exists
+  const hideBaseToggle = isEdit && !editingIsBase && Boolean(baseId);
 
   const baseCurrency = useMemo(() => {
     if (!baseId) return null;
@@ -76,7 +99,7 @@ export default function CurrencyForm({
         const hasBase = Boolean(baseId);
         setName("");
         setCode("");
-        setSetAsBase(!hasBase);
+        setSetAsBase(!hasBase); // if no base yet, default checked
         setRate(!hasBase ? "1" : "0.1");
         return;
       }
@@ -90,6 +113,7 @@ export default function CurrencyForm({
         setName(cur?.name ?? "");
         setCode(cur?.code ?? "");
         setSetAsBase(isBase);
+        setSetAsCommon(String(cur?.id) === String(commonId));
         setRate(isBase ? "1" : String(cur?.rate ?? ""));
         setLoading(false);
         return;
@@ -113,6 +137,7 @@ export default function CurrencyForm({
 
         const isBase =
           String(cur?.id) === String(baseId) || Number(cur?.rate) === 1;
+        setSetAsCommon(String(cur.id) === String(commonId));
 
         setName(cur?.name ?? "");
         setCode(cur?.code ?? "");
@@ -129,16 +154,23 @@ export default function CurrencyForm({
     return () => {
       cancelled = true;
     };
-  }, [vaultId, isEdit, currencyId, baseId, editingCurrencyFromList]);
+  }, [vaultId, isEdit, currencyId, baseId, commonId, editingCurrencyFromList]);
 
   function close() {
     if (busy) return;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("vault:refresh", { detail: { vaultId } })
+      );
+    }
     if (onClose) return onClose();
     router.back();
   }
 
   function handleBaseToggle(checked) {
     setSetAsBase(checked);
+
+    // If user is making it base, enforce rate = 1
     if (checked) setRate("1");
   }
 
@@ -163,9 +195,14 @@ export default function CurrencyForm({
 
     // Base rules
     const editingIsBase = isEdit && String(currencyId) === String(baseId);
-
+    const clearingBase = editingIsBase && !setAsBase;
     if (setAsBase && parsedRate !== 1) {
       return "Base currency must have a rate of 1.";
+    }
+
+    if (clearingBase) {
+      // If clearing base, allow rate to be anything > 0 (including 1).
+      // Vault will have no base_currency_id after save.
     }
 
     if (!setAsBase && parsedRate === 1 && baseId && !editingIsBase) {
@@ -177,34 +214,33 @@ export default function CurrencyForm({
     return "";
   }
 
-  async function demoteExistingBaseIfNeeded() {
-    // If user is setting this currency as base, demote current base currency (unless it's the same currency)
-    if (!setAsBase) return;
-    if (!baseId) return;
-    if (isEdit && String(currencyId) === String(baseId)) return;
+  async function hydrateVaultNow() {
+    if (!vaultId) return;
 
-    const res = await fetch(`/api/vaults/${vaultId}/currencies/${baseId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ rate: 0.1 }),
-    });
+    const res = await fetch(`/api/vaults/${vaultId}`, { cache: "no-store" });
+    if (!res.ok) return;
 
-    if (!res.ok) {
-      throw new Error(`Could not update previous base (${res.status}).`);
+    const json = await res.json().catch(() => null);
+    if (json?.data && applyVaultUpdate) {
+      applyVaultUpdate(json.data);
     }
   }
 
-  async function updateVaultBaseCurrencyId(newBaseCurrencyId) {
-    // TODO: wire this to your existing vault settings update action/endpoint.
-    // You said: "we will also need to update the vault with the id of the currency being edited."
-    //
-    // Example (placeholder):
-    // const res = await fetch(`/api/vaults/${vaultId}`, {
-    //   method: "PATCH",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ base_currency_id: newBaseCurrencyId }),
-    // });
-    // if (!res.ok) throw new Error(`Failed to update vault base currency (${res.status}).`);
+  async function updateVaultSettings(partial) {
+    const res = await updateVaultSettingsAction({
+      vaultId,
+      ...partial,
+    });
+
+    if (!res?.ok) {
+      throw new Error(res?.error || "Failed to update vault settings.");
+    }
+
+    if (res?.data && applyVaultUpdate) {
+      applyVaultUpdate({ ...(resolvedVault ?? {}), ...res.data });
+    }
+
+    router.refresh();
   }
 
   async function onSubmit(e) {
@@ -223,8 +259,6 @@ export default function CurrencyForm({
 
     setBusy(true);
     try {
-      await demoteExistingBaseIfNeeded();
-
       let saved = null;
 
       if (isEdit) {
@@ -252,17 +286,34 @@ export default function CurrencyForm({
         saved = await res.json().catch(() => null);
       }
 
-      // If this currency is now base, also update vault.base_currency_id
-      if (setAsBase) {
-        const newBaseId = isEdit
-          ? currencyId
-          : saved?.id ?? saved?.currency?.id;
-        if (newBaseId) {
-          await updateVaultBaseCurrencyId(newBaseId);
+      const savedId = isEdit ? currencyId : saved?.id ?? saved?.currency?.id;
+
+      const settingsPatch = {};
+
+      // Base behavior
+      if (!hideBaseToggle) {
+        if (editingIsBase && !setAsBase) {
+          settingsPatch.base_currency_id = null; // clearing base
+        } else if (setAsBase && savedId) {
+          settingsPatch.base_currency_id = savedId; // set as base
         }
       }
 
-      onSaved?.(saved);
+      // Common behavior
+      if (setAsCommon && savedId) {
+        settingsPatch.common_currency_id = savedId;
+      } else if (editingIsCommon && !setAsCommon) {
+        settingsPatch.common_currency_id = null;
+      }
+
+      if (Object.keys(settingsPatch).length) {
+        await updateVaultSettings(settingsPatch);
+      }
+
+      // Always hydrate once after a successful save
+      await hydrateVaultNow();
+
+      if (onSaved) onSaved(saved);
 
       router.refresh();
       close();
@@ -274,7 +325,7 @@ export default function CurrencyForm({
   }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto text-(--fg) space-y-6">
+    <div className="p-6 max-w-3xl mx-auto text-fg space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">
@@ -317,17 +368,29 @@ export default function CurrencyForm({
           required
         />
 
+        {!hideBaseToggle ? (
+          <InputComponent
+            id="setAsBase"
+            type="checkbox"
+            label="Set as base currency (rate = 1)"
+            checked={setAsBase}
+            onChange={(e) => handleBaseToggle(e.target.checked)}
+            disabled={busy}
+          />
+        ) : null}
+
         <InputComponent
-          id="setAsBase"
+          id="setAsCommon"
           type="checkbox"
-          label="Set as base currency (rate = 1)"
-          checked={setAsBase}
-          onChange={(e) => handleBaseToggle(e.target.checked)}
+          label="Set as common currency (used for quick entry)"
+          checked={setAsCommon}
+          onChange={(e) => setSetAsCommon(e.target.checked)}
           disabled={busy}
         />
 
         <InputComponent
           label="Rate"
+          hint="How many units of the base currency are equal to one unit of this currency."
           value={rate}
           onChange={(e) => setRate(e.target.value)}
           disabled={busy || setAsBase}
@@ -335,21 +398,20 @@ export default function CurrencyForm({
         />
 
         <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
+          <Button
             onClick={close}
-            className="px-3 py-2 rounded-lg border border-color-border hover:bg-color-surface-50 disabled:opacity-50"
+            variant="ghost"
             disabled={busy}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            className="px-3 py-2 rounded-lg bg-color-primary-900 text-color-fg hover:opacity-90 disabled:opacity-50"
+            variant="primary"
             disabled={busy}
           >
             {busy ? "Saving..." : "Save"}
-          </button>
+          </Button>
         </div>
       </form>
 

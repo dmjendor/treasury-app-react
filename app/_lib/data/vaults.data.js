@@ -123,8 +123,10 @@ export async function createVault(newVault) {
   return data;
 }
 
-export async function updateVaultSettingsDb({ userId, id, ...patch }) {
+export async function updateVaultSettingsDb({ userId, vaultId, ...patch }) {
   // Supabase server client in here
+  const supabase = await getSupabase();
+
   // Only allow updating whitelisted columns
   const allowed = {
     active: patch.active,
@@ -152,11 +154,8 @@ export async function updateVaultSettingsDb({ userId, id, ...patch }) {
   const { data, error } = await supabase
     .from("vaults")
     .update(allowed)
-    .eq("id", id)
-    .eq("user_id", userId)
-    .select(
-      "id, active, name, theme_id, system_id, base_currency_id, common_currency_id, allow_xfer_in, allow_xfer_out, treasury_split_enabled, reward_prep_enabled, vo_buy_markup, vo_sell_markup, item_buy_markup, item_sell_markup, merge_split"
-    )
+    .eq("id", vaultId)
+    .select("*")
     .single();
 
   if (error) throw error;

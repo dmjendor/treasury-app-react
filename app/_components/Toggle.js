@@ -21,27 +21,27 @@ export default function Toggle({
     <div className={`space-y-1 ${className}`}>
       {label ? (
         <label
-          className="text-sm font-semibold text-ink-900"
+          className="text-sm font-semibold text-fg"
           htmlFor={fieldId}
         >
           {label}
         </label>
       ) : null}
 
-      {hint ? <div className="text-xs text-ink-600">{hint}</div> : null}
+      {hint ? <div className="text-xs text-muted-fg">{hint}</div> : null}
 
       <label
         htmlFor={fieldId}
         className={`
           flex items-center justify-between gap-4
           rounded-xl
-          border border-white/10
-          bg-white/5
+          border border-border
+          bg-input
           px-4 py-3
           ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
         `}
       >
-        <span className="text-sm text-ink-800">{label ? null : "Toggle"}</span>
+        <span className="text-sm text-fg">{label ? null : "Toggle"}</span>
 
         <span className="relative inline-flex items-center">
           <input
@@ -57,11 +57,11 @@ export default function Toggle({
           <span
             className="
               h-6 w-11 rounded-full
-              bg-white/10
-              border border-white/10
+              bg-surface
+              border border-border
               transition-colors
-              peer-checked:bg-primary-500
-              peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-500/50
+              peer-checked:bg-btn-primary-bg
+              peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent
             "
           />
 
@@ -70,7 +70,7 @@ export default function Toggle({
             className="
               pointer-events-none absolute left-0.5
               h-5 w-5 rounded-full
-              bg-white
+              bg-card
               transition-transform
               peer-checked:translate-x-5
             "

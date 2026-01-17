@@ -18,12 +18,12 @@ function DeleteContainer({ containerId, onDelete }) {
     group
     inline-flex items-center justify-center
     h-9 w-9
-    text-primary-300
+    text-muted-fg
     transition-colors
-    hover:text-primary-900
-    hover:bg-danger
+    hover:text-fg
+    hover:bg-danger-100
     rounded-full
-    focus:outline-none focus:ring-2 focus:ring-primary-500/40
+    focus:outline-none focus:ring-2 focus:ring-accent
   "
       aria-label="Delete"
     >

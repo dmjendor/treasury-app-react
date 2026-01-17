@@ -17,8 +17,8 @@ export default function TreasuresTable({
   const rows = Array.isArray(treasures) ? treasures : [];
 
   return (
-    <div className="rounded-2xl border border-(--border) overflow-hidden bg-(--card) text-(--card-fg)">
-      <div className="px-4 py-3 bg-(--primary-700) text-(--primary-50) flex items-center justify-between">
+    <div className="rounded-2xl border border-border overflow-hidden bg-card text-card-fg">
+      <div className="px-4 py-3 bg-surface text-fg flex items-center justify-between border-b border-border">
         <div className="text-sm opacity-90">
           {rows.length} treasure item{rows.length === 1 ? "" : "s"}
         </div>
@@ -36,8 +36,8 @@ export default function TreasuresTable({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-(--accent-600) border-b border-(--border)">
-            <tr className="text-left text-(--fg)">
+          <thead className="bg-surface border-b border-border">
+            <tr className="text-left text-fg">
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Value</th>
               <th className="px-4 py-3">Qty</th>
@@ -49,7 +49,7 @@ export default function TreasuresTable({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  className="px-4 py-6 text-(--muted-fg)"
+                  className="px-4 py-6 text-muted-fg"
                   colSpan={5}
                 >
                   No treasure in this container yet.
@@ -59,7 +59,7 @@ export default function TreasuresTable({
               rows.map((t) => (
                 <tr
                   key={t.id}
-                  className="border-b border-(--border) last:border-b-0 hover:bg-(--primary-500) hover:text-(--primary-900) transition-colors"
+                  className="border-b border-border last:border-b-0 hover:bg-surface hover:text-fg transition-colors"
                 >
                   <td className="px-4 py-3 font-medium">{t.name}</td>
                   <td className="px-4 py-3">{fmtMoney(t.value)}</td>

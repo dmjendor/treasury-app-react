@@ -8,8 +8,8 @@ export default function NavLink({ href, icon, label, active }) {
       className={[
         "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition",
         active
-          ? "bg-white/10 text-ink-900"
-          : "text-ink-700 hover:bg-white/5 hover:text-ink-900",
+          ? "bg-card text-fg"
+          : "text-muted-fg hover:bg-surface hover:text-fg",
       ].join(" ")}
     >
       <IconComponent icon={icon} />

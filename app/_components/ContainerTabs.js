@@ -15,7 +15,7 @@ export default function ContainerTabs({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {list.length === 0 ? (
-        <div className="text-sm text-(--muted-fg)">No containers yet.</div>
+        <div className="text-sm text-muted-fg">No containers yet.</div>
       ) : (
         list.map((c) => {
           const isActive = c.id === activeId;

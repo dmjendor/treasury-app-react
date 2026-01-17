@@ -27,7 +27,7 @@ export default function RandomBackground() {
   }, []);
 
   if (!bg) {
-    return <div className="fixed inset-0 -z-10 bg-black" />;
+    return <div className="fixed inset-0 -z-10 bg-bg" />;
   }
 
   return (
@@ -39,7 +39,7 @@ export default function RandomBackground() {
         priority
         className="object-cover"
       />
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-overlay" />
     </div>
   );
 }

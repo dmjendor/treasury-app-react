@@ -63,14 +63,15 @@ export default function VaultSettingsClient() {
 
   // These lists need to come from somewhere.
   // Best place: fetch them in the vault layout and include them in the provider value.
-  const themes = useMemo(() => vault.themesList ?? [], [vault]);
-  const systems = useMemo(() => vault.systemsList ?? [], [vault]);
-  const currencies = useMemo(() => vault.currenciesList ?? [], [vault]);
+  console.log(vault);
+  const themes = useMemo(() => vault.themeList ?? [], [vault]);
+  const systems = useMemo(() => vault.systemList ?? [], [vault]);
+  const currencies = useMemo(() => vault.currencyList ?? [], [vault]);
 
   if (!vault) {
     return (
-      <div className="p-6 max-w-4xl mx-auto text-(--fg)">
-        <div className="rounded-2xl border border-(--border) bg-(--card) p-4 text-sm text-(--muted-fg)">
+      <div className="p-6 max-w-4xl mx-auto text-fg">
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-fg">
           Loading vault…
         </div>
       </div>
@@ -129,11 +130,11 @@ export default function VaultSettingsClient() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto text-(--fg) space-y-6">
+    <div className="p-6 max-w-4xl mx-auto text-fg space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Vault settings</h1>
-          <p className="text-sm text-(--muted-fg)">
+          <p className="text-sm text-muted-fg">
             Configure vault behavior and theme.
           </p>
         </div>
@@ -148,16 +149,16 @@ export default function VaultSettingsClient() {
 
       <form
         onSubmit={onSave}
-        className="rounded-2xl border border-(--border) bg-(--card) text-(--card-fg) p-5 space-y-6"
+        className="rounded-2xl border border-border bg-card text-card-fg p-5 space-y-6"
       >
         {error ? (
-          <div className="rounded-xl border border-(--danger-700) bg-[color-mix(in_oklch,var(--danger-700)_12%,transparent)] p-3 text-sm">
+          <div className="rounded-xl border border-danger-600 bg-danger-100 p-3 text-sm text-danger-700">
             {error}
           </div>
         ) : null}
 
         <section className="space-y-4">
-          <div className="text-sm font-semibold text-(--fg)">Basics</div>
+          <div className="text-sm font-semibold text-fg">Basics</div>
 
           <InputComponent
             id="name"
@@ -211,7 +212,7 @@ export default function VaultSettingsClient() {
         </section>
 
         <section className="space-y-4">
-          <div className="text-sm font-semibold text-(--fg)">Transfers</div>
+          <div className="text-sm font-semibold text-fg">Transfers</div>
 
           <InputComponent
             id="allow_xfer_in"
@@ -231,7 +232,7 @@ export default function VaultSettingsClient() {
         </section>
 
         <section className="space-y-4">
-          <div className="text-sm font-semibold text-(--fg)">Currencies</div>
+          <div className="text-sm font-semibold text-fg">Currencies</div>
 
           <Select
             id="base_currency_id"
@@ -269,7 +270,7 @@ export default function VaultSettingsClient() {
         </section>
 
         <section className="space-y-4">
-          <div className="text-sm font-semibold text-(--fg)">Workflow</div>
+          <div className="text-sm font-semibold text-fg">Workflow</div>
 
           <InputComponent
             id="treasury_split_enabled"
@@ -289,7 +290,7 @@ export default function VaultSettingsClient() {
         </section>
 
         <section className="space-y-4">
-          <div className="text-sm font-semibold text-(--fg)">Markups</div>
+          <div className="text-sm font-semibold text-fg">Markups</div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <InputComponent

@@ -1,26 +1,58 @@
 /**
- *
- * - Fetch a theme
- * - @param {Request} _request
- * - @param {{ params: Promise<{ themeId: string }> }} context
- * - @returns {Promise<Response>}
+ * API Routes: Vault detail.
  */
-export async function GET(_request, { params }) {
+
+import { NextResponse } from "next/server";
+import { auth } from "@/app/_lib/auth";
+import { assertVaultOwner, getVaultById } from "@/app/_lib/data/vaults.data";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * JSON response helper.
+ * @param {any} body
+ * @param {number} status
+ */
+function json(body, status = 200) {
+  return NextResponse.json(body, { status });
+}
+
+/**
+ * Require a session and return userId.
+ * @returns {Promise<string>}
+ */
+async function requireUserId() {
+  const session = await auth();
+  if (!session) throw new Error("You must be logged in.");
+
+  const userId = session?.user?.userId;
+  if (!userId) throw new Error("You must be logged in.");
+
+  return userId;
+}
+
+/**
+- Get a vault by id.
+- @param {{ params: { vaultId: string } }} context
+- @returns {Promise<Response>}
+ */
+export async function GET(_request, context) {
   try {
-    const session = await auth();
-    if (!session) throw new Error("You must be logged in.");
+    const userId = await requireUserId();
+    const { vaultId } = await context.params;
 
-    const { themeId } = await params;
-    if (!themeId)
-      return json({ ok: false, error: "themeId is required." }, 400);
+    if (!vaultId)
+      return json({ ok: false, error: "vaultId is required." }, 400);
 
-    const data = await getThemeKey(themeId);
-    if (!data) return json({ ok: false, error: "Theme not found." }, 404);
+    await assertVaultOwner(vaultId, userId);
+    const vault = await getVaultById(vaultId);
 
-    return json({ ok: true, data });
+    return json({ ok: true, data: vault });
   } catch (err) {
     if (err?.message === "You must be logged in.")
       return json({ ok: false, error: err.message }, 401);
+    if (err?.message === "Vault access denied.")
+      return json({ ok: false, error: err.message }, 403);
     return json({ ok: false, error: err?.message || "Unexpected error." }, 500);
   }
 }

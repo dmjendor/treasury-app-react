@@ -28,12 +28,12 @@ const Select = forwardRef(function Select(
         className={`
           w-full
           rounded-xl
-          border border-(--border)
-          bg-(--input)
+          border border-border
+          bg-input
           px-4 py-3
-          text-sm text-(--input-fg)
-          focus:outline-none focus:ring-2 focus:ring-(--accent-500)
-          focus:ring-offset-2 focus:ring-offset-(--bg)
+          text-sm text-input-fg
+          focus:outline-none focus:ring-2 focus:ring-accent
+          focus:ring-offset-2 focus:ring-offset-bg
           disabled:opacity-60 disabled:cursor-not-allowed
           transition-colors
           ${className}

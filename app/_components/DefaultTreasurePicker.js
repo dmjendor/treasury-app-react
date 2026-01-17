@@ -47,7 +47,7 @@ export default function DefaultTreasurePicker({ items, onPick }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold text-(--fg)">
+        <div className="text-sm font-semibold text-fg">
           Pick default treasure
         </div>
         <Button
@@ -106,12 +106,12 @@ export default function DefaultTreasurePicker({ items, onPick }) {
       </div>
 
       {selectedItem ? (
-        <div className="rounded-xl border border-(--border) bg-(--surface-800) p-3 text-sm">
-          <div className="text-(--muted-fg)">Preview</div>
-          <div className="mt-1 font-semibold text-(--fg)">
+        <div className="rounded-xl border border-border bg-card p-3 text-sm">
+          <div className="text-muted-fg">Preview</div>
+          <div className="mt-1 font-semibold text-fg">
             {selectedItem.name}
           </div>
-          <div className="mt-1 text-(--muted-fg)">
+          <div className="mt-1 text-muted-fg">
             Value: {selectedItem.value ?? 0}
           </div>
 

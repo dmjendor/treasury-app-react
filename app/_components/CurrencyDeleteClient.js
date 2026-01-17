@@ -43,16 +43,16 @@ export default function CurrencyDeleteClient({ vaultId, currencyId }) {
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto text-(--fg)">
-      <div className="overflow-hidden rounded-2xl border border-(--border) bg-(--card) text-(--card-fg)">
-        <div className="px-5 py-4 bg-(--danger-700) text-(--danger-50) border-b border-(--border)">
+    <div className="p-6 max-w-xl mx-auto text-fg">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card text-fg">
+        <div className="px-5 py-4 bg-danger-700 text-danger-50 border-b border-border">
           <h1 className="text-xl font-semibold">Delete currency</h1>
           <p className="text-sm opacity-90">This action can’t be undone.</p>
         </div>
 
         <div className="p-5 space-y-4">
           {error ? (
-            <div className="p-3 rounded-lg border border-(--danger) bg-[color-mix(in_oklch,var(--danger)_12%,transparent)] text-sm">
+            <div className="p-3 rounded-lg border border-danger-600 bg-danger-100 text-sm text-danger-700">
               {error}
             </div>
           ) : null}

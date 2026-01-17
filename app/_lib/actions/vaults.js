@@ -8,6 +8,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/app/_lib/auth";
 import { formDataToObject, requireUserId } from "@/app/_lib/actions/_utils";
+import { updateVaultSettingsDb } from "@/app/_lib/data/vaults.data";
 
 /**
  * Create a vault.
@@ -45,22 +46,27 @@ export async function createVaultAction(formData) {
   }
 }
 
+/**
+- Update vault settings.
+- @param {object} input
+- @returns {Promise<object>}
+ */
 export async function updateVaultSettingsAction(input) {
   try {
     const session = await auth();
-    if (!session?.user?.id)
+    if (!session?.user?.userId)
       return { ok: false, error: "You must be logged in." };
 
     // Minimal validation
-    if (!input?.id) return { ok: false, error: "Missing vault id." };
-    if (typeof input?.name === "string" && !input.name.trim()) {
-      return { ok: false, error: "Vault name is required." };
-    }
+    if (!input?.vaultId) return { ok: false, error: "Missing vault id." };
 
     const updated = await updateVaultSettingsDb({
-      userId: session.user.id,
+      userId: session.user.userId,
       ...input,
     });
+
+    revalidatePath(`/account/vaults/${input.vaultId}`);
+    revalidatePath(`/account/vaults/${input.vaultId}/currencies`);
 
     return { ok: true, data: updated };
   } catch (e) {

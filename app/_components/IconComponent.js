@@ -26,10 +26,10 @@ function sizeToClasses(size) {
 }
 
 function variantToClass(variant) {
-  if (variant === "muted") return "text-(--muted-fg) opacity-80";
-  if (variant === "accent") return "text-(--accent-400) opacity-90";
-  if (variant === "primary") return "text-(--primary-400) opacity-90";
-  if (variant === "danger") return "text-(--danger-400) opacity-90";
+  if (variant === "muted") return "text-muted-fg opacity-80";
+  if (variant === "accent") return "text-accent-400 opacity-90";
+  if (variant === "primary") return "text-primary-400 opacity-90";
+  if (variant === "danger") return "text-danger-400 opacity-90";
   if (variant === "inherit") return "";
   return "opacity-80";
 }

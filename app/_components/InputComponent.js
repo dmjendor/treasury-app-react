@@ -42,7 +42,7 @@ const InputComponent = forwardRef(function Input(
         name={fieldId}
         type={type}
         className={`w-full rounded-xl border border-border
-          bg-input text-fg placeholder:text-muted-fg
+          bg-input text-input-fg placeholder:text-muted-fg
           px-4 py-3
           focus:outline-none focus:ring-2 focus:ring-accent
           ${className}`}

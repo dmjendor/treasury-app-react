@@ -1,21 +1,22 @@
 "use client";
-import CurrencyForm from "@/app/_components/CurrencyForm";
 
-import { useVault } from "@/app/_context/VaultProvider";
-import { useParams } from "next/navigation";
-import React from "react";
+import { useParams, useRouter } from "next/navigation";
+import CurrencyFormWithVault from "@/app/_components/CurrencyFormWithVault";
 
-export default function Page() {
-  const params = useParams();
-  const currencyId = params?.currencyId ? String(params.currencyId) : "";
+export default function Page({ params }) {
+  const router = useRouter();
+  const { vaultId, currencyId } = useParams();
 
-  const vault = useVault();
+  function handleClose() {
+    router.replace(`/account/vaults/${vaultId}/currencies`);
+    router.refresh();
+  }
 
   return (
-    <CurrencyForm
+    <CurrencyFormWithVault
       mode="edit"
-      vault={vault}
       currencyId={currencyId}
+      onClose={handleClose}
     />
   );
 }
