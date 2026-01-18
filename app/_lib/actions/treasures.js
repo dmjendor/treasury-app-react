@@ -12,11 +12,11 @@ export async function createTreasureAction(payload) {
   }
 }
 
-export async function getDefaultTreasuresAction({ systemId }) {
+export async function getDefaultTreasuresAction({ vaultId }) {
   try {
-    if (!systemId) return { ok: false, error: "Missing systemId", data: null };
+    if (!vaultId) return { ok: false, error: "Missing vaultId", data: null };
 
-    const rows = await getDefaultTreasures(systemId);
+    const rows = await getDefaultTreasures(vaultId);
     return { ok: true, error: null, data: Array.isArray(rows) ? rows : [] };
   } catch (err) {
     return {

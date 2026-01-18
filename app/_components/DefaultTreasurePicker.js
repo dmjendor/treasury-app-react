@@ -17,7 +17,7 @@ export default function DefaultTreasurePicker({ items, onPick }) {
       .sort((a, b) =>
         String(a.name).localeCompare(String(b.name), undefined, {
           sensitivity: "base",
-        })
+        }),
       );
 
     const itemsList = rows
@@ -25,11 +25,11 @@ export default function DefaultTreasurePicker({ items, onPick }) {
       .sort((a, b) =>
         String(a.name).localeCompare(String(b.name), undefined, {
           sensitivity: "base",
-        })
+        }),
       );
 
     const chosen = itemId
-      ? rows.find((r) => String(r.id) === String(itemId)) ?? null
+      ? (rows.find((r) => String(r.id) === String(itemId)) ?? null)
       : null;
 
     return {
@@ -64,6 +64,7 @@ export default function DefaultTreasurePicker({ items, onPick }) {
         <Select
           id="dt-category"
           label="Category"
+          hint="What type of treasure are you wanting to add."
           value={categoryId}
           onChange={(e) => {
             setCategoryId(e.target.value);
@@ -108,9 +109,7 @@ export default function DefaultTreasurePicker({ items, onPick }) {
       {selectedItem ? (
         <div className="rounded-xl border border-border bg-card p-3 text-sm">
           <div className="text-muted-fg">Preview</div>
-          <div className="mt-1 font-semibold text-fg">
-            {selectedItem.name}
-          </div>
+          <div className="mt-1 font-semibold text-fg">{selectedItem.name}</div>
           <div className="mt-1 text-muted-fg">
             Value: {selectedItem.value ?? 0}
           </div>

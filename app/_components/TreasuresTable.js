@@ -41,6 +41,8 @@ export default function TreasuresTable({
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Value</th>
               <th className="px-4 py-3">Qty</th>
+              <th className="px-4 py-3">Magical</th>
+              <th className="px-4 py-3">Identified</th>
               <th className="px-4 py-3 w-40">Actions</th>
             </tr>
           </thead>
@@ -61,9 +63,17 @@ export default function TreasuresTable({
                   key={t.id}
                   className="border-b border-border last:border-b-0 hover:bg-surface hover:text-fg transition-colors"
                 >
-                  <td className="px-4 py-3 font-medium">{t.name}</td>
+                  <td
+                    className={`px-4 py-3 font-medium ${t.magical ? "text-accent-600" : ""}`}
+                  >
+                    {t.name}
+                  </td>
                   <td className="px-4 py-3">{fmtMoney(t.value)}</td>
                   <td className="px-4 py-3">{t.quantity ?? 0}</td>
+                  <td className="px-4 py-3">{t.magical && "🪄"}</td>
+                  <td className="px-4 py-3">
+                    {t.identified && t.magical && "🔎"}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <LinkButton

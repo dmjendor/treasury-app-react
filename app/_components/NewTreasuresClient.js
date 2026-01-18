@@ -16,18 +16,18 @@ import { useVault } from "@/app/_context/VaultProvider";
 - @returns {JSX.Element}
   */
 export default function NewTreasureClient({ isModal }) {
-  const { vault } = useVault();
+  const { vault, updateVault } = useVault();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [defaultTreasures, setDefaultTreasures] = useState([]);
-  const systemId = vault?.system_id;
+  const vaultId = vault?.id;
   useEffect(() => {
-    if (systemId) return;
+    if (!vaultId) return;
 
     async function load() {
       setError("");
-      const res = await getDefaultTreasuresAction({ systemId });
+      const res = await getDefaultTreasuresAction({ vaultId });
 
       if (!res.ok) {
         setDefaultTreasures([]);
@@ -39,7 +39,7 @@ export default function NewTreasureClient({ isModal }) {
     }
 
     load();
-  }, [systemId]);
+  }, [vaultId]);
 
   async function handleCreate(payload) {
     setError("");
@@ -55,7 +55,7 @@ export default function NewTreasureClient({ isModal }) {
     }
 
     setBusy(true);
-
+    console.log("handlecreate");
     const res = await createTreasureAction(payload);
 
     if (!res?.ok) {
@@ -96,18 +96,17 @@ export default function NewTreasureClient({ isModal }) {
       </header>
 
       <TreasuresForm
-        isEdit={false}
-        vaultId={vault?.id}
-        baseCurrencyId={vault?.base_currency_id}
-        commonCurrencyId={vault?.common_currency_id}
-        systemId={vault?.system_id}
-        containers={vault?.containerList}
+        mode="new"
+        vault={vault}
+        updateVault={updateVault}
         defaultTreasures={defaultTreasures}
-        currencyList={vault?.currencyList}
         submitting={busy}
         error={error}
-        onSubmit={handleCreate}
-        onCancel={() => router.replace(`/account/vaults/${vault.id}/treasures`)}
+        onSaved={handleCreate}
+        onClose={() => {
+          router.replace(`/account/vaults/${vault.id}/treasures`);
+          router.refresh();
+        }}
       />
     </div>
   );
