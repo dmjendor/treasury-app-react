@@ -1,5 +1,5 @@
 import Modal from "@/app/_components/Modal";
-import TreasuresFormWithVault from "@/app/_components/TreasuresFormWithVault";
+import NewTreasuresClient from "@/app/_components/NewTreasuresClient";
 
 /**
 - Render the new treasure modal.
@@ -8,7 +8,7 @@ import TreasuresFormWithVault from "@/app/_components/TreasuresFormWithVault";
 export default async function Page() {
   return (
     <Modal title="Add Treasure">
-      <TreasuresFormWithVault mode="create" />
+      <NewTreasuresClient isModal />
     </Modal>
   );
 }

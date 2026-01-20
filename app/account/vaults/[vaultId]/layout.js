@@ -18,7 +18,7 @@ export default async function VaultLayout({ children, params }) {
       key={vault?.id ?? "no-vault"}
     >
       <ThemeScope themeKey={themeKey}>
-        <div className="min-h-screen bg-(--bg) text-(--fg) space-y-6 p-2">
+        <div className="min-h-screen bg-bg text-fg space-y-6 p-2">
           <VaultHeader />
           {children}
         </div>

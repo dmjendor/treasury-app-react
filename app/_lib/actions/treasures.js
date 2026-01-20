@@ -1,7 +1,9 @@
 "use server";
 
-import { createTreasureDb } from "@/app/_lib/data/treasures.data";
-import { getDefaultTreasures } from "@/app/_lib/data/treasures.data";
+import {
+  createTreasureDb,
+  getDefaultTreasures,
+} from "@/app/_lib/data/treasures.data";
 
 export async function createTreasureAction(payload) {
   try {

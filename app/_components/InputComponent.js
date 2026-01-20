@@ -25,6 +25,12 @@ const InputComponent = forwardRef(function Input(
 ) {
   const fieldId = id || props.name;
 
+  const fieldProps = Object.fromEntries(
+    Object.entries(props).filter(
+      ([key]) => key.startsWith("data-") || key.startsWith("aria-")
+    )
+  );
+
   return (
     <FormField
       id={fieldId}
@@ -33,7 +39,7 @@ const InputComponent = forwardRef(function Input(
       labelRight={labelRight}
       error={error}
       type={type}
-      {...props}
+      {...fieldProps}
     >
       {children ? <div className="mb-2">{children}</div> : null}
       <input

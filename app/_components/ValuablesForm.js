@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
-import DefaultTreasurePicker from "@/app/_components/DefaultTreasurePicker";
+import DefaultValuablePicker from "@/app/_components/DefaultValuablePicker";
 import InputComponent from "@/app/_components/InputComponent";
-import Textarea from "@/app/_components/Textarea";
+import { createValuableAction } from "@/app/_lib/actions/valuables";
 
 function asNumber(value) {
   const n = Number(value);
@@ -18,18 +19,19 @@ function formatNumberString(n) {
   return String(rounded);
 }
 
-export default function TreasuresForm({
+export default function ValuablesForm({
   mode, // "new" | "edit"
   vault,
-  updateVault, // optional, parent can pass but form doesn't require it
-  treasureId, // required for edit
+  updateVault, // optional
+  valuableId, // edit only
   onClose,
   onSaved, // called with payload on submit
 
-  defaultTreasures, // optional list for "new"
+  defaultValuables, // new only
   submitting = false,
   error = "",
 }) {
+  const router = useRouter();
   const isEdit = mode === "edit";
   const vaultId = vault?.id != null ? String(vault.id) : "";
 
@@ -63,37 +65,30 @@ export default function TreasuresForm({
     );
   }, [currencyList, commonCurrencyId]);
 
-  const baseLabel =
-    baseCurrency?.code || baseCurrency?.symbol || baseCurrency?.name || "Base";
+  const baseLabel = baseCurrency?.code || baseCurrency?.name || "Base";
 
-  const commonLabel =
-    commonCurrency?.code ||
-    commonCurrency?.symbol ||
-    commonCurrency?.name ||
-    "Common";
+  const commonLabel = commonCurrency?.code || commonCurrency?.name || "Common";
 
   const commonRate = Number(commonCurrency?.rate) || 1;
 
   const [formError, setFormError] = useState(error || "");
   const [loading, setLoading] = useState(isEdit);
+  const [busy, setBusy] = useState(false);
+  const isSubmitting = Boolean(submitting || busy);
 
   const [containerId, setContainerId] = useState("");
   const [name, setName] = useState("");
-  const [genericname, setGenericname] = useState("");
-  const [description, setDescription] = useState("");
 
   const [valueBase, setValueBase] = useState(0);
   const [valueUnit, setValueUnit] = useState("common"); // "common" | "base"
+  const [valueLabel, setValueLabel] = useState(commonLabel);
   const [displayValue, setDisplayValue] = useState("");
-
-  const [quantity, setQuantity] = useState("1");
-  const [identified, setIdentified] = useState(false);
-  const [magical, setMagical] = useState(false);
-  const [archived, setArchived] = useState(false);
   const [showDefaults, setShowDefaults] = useState(false);
 
+  const [quantity, setQuantity] = useState("1");
+
   const canUseDefaults =
-    !isEdit && Array.isArray(defaultTreasures) && defaultTreasures.length > 0;
+    !isEdit && Array.isArray(defaultValuables) && defaultValuables.length > 0;
 
   useEffect(() => {
     setFormError(error || "");
@@ -109,8 +104,8 @@ export default function TreasuresForm({
         return;
       }
 
-      if (!vaultId || !treasureId) {
-        setFormError("Treasure is required.");
+      if (!vaultId || !valuableId) {
+        setFormError("Valuable is required.");
         setLoading(false);
         return;
       }
@@ -120,40 +115,32 @@ export default function TreasuresForm({
 
       try {
         const res = await fetch(
-          `/api/vaults/${vaultId}/treasures/${treasureId}`,
-          {
-            cache: "no-store",
-          },
+          `/api/vaults/${vaultId}/valuables/${valuableId}`,
+          { cache: "no-store" },
         );
 
         if (!res.ok) {
-          throw new Error(`Failed to load treasure (${res.status}).`);
+          throw new Error(`Failed to load valuable (${res.status}).`);
         }
 
         const json = await res.json().catch(() => null);
-        const t = Array.isArray(json?.data) ? json.data[0] : json?.data;
+        const v = Array.isArray(json?.data) ? json.data[0] : json?.data;
         if (cancelled) return;
 
-        setContainerId(t?.container_id != null ? String(t.container_id) : "");
-        setName(t?.name ?? "");
-        setGenericname(t?.genericname ?? "");
-        setDescription(t?.description ?? "");
+        setContainerId(v?.container_id != null ? String(v.container_id) : "");
+        setName(v?.name ?? "");
 
-        const base = Number(t?.value) || 0;
+        const base = Number(v?.value) || 0;
         setValueBase(base);
 
-        // keep UI in common unless user switches
         setValueUnit("common");
         setDisplayValue(
           commonRate ? formatNumberString(base / commonRate) : "",
         );
 
-        setQuantity(String(t?.quantity ?? "1"));
-        setIdentified(Boolean(t?.identified));
-        setMagical(Boolean(t?.magical));
-        setArchived(Boolean(t?.archived));
+        setQuantity(String(v?.quantity ?? "1"));
       } catch (e) {
-        if (!cancelled) setFormError(e?.message || "Failed to load treasure.");
+        if (!cancelled) setFormError(e?.message || "Failed to load valuable.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -163,12 +150,12 @@ export default function TreasuresForm({
     return () => {
       cancelled = true;
     };
-  }, [isEdit, vaultId, treasureId, commonRate]);
+  }, [isEdit, vaultId, valuableId, commonRate]);
 
-  function applyDefaultTreasure(t) {
-    setName(t?.name ?? "");
+  function applyDefaultValuable({ defaultValuable, value }) {
+    setName(defaultValuable?.name ?? "");
 
-    const base = Number(t?.value) || 0;
+    const base = Number(value) || 0;
     setValueBase(base);
 
     if (valueUnit === "common") {
@@ -180,8 +167,8 @@ export default function TreasuresForm({
 
   function handleDisplayValueChange(nextStr) {
     setDisplayValue(nextStr);
-    const n = asNumber(nextStr);
 
+    const n = asNumber(nextStr);
     if (!Number.isFinite(n)) {
       setValueBase(0);
       return;
@@ -195,17 +182,21 @@ export default function TreasuresForm({
   }
 
   function handleValueUnitChange(nextUnit) {
-    if (nextUnit === valueUnit) return;
+    const unit =
+      typeof nextUnit === "string" ? nextUnit : nextUnit?.target?.value;
+    if (!unit || unit === valueUnit) return;
 
-    if (nextUnit === "common") {
+    if (unit === "common") {
       setDisplayValue(
         commonRate ? formatNumberString(valueBase / commonRate) : "",
       );
+      setValueLabel(commonLabel);
     } else {
       setDisplayValue(formatNumberString(valueBase));
+      setValueLabel(baseLabel);
     }
 
-    setValueUnit(nextUnit);
+    setValueUnit(unit);
   }
 
   function validateNonNegativeNumber(raw, label) {
@@ -221,7 +212,7 @@ export default function TreasuresForm({
     if (!vaultId) return setFormError("Vault is required.");
     if (!name.trim()) return setFormError("Name is required.");
     if (!containerId) return setFormError("Container is required.");
-    if (isEdit && !treasureId) return setFormError("Treasure is required.");
+    if (isEdit && !valuableId) return setFormError("Valuable is required.");
 
     const valueErr = validateNonNegativeNumber(valueBase, "Value");
     if (valueErr) return setFormError(valueErr);
@@ -233,16 +224,57 @@ export default function TreasuresForm({
       vault_id: vaultId,
       container_id: containerId,
       name: name.trim(),
-      genericname: genericname.trim() || null,
-      description: description.trim() || null,
       value: Number(valueBase) || 0,
       quantity: Number(quantity) || 0,
-      identified: !!identified,
-      magical: !!magical,
-      archived: !!archived,
     };
 
-    onSaved?.(payload);
+    if (onSaved) {
+      onSaved(payload);
+      return;
+    }
+
+    setBusy(true);
+    try {
+      if (isEdit) {
+        const res = await fetch(
+          `/api/vaults/${vaultId}/valuables/${valuableId}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          },
+        );
+
+        const json = await res.json().catch(() => null);
+        if (!res.ok || json?.ok === false) {
+          throw new Error(
+            json?.error || `Failed to update valuable (${res.status}).`,
+          );
+        }
+      } else {
+        const res = await createValuableAction(payload);
+        if (!res?.ok) {
+          throw new Error(res?.error || "Failed to create valuable.");
+        }
+      }
+
+      router.replace(`/account/vaults/${vaultId}/valuables`);
+      router.refresh();
+    } catch (err) {
+      setFormError(err?.message || "Save failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleClose() {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    router.back();
+    router.refresh();
   }
 
   const valueUnitControl = (
@@ -280,10 +312,10 @@ export default function TreasuresForm({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-semibold text-fg">
-                Game system default treasures
+                Game system default valuables
               </div>
               <div className="text-xs text-muted-fg">
-                Pick one to prefill name and value, then tweak below.
+                Pick a category and item to prefill name and generate a value.
               </div>
             </div>
 
@@ -296,11 +328,14 @@ export default function TreasuresForm({
           </div>
 
           {showDefaults ? (
-            <div className="mt-3 max-h-64 overflow-auto rounded-xl border border-border bg-surface p-2">
-              <DefaultTreasurePicker
-                items={defaultTreasures}
+            <div className="mt-3">
+              <DefaultValuablePicker
+                items={defaultValuables}
+                valueUnit={valueUnit}
+                commonRate={commonRate}
+                valueLabel={valueLabel}
                 onPick={(picked) => {
-                  applyDefaultTreasure(picked);
+                  applyDefaultValuable(picked);
                   setShowDefaults(false);
                 }}
               />
@@ -311,7 +346,7 @@ export default function TreasuresForm({
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl border border-border bg-card p-5 text-fg space-y-4"
+        className="space-y-4 bg-card p-5 text-fg"
       >
         {loading ? <div className="text-sm text-muted-fg">Loading…</div> : null}
 
@@ -324,7 +359,7 @@ export default function TreasuresForm({
         <Select
           id="containerId"
           label="Container"
-          hint="Where this treasure is stored"
+          hint="Where this valuable is stored"
           value={containerId}
           onChange={(e) => setContainerId(e.target.value)}
         >
@@ -346,27 +381,10 @@ export default function TreasuresForm({
           onChange={(e) => setName(e.target.value)}
         />
 
-        <InputComponent
-          id="genericname"
-          label="Generic name"
-          hint="Optional. Example: Mysterious Sword."
-          value={genericname}
-          onChange={(e) => setGenericname(e.target.value)}
-        />
-
-        <Textarea
-          label="Description"
-          hint="Optional notes, inscriptions, etc."
-          id="description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-        />
-
         <div className="grid gap-4 sm:grid-cols-2">
           <InputComponent
             id="displayValue"
-            label="Book value"
+            label="Value"
             labelRight={valueUnitControl}
             hint={`Enter value in ${commonLabel} or ${baseLabel}.`}
             value={displayValue}
@@ -382,51 +400,20 @@ export default function TreasuresForm({
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InputComponent
-            id="magical"
-            label="Magical"
-            type="checkbox"
-            checked={magical}
-            onChange={(e) => setMagical(e.target.checked)}
-          />
-          {magical && (
-            <InputComponent
-              id="identified"
-              label="Identified"
-              type="checkbox"
-              checked={identified}
-              onChange={(e) => setIdentified(e.target.checked)}
-            />
-          )}
-        </div>
-
-        {isEdit ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <InputComponent
-              id="archived"
-              label="Archived"
-              type="checkbox"
-              checked={archived}
-              onChange={(e) => setArchived(e.target.checked)}
-            />
-          </div>
-        ) : null}
-
         <div className="flex gap-2 pt-2">
           <Button
             type="submit"
             variant="primary"
-            disabled={submitting || loading}
+            disabled={isSubmitting || loading}
           >
-            {submitting ? "Saving…" : "Save"}
+            {isSubmitting ? "Saving..." : "Save"}
           </Button>
 
           <Button
             type="button"
             variant="outline"
-            disabled={submitting || loading}
-            onClick={onClose}
+            disabled={isSubmitting || loading}
+            onClick={handleClose}
           >
             Cancel
           </Button>

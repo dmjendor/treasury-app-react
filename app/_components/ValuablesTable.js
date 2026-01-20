@@ -9,22 +9,22 @@ function fmtMoney(value) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
-export default function TreasuresTable({
+export default function ValuablesTable({
   vaultId,
-  treasures,
+  valuables,
   activeContainerId,
 }) {
-  const rows = Array.isArray(treasures) ? treasures : [];
+  const rows = Array.isArray(valuables) ? valuables : [];
 
   return (
     <div className="rounded-2xl border border-primary-700 overflow-hidden bg-primary-700 text-primary-50">
       <div className="px-4 py-3 flex items-center justify-between border-b border-primary-900">
         <div className="text-sm opacity-90">
-          {rows.length} treasure item{rows.length === 1 ? "" : "s"}
+          {rows.length} valuable item{rows.length === 1 ? "" : "s"}
         </div>
 
         <LinkButton
-          href={`/account/vaults/${vaultId}/treasures/new${
+          href={`/account/vaults/${vaultId}/valuables/new${
             activeContainerId ? `?containerId=${activeContainerId}` : ""
           }`}
           variant="accent"
@@ -41,8 +41,6 @@ export default function TreasuresTable({
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Value</th>
               <th className="px-4 py-3">Qty</th>
-              <th className="px-4 py-3">Magical</th>
-              <th className="px-4 py-3">Identified</th>
               <th className="px-4 py-3 w-40">Actions</th>
             </tr>
           </thead>
@@ -54,7 +52,7 @@ export default function TreasuresTable({
                   className="px-4 py-6 text-muted-fg bg-card"
                   colSpan={5}
                 >
-                  No treasure in this container yet.
+                  No valuable in this container yet.
                 </td>
               </tr>
             ) : (
@@ -70,14 +68,10 @@ export default function TreasuresTable({
                   </td>
                   <td className="px-4 py-3">{fmtMoney(t.value)}</td>
                   <td className="px-4 py-3">{t.quantity ?? 0}</td>
-                  <td className="px-4 py-3">{t.magical && "🪄"}</td>
-                  <td className="px-4 py-3">
-                    {t.identified && t.magical && "🔎"}
-                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <LinkButton
-                        href={`/account/vaults/${vaultId}/treasures/${t.id}/edit`}
+                        href={`/account/vaults/${vaultId}/valuables/${t.id}/edit`}
                         variant="outline"
                         size="sm"
                       >
@@ -85,7 +79,7 @@ export default function TreasuresTable({
                       </LinkButton>
 
                       <LinkButton
-                        href={`/account/vaults/${vaultId}/treasures/${t.id}/delete`}
+                        href={`/account/vaults/${vaultId}/valuables/${t.id}/delete`}
                         variant="danger"
                         size="sm"
                       >

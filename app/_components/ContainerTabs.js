@@ -37,7 +37,7 @@ export default function ContainerTabs({
       <div className="ml-auto">
         <LinkButton
           href={`/account/vaults/${vaultId}/containers`}
-          variant="outline"
+          variant="accent"
           size="sm"
         >
           Manage containers
