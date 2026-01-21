@@ -1,5 +1,5 @@
 import ContainerList from "@/app/_components/ContainerList";
-import { getContainersForVault } from "@/app/_lib/data-service";
+import { getContainersForVault } from "@/app/_lib/data/containers.data";
 
 export default async function ContainersPage({ params }) {
   const { vaultId } = await params;

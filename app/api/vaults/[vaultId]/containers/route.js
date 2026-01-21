@@ -1,5 +1,5 @@
+import { createContainerInDb } from "@/app/_lib/data/containers.data";
 import { NextResponse } from "next/server";
-import { createContainerInDb } from "@/app/_lib/data-service";
 
 function toBool(v) {
   return v === true || v === "true" || v === "on" || v === "1";
@@ -27,7 +27,7 @@ export async function POST(req, { params }) {
   } catch (e) {
     return NextResponse.json(
       { error: e?.message || "Failed to create container" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
