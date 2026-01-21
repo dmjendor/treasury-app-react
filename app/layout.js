@@ -3,6 +3,8 @@ import "@/app/_styles/globals.css";
 import "@/app/_styles/rpg-awesome.min.css";
 import Header from "./_components/Header";
 
+export const dynamic = "force-dynamic";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

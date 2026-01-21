@@ -14,7 +14,7 @@ async function Header() {
         >
           Party Treasury
         </a>
-        {!session && (
+        {!session?.user && (
           <nav className="hidden items-center gap-6 text-sm text-muted-fg md:flex">
             <a
               className="hover:text-fg"
