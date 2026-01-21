@@ -1,5 +1,5 @@
 import { HiArrowRightStartOnRectangle } from "react-icons/hi2";
-import { signOutAction } from "../_lib/actions";
+import { signOutAction } from "../_lib/actions/auth";
 
 function SignOutButton() {
   return (

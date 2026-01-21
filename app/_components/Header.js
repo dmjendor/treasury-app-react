@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { auth } from "@/app/_lib/auth";
+import { LinkButton } from "@/app/_components/LinkButton";
 
 async function Header() {
   const session = await auth();
+  console.log("session", session);
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-overlay backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -42,8 +44,9 @@ async function Header() {
         )}
 
         <div className="flex items-center gap-3">
-          {session?.user?.image ? (
-            <Link
+          {session?.user ? (
+            <LinkButton
+              variant="primary"
               href="/account"
               className="hover:text-fg transition-colors flex items-center gap-4 text-fg"
             >
@@ -54,21 +57,23 @@ async function Header() {
                 className="h-8 rounded-full"
               />
               <span>Account</span>
-            </Link>
+            </LinkButton>
           ) : (
             <>
-              <Link
+              <LinkButton
+                variant="primary"
                 href="/demo"
                 className="rounded-xl bg-btn-secondary-bg px-4 py-2 text-sm text-btn-secondary-fg hover:bg-btn-secondary-hover-bg"
               >
                 View demo
-              </Link>
-              <Link
+              </LinkButton>
+              <LinkButton
+                variant="primary"
                 href="/login"
                 className="rounded-xl bg-btn-primary-bg px-4 py-2 text-sm font-semibold text-btn-primary-fg hover:bg-btn-primary-hover-bg"
               >
                 Sign in
-              </Link>
+              </LinkButton>
             </>
           )}
         </div>

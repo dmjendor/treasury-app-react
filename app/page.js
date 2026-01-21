@@ -11,7 +11,7 @@ export default function Home() {
       <RandomBackground />
 
       {/* Nav */}
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur">
+      {/* <header className="sticky top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <a
             href="#top"
@@ -62,7 +62,7 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </header>
+      </header> */}
 
       {/* Hero */}
       <section
