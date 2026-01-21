@@ -1,6 +1,5 @@
 // app/account/vaults/new/page.js
 import VaultForm from "@/app/_components/VaultForm";
-import { createVaultAction } from "@/app/actions";
 
 export default function EditVaultPage() {
   return (

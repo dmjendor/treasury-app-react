@@ -1,47 +1,16 @@
 // app/(account)/vaults/[vaultId]/members/page.js
 import MembersClient from "@/app/_components/MembersClient";
-import { getSupabase } from "@/app/_lib/data-service";
+import { getPermissionsForVaultAction } from "@/app/_lib/actions/permissions";
 
 /**
  * Members page
  * Lists people (and invites) who currently have can_view=true for this vault.
  */
 export default async function Page({ params }) {
-  const { vaultId } = params;
-
-  const supabase = getSupabase();
-
-  // Pull permissions rows and enrich with profile name (if you have profiles).
-  // Adjust the join/select to match your schema (profiles table name + columns).
-  const { data, error } = await supabase
-    .from("permissions")
-    .select(
-      `
-        id,
-        user_id,
-        email,
-        can_view,
-        accepted_at,
-        invited_at,
-        created_by,
-        transfer_coin_in,
-        transfer_coin_out,
-        transfer_treasure_in,
-        transfer_treasure_out,
-        transfer_valubles_in,
-        transfer_valuables_out,
-        profiles:user_id (
-          id,
-          name,
-          full_name
-        )
-      `,
-    )
-    .eq("vault_id", vaultId)
-    .eq("can_view", true)
-    .order("accepted_at", { ascending: false, nullsFirst: true })
-    .order("invited_at", { ascending: false });
-
+  const resolvedParams =
+    typeof params?.then === "function" ? await params : params;
+  const { vaultId } = resolvedParams;
+  const { data, error } = await getPermissionsForVaultAction({ vaultId });
   const rows = Array.isArray(data) ? data : [];
   const members = rows.map((r) => {
     const profileName = r?.profiles?.full_name || r?.profiles?.name || "";

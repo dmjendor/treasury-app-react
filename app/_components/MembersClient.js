@@ -7,7 +7,7 @@ import { Button } from "@/app/_components/Button";
 import { LinkButton } from "@/app/_components/LinkButton";
 import IconComponent from "@/app/_components/IconComponent";
 import { HiOutlineTrash } from "react-icons/hi2";
-import { removePermissionAction } from "@/app/_lib/actions/permissions/removePermissionAction";
+// import { removePermissionAction } from "@/app/_lib/actions/permissions/removePermissionAction";
 
 function Badge({ status }) {
   const label = status === "invited" ? "Invited" : "Active";
@@ -40,16 +40,16 @@ export default function MembersClient({ vaultId, members, loadError }) {
     setError("");
     setBusyId(permissionId);
 
-    const res = await removePermissionAction({
-      id: permissionId,
-      vault_id: vaultId,
-    });
+    // const res = await removePermissionAction({
+    //   id: permissionId,
+    //   vault_id: vaultId,
+    // });
 
-    if (!res?.ok) {
-      setError(res?.error || "Failed to remove member.");
-      setBusyId("");
-      return;
-    }
+    // if (!res?.ok) {
+    //   setError(res?.error || "Failed to remove member.");
+    //   setBusyId("");
+    //   return;
+    // }
 
     setBusyId("");
     router.refresh();
