@@ -155,3 +155,7 @@ export async function acceptInviteAction({ token }) {
     };
   }
 }
+
+export async function removePermissionAction({ permissionId, vaultId }) {
+  return null;
+}
