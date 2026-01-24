@@ -6,6 +6,7 @@ export default function RaIcon({ name = "", className = "", title }) {
   return (
     <i
       className={`${classNames} ${className}`}
+      // style={{ color: "currentColor" }}
       aria-hidden={!title}
       aria-label={title}
       role={title ? "img" : undefined}

@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/_styles/globals.css";
 import "@/app/_styles/rpg-awesome.min.css";
 import Header from "./_components/Header";
+import ToasterProvider from "@/app/_components/ToasterProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children, modal }) {
         <Header />
         {children}
         {modal}
+        <ToasterProvider />
       </body>
     </html>
   );

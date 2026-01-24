@@ -4,7 +4,6 @@ import { LinkButton } from "@/app/_components/LinkButton";
 
 async function Header() {
   const session = await auth();
-  console.log("session", session);
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-overlay backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

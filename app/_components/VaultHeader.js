@@ -2,6 +2,7 @@
 
 import CreateMenu from "./CreateMenu";
 import IconComponent from "@/app/_components/IconComponent";
+import ChestIcon from "@/app/_components/icons/ChestIcon";
 import { useVault } from "@/app/_context/VaultProvider";
 
 /**
@@ -18,7 +19,7 @@ export default function VaultHeader() {
         <div className="rounded-xl bg-accent-700 p-2">
           <IconComponent
             size="2xl"
-            icon="/svg/chest.svg"
+            icon={ChestIcon}
             label="Treasure chest"
             variant="accent"
           />

@@ -55,7 +55,6 @@ export default function NewTreasureClient({ isModal }) {
     }
 
     setBusy(true);
-    console.log("handlecreate");
     const res = await createTreasureAction(payload);
 
     if (!res?.ok) {

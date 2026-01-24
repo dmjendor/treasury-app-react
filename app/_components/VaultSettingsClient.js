@@ -63,7 +63,6 @@ export default function VaultSettingsClient() {
 
   // These lists need to come from somewhere.
   // Best place: fetch them in the vault layout and include them in the provider value.
-  console.log(vault);
   const themes = useMemo(() => vault.themeList ?? [], [vault]);
   const systems = useMemo(() => vault.systemList ?? [], [vault]);
   const currencies = useMemo(() => vault.currencyList ?? [], [vault]);

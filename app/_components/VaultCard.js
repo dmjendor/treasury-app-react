@@ -1,10 +1,8 @@
 import IconComponent from "@/app/_components/IconComponent";
+import BackpackIcon from "@/app/_components/icons/BackpackIcon";
+import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
 import Link from "next/link";
 import {
-  HiOutlineArchiveBox,
-  HiOutlineGift,
-  HiOutlineCurrencyDollar,
-  HiOutlineSparkles,
   HiOutlineBookOpen,
   HiOutlineSwatch,
   HiOutlinePencilSquare,
@@ -14,25 +12,28 @@ import {
 function VaultCard({ vault }) {
   const {
     id,
-    active,
     name,
-    system_id,
-    theme_id,
-    system,
     theme,
+    system,
     containers_count,
-    treasure_count,
+    treasures_count,
     currencies_count,
     valuables_count,
+    updated_at,
   } = vault;
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm backdrop-blur">
-      {/* subtle highlight */}
+    <div
+      className={`group relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm backdrop-blur theme-${theme?.theme_key || "night"}`}
+    >
+      {/* accent wash + border shimmer */}
       <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-primary-500 opacity-10 blur-3xl" />
-        <div className="absolute -bottom-28 -left-28 h-56 w-56 rounded-full bg-accent-500 opacity-10 blur-3xl" />
+        <div className="absolute -top-28 -right-28 h-72 w-72 rounded-full bg-accent/12 blur-3xl" />
+        <div className="absolute -bottom-28 -left-28 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
       </div>
+
+      {/* inner frame that can pick up accent */}
+      <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-border transition-colors duration-300 group-hover:ring-accent/40" />
 
       <div className="relative">
         {/* Header */}
@@ -42,14 +43,14 @@ function VaultCard({ vault }) {
               {name || "Untitled Vault"}
             </h3>
 
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <Pill
                 icon={HiOutlineBookOpen}
-                text={vault?.system?.name || "Game System"}
+                text={system?.name || "Game System"}
               />
               <Pill
                 icon={HiOutlineSwatch}
-                text={vault?.theme?.name || "Theme"}
+                text={theme?.name || "Theme"}
               />
             </div>
           </div>
@@ -57,20 +58,26 @@ function VaultCard({ vault }) {
           <div className="flex items-center gap-2">
             <Link
               href={`/account/vaults/${id}/edit`}
-              className="inline-flex items-center gap-2 rounded-xl bg-btn-secondary-bg px-3 py-2 text-sm text-btn-secondary-fg hover:bg-btn-secondary-hover-bg focus:outline-none focus:ring-2 focus:ring-accent"
+              className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-fg transition-colors hover:bg-surface hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               aria-label={`Edit ${name ?? "vault"}`}
             >
-              <HiOutlinePencilSquare className="h-5 w-5" />
+              <IconComponent
+                icon={HiOutlinePencilSquare}
+                title="Edit"
+              />
               <span className="hidden sm:inline">Edit</span>
             </Link>
 
             <Link
               href={`/account/vaults/${id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-btn-primary-bg px-3 py-2 text-sm font-semibold text-btn-primary-fg hover:bg-btn-primary-hover-bg focus:outline-none focus:ring-2 focus:ring-accent"
+              className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-fg transition-colors hover:bg-surface hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               aria-label={`View ${name ?? "vault"}`}
             >
               <span className="hidden sm:inline">View</span>
-              <HiOutlineArrowRight className="h-5 w-5" />
+              <IconComponent
+                icon={HiOutlineArrowRight}
+                title="View"
+              />
             </Link>
           </div>
         </div>
@@ -78,37 +85,32 @@ function VaultCard({ vault }) {
         {/* Stats */}
         <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat
-            icon={"/svg/backpack.svg"}
+            icon={BackpackIcon}
             label="Containers"
             value={containers_count}
           />
           <Stat
-            icon={"ra-sword"}
+            icon="ra-sword"
             label="Treasure"
-            value={treasure_count}
+            value={treasures_count}
           />
           <Stat
-            icon={"/svg/two-coins.svg"}
+            icon={TwoCoinsIcon}
             label="Currencies"
             value={currencies_count}
           />
           <Stat
-            icon={"ra-diamond"}
+            icon="ra-diamond"
             label="Valuables"
             value={valuables_count}
           />
         </div>
 
-        {/* Footer note (optional) */}
+        {/* Footer */}
         <div className="mt-5 flex items-center justify-between text-xs text-muted-fg">
           <span className="truncate">
             Last updated:{" "}
-            {vault.updated_at
-              ? new Date(vault.updated_at).toLocaleDateString()
-              : "Unknown"}
-          </span>
-          <span className="text-muted-fg opacity-0 transition-opacity group-hover:opacity-100">
-            Open vault
+            {updated_at ? new Date(updated_at).toLocaleDateString() : "Unknown"}
           </span>
         </div>
       </div>
@@ -120,11 +122,19 @@ export default VaultCard;
 
 function Stat({ icon, label, value }) {
   return (
-    <div className="flex items-center gap-2 rounded-xl bg-surface px-3 py-2">
-      <IconComponent icon={icon} />
+    <div className="group/stat flex items-center gap-2 rounded-xl border border-accent-700 bg-accent-600 px-3 py-2 transition-colors">
+      <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent-100 text-accent-800 ring-1 ring-inset ring-accent-200 transition-colors group-hover/stat:bg-accent-200">
+        <IconComponent
+          icon={icon}
+          variant="inherit"
+        />
+      </div>
+
       <div className="leading-tight">
-        <div className="text-xs text-muted-fg">{label}</div>
-        <div className="text-sm font-semibold text-fg">{value ?? 0}</div>
+        <div className="text-xs text-accent-100">{label}</div>
+        <div className="text-sm font-semibold text-accent-950">
+          {value ?? 0}
+        </div>
       </div>
     </div>
   );
@@ -132,9 +142,14 @@ function Stat({ icon, label, value }) {
 
 function Pill({ icon, text }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-xs text-muted-fg">
-      <IconComponent icon={icon} />
-      <span className="truncate">{text || "Unknown"}</span>
+    <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-accent-700 bg-accent-600 px-3 py-1 text-xs ring-1 ring-inset ring-accent-700 transition-colors text-accent-50">
+      <span className="text-accent-50">
+        <IconComponent
+          icon={icon}
+          variant="accent"
+        />
+      </span>
+      <span className="truncate text-accent-50">{text || "Unknown"}</span>
     </div>
   );
 }

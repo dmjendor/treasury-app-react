@@ -12,6 +12,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ImgIcon from "@/app/_components/ImgIcon";
 import RaIcon from "@/app/_components/RaIcon";
+import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
+import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 
 /**
  * Determines whether an icon value is a path to an image asset.
@@ -116,7 +118,7 @@ export default function CreateMenu({ vaultId }) {
     {
       label: "New container",
       href: `${base}/containers/new`,
-      icon: "/svg/backpack.svg",
+      icon: { BackpackIcon },
     },
     {
       label: "New treasure",
@@ -126,7 +128,7 @@ export default function CreateMenu({ vaultId }) {
     {
       label: "New currency",
       href: `${base}/currencies/new`,
-      icon: "/svg/two-coins.svg",
+      icon: { TwoCoinsIcon },
     },
     {
       label: "New valuable",

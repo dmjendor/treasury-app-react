@@ -26,12 +26,15 @@ function sizeToClasses(size) {
 }
 
 function variantToClass(variant) {
-  if (variant === "muted") return "text-muted-fg opacity-80";
-  if (variant === "accent") return "text-accent-400 opacity-90";
-  if (variant === "primary") return "text-primary-400 opacity-90";
-  if (variant === "danger") return "text-danger-400 opacity-90";
+  if (variant === "muted") return "text-muted-fg";
+  if (variant === "accent") return "text-accent-200";
+  if (variant === "accent-dark") return "text-accent-800";
+  if (variant === "primary") return "text-primary-200";
+  if (variant === "primary-dark") return "text-primary-800";
+  if (variant === "danger") return "text-danger-200";
+  if (variant === "danger-dark") return "text-danger-800";
   if (variant === "inherit") return "";
-  return "opacity-80";
+  return "text-fg";
 }
 
 function isSvgPath(icon) {
@@ -61,7 +64,7 @@ function isReactIcon(icon) {
 function IconComponent({
   icon,
   size = "md",
-  variant = "muted",
+  variant = "primary",
   className = "",
   title,
   decorative = true,
@@ -88,7 +91,7 @@ function IconComponent({
     return (
       <RaIcon
         name={icon}
-        className={cx(text, variantClass, className)}
+        className={cx(text, className, variantClass)}
         title={!decorative ? title : undefined}
         {...a11yProps}
       />
@@ -99,7 +102,7 @@ function IconComponent({
     const ReactIcon = icon;
     return (
       <ReactIcon
-        className={cx(hw, variantClass, className)}
+        className={cx(hw, className, variantClass)}
         title={!decorative ? title : undefined}
         {...a11yProps}
       />

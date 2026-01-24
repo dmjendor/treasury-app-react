@@ -23,12 +23,12 @@ export default function DeleteCurrencyModal({ vaultId, currencyId }) {
       try {
         const res = await fetch(
           `/api/vaults/${vaultId}/currencies/${currencyId}`,
-          { cache: "no-store" }
+          { cache: "no-store" },
         );
         if (!res.ok)
           throw new Error(`Failed to load currency (${res.status}).`);
         const { data } = await res.json();
-        console.log(data);
+
         if (!cancelled) setCurrency(data);
       } catch (e) {
         if (!cancelled) setError(e?.message || "Failed to load currency.");
@@ -54,20 +54,20 @@ export default function DeleteCurrencyModal({ vaultId, currencyId }) {
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("vault:refresh", { detail: { vaultId } })
+        new CustomEvent("vault:refresh", { detail: { vaultId } }),
       );
     }
 
     try {
       if (Number(currency?.multiplier) === 1) {
         throw new Error(
-          "You can’t delete the base currency. Set another currency as base first."
+          "You can’t delete the base currency. Set another currency as base first.",
         );
       }
 
       const res = await fetch(
         `/api/vaults/${vaultId}/currencies/${currencyId}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (!res.ok)
         throw new Error(`Failed to delete currency (${res.status}).`);

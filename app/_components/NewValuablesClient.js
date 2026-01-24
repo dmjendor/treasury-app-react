@@ -55,7 +55,7 @@ export default function NewValuableClient({ isModal }) {
     }
 
     setBusy(true);
-    console.log("handlecreate");
+
     const res = await createValuableAction(payload);
 
     if (!res?.ok) {

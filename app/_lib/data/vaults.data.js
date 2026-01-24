@@ -35,7 +35,7 @@ export async function getVaultById(id) {
   const { data: vault, error } = await supabase
     .from("vaults")
     .select(
-      "id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )"
+      "id, user_id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )",
     )
     .eq("id", id)
     .single();
@@ -75,12 +75,11 @@ export const getUserVaults = async function () {
   const { data: vaults, error } = await supabase
     .from("vaults")
     .select(
-      "id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasure(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system: systems( id, name)"
+      "id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system: systems( id, name)",
     )
     .eq("user_id", session.user.userId)
     .order("name");
 
-  console.log(error);
   if (error) throw new Error("Vaults could not be loaded");
 
   const normalizedVaults = Array.isArray(vaults)
@@ -160,4 +159,41 @@ export async function updateVaultSettingsDb({ userId, vaultId, ...patch }) {
 
   if (error) throw error;
   return data;
+}
+
+/**
+ * Vaults the user can access but does not own (player views).
+ * A user is a member when permissions.user_id is set and can_view = true.
+ */
+export async function getMemberVaultsForUser(userId) {
+  const supabase = await getSupabase();
+
+  const { data, error } = await supabase
+    .from("permissions")
+    .select(
+      `
+        vault_id,
+        accepted_at,
+        vaults:vault_id (
+          id,
+          name,
+          user_id,
+          created_at,
+          updated_at
+        )
+      `,
+    )
+    .eq("user_id", userId)
+    .eq("can_view", true)
+    .not("accepted_at", "is", null) // optional, but helps enforce "accepted"
+    .order("name", { foreignTable: "vaults", ascending: true });
+
+  if (error) return { data: null, error };
+
+  const memberVaults = (data || [])
+    .map((row) => row.vaults)
+    .filter(Boolean)
+    .filter((v) => String(v.user_id) !== String(userId));
+
+  return { data: memberVaults, error: null };
 }

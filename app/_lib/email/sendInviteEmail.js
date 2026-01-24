@@ -32,14 +32,20 @@ export async function sendInviteEmail({ toEmail, inviteUrl, vaultName }) {
   `;
 
   const from = "Party Treasury <invites@partytreasury.com>";
+  let response = {};
+  try {
+    const res = await resend.emails.send({
+      from,
+      to: toEmail,
+      subject,
+      text,
+      html,
+    });
 
-  const res = await resend.emails.send({
-    from,
-    to: toEmail,
-    subject,
-    text,
-    html,
-  });
-
-  return res;
+    response = { ok: true, data: res };
+  } catch (error) {
+    response = { ok: false, error: error?.message, data: error };
+  } finally {
+    return response;
+  }
 }

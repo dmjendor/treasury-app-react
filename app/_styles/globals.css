@@ -186,8 +186,8 @@
     --bg: var(--surface-900);
     --fg: var(--surface-50);
 
-    --card: var(--surface-800);
-    --card-fg: var(--surface-50);
+    --card: var(--primary-400);
+    --card-fg: var(--primary-900);
 
     --input: var(--surface-800);
     --input-fg: var(--surface-50);
@@ -302,7 +302,7 @@
     --bg: var(--surface-100);
     --fg: var(--primary-900);
 
-    --card: var(--surface-200);
+    --card: var(--primary-400);
     --card-fg: var(--primary-900);
 
     --input: var(--surface-100);
@@ -416,8 +416,8 @@
     --bg: var(--surface-50);
     --fg: var(--surface-900);
 
-    --card: var(--surface-100);
-    --card-fg: var(--surface-900);
+    --card: var(--primary-400);
+    --card-fg: var(--primary-900);
 
     --input: var(--surface-50);
     --input-fg: var(--surface-900);
@@ -503,5 +503,10 @@ html {
 .ra,
 [class^="ra-"],
 [class*=" ra-"] {
+  color: currentColor;
+}
+
+.ra,
+.ra::before {
   color: currentColor;
 }

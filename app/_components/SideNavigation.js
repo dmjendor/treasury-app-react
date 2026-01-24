@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
 import { HiOutlinePlusCircle } from "react-icons/hi2";
 import NavLink from "./NavLink";
+import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
+import BackpackIcon from "@/app/_components/icons/BackpackIcon";
+import ChestIcon from "@/app/_components/icons/ChestIcon";
 
 function SideNavigation() {
   const params = useParams();
@@ -19,11 +22,11 @@ function SideNavigation() {
 
   return (
     <nav className="border-r border-border">
-      <ul className="flex flex-col gap-2 h-full text-lg">
+      <ul className="flex flex-col gap-2 h-full text-lg text-accent-50">
         <NavLink
           href="/account/vaults"
-          icon="/svg/chest.svg"
-          label="Vaults"
+          icon={ChestIcon}
+          label="My Vaults"
           active={pathname?.startsWith("/account/vaults")}
         />
         {/* Link Scoped */}
@@ -53,7 +56,7 @@ function SideNavigation() {
 
             <NavLink
               href={`${vaultBase}/containers`}
-              icon="/svg/backpack.svg"
+              icon={BackpackIcon}
               label="Containers"
               active={pathname?.startsWith(`${vaultBase}/containers`)}
             />
@@ -74,7 +77,7 @@ function SideNavigation() {
 
             <NavLink
               href={`${vaultBase}/currencies`}
-              icon="/svg/two-coins.svg"
+              icon={TwoCoinsIcon}
               label="Currencies"
               active={pathname?.startsWith(`${vaultBase}/currencies`)}
             />

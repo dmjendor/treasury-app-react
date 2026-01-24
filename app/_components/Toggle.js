@@ -1,82 +1,78 @@
 "use client";
 
 /**
- * Toggle
  *
- * Accessible boolean control styled as a switch.
- * Under the hood it's a checkbox, so it works naturally with forms and FormData.
+ * - Render a compact toggle switch.
+ * - @param {object} props
+ * - @returns {JSX.Element}
  */
 export default function Toggle({
   name,
   id,
   label,
   hint,
+  checked,
   defaultChecked,
   disabled,
   className = "",
+  onChange,
 }) {
   const fieldId = id || name;
+  const isControlled = typeof checked === "boolean";
 
   return (
-    <div className={`space-y-1 ${className}`}>
-      {label ? (
-        <label
-          className="text-sm font-semibold text-fg"
-          htmlFor={fieldId}
-        >
-          {label}
-        </label>
-      ) : null}
+    <label
+      htmlFor={fieldId}
+      className={`
+        flex items-start justify-between gap-4
+        ${className}
+        ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+      `}
+    >
+      <span className="min-w-0">
+        {label ? (
+          <span className="block text-sm font-semibold">{label}</span>
+        ) : null}
+        {hint ? <span className="block text-xs">{hint}</span> : null}
+        {!label && !hint ? <span className="block text-sm">Toggle</span> : null}
+      </span>
 
-      {hint ? <div className="text-xs text-muted-fg">{hint}</div> : null}
+      <span className="relative inline-flex items-center">
+        <input
+          id={fieldId}
+          name={name}
+          type="checkbox"
+          checked={isControlled ? checked : undefined}
+          defaultChecked={!isControlled ? defaultChecked : undefined}
+          disabled={disabled}
+          onChange={onChange}
+          aria-label={label || "Toggle"}
+          className="peer sr-only"
+        />
 
-      <label
-        htmlFor={fieldId}
-        className={`
-          flex items-center justify-between gap-4
-          rounded-xl
-          border border-border
-          bg-input
-          px-4 py-3
-          ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-        `}
-      >
-        <span className="text-sm text-fg">{label ? null : "Toggle"}</span>
+        {/* Track */}
+        <span
+          className="
+            h-5 w-9 rounded-full
+            bg-accent-200
+            border border-border
+            transition-colors
+            
+            peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent
+          "
+        />
 
-        <span className="relative inline-flex items-center">
-          <input
-            id={fieldId}
-            name={name}
-            type="checkbox"
-            defaultChecked={defaultChecked}
-            disabled={disabled}
-            className="peer sr-only"
-          />
-
-          {/* Track */}
-          <span
-            className="
-              h-6 w-11 rounded-full
-              bg-surface
-              border border-border
-              transition-colors
-              peer-checked:bg-btn-primary-bg
-              peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent
-            "
-          />
-
-          {/* Thumb */}
-          <span
-            className="
-              pointer-events-none absolute left-0.5
-              h-5 w-5 rounded-full
-              bg-card
-              transition-transform
-              peer-checked:translate-x-5
-            "
-          />
-        </span>
-      </label>
-    </div>
+        {/* Thumb */}
+        <span
+          className="
+            pointer-events-none absolute left-0.5
+            h-4 w-4 rounded-full
+            bg-accent-600
+            transition-transform
+            peer-checked:translate-x-4
+          "
+        />
+      </span>
+    </label>
   );
 }

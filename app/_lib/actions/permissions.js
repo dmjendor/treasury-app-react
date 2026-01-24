@@ -9,8 +9,10 @@ import {
   acceptPermissionInvite,
   getVaultNameForInvite,
   getAllUsersForVault,
+  getPermissionByVaultAndUserId,
 } from "@/app/_lib/data/permissions.data";
 import { auth } from "@/app/_lib/auth";
+import { getVaultById } from "@/app/_lib/data/vaults.data"; // or wherever
 
 export async function createPermissionAction(payload) {
   try {
@@ -23,7 +25,6 @@ export async function createPermissionAction(payload) {
 
 export async function getPermissionsForVaultAction({ vaultId }) {
   try {
-    console.log("gpfva", vaultId);
     if (!vaultId) return { ok: false, error: "Missing vaultId", data: null };
 
     const rows = await getAllUsersForVault(vaultId);
@@ -51,16 +52,14 @@ export async function inviteMemberAction({ vaultId, email }) {
     if (!cleanEmail)
       return { ok: false, error: "Email is required.", data: null };
 
-    const supabase = getSupabaseServer();
-    const { data: userRes } = await supabase.auth.getUser();
-    const user = userRes?.user;
-
-    if (!user) return { ok: false, error: "Not signed in.", data: null };
+    const session = await auth();
+    const userId = session?.user?.userId;
+    if (!userId) return { ok: false, error: "Not signed in.", data: null };
 
     const upsertRes = await upsertPermissionInvite({
       vaultId,
       email: cleanEmail,
-      createdBy: user.id,
+      createdBy: userId,
     });
 
     if (!upsertRes.ok) return upsertRes;
@@ -158,4 +157,54 @@ export async function acceptInviteAction({ token }) {
 
 export async function removePermissionAction({ permissionId, vaultId }) {
   return null;
+}
+
+function pickAllowedFields(patch) {
+  return {
+    transfer_coin_in: patch.transfer_coin_in,
+    transfer_coin_out: patch.transfer_coin_out,
+    transfer_treasures_in: patch.transfer_treasures_in,
+    transfer_treasures_out: patch.transfer_treasures_out,
+    transfer_valuables_in: patch.transfer_valuables_in,
+    transfer_valuables_out: patch.transfer_valuables_out,
+  };
+}
+
+export async function updateMemberPermissions({
+  vaultId,
+  permissionId,
+  patch,
+}) {
+  const session = await auth();
+  const userId = session?.user?.userId;
+  if (!userId) return { ok: false, error: "Not signed in.", data: null };
+
+  // owner only
+  const vault = await getVaultById(vaultId);
+  console.log(vault);
+  if (!vault) return { ok: false, error: "Vault not found.", data: null };
+  console.log(vault.user_id, userId);
+  if (String(vault.user_id) !== String(userId)) {
+    return {
+      ok: false,
+      error: "Only the vault owner can edit permissions.",
+      data: null,
+    };
+  }
+
+  const update = pickAllowedFields(patch);
+
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("permissions")
+    .update(update)
+    .eq("id", permissionId)
+    .eq("vault_id", vaultId)
+    .select("*")
+    .single();
+
+  console.log(error);
+  if (error)
+    return { ok: false, error: "Could not update permissions.", data: null };
+  return { ok: true, error: null, data };
 }

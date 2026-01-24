@@ -12,10 +12,11 @@ import Link from "next/link";
 import { LinkButton } from "@/app/_components/LinkButton";
 import IconComponent from "@/app/_components/IconComponent";
 import { getUserVaults, getVaultById } from "@/app/_lib/data/vaults.data";
+import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 
 function Panel({ title, icon: Icon, children }) {
   return (
-    <section className="rounded-2xl border border-border) bg-primary-400) p-6">
+    <section className="rounded-2xl border border-border bg-primary-400 p-6">
       <div className="flex items-center gap-2">
         {Icon ? <Icon className="h-5 w-5 text-accent-700" /> : null}
         <h2 className="text-sm font-semibold text-fg">{title}</h2>
@@ -27,7 +28,7 @@ function Panel({ title, icon: Icon, children }) {
 
 function StatCard({ label, value, icon, href }) {
   const content = (
-    <div className="rounded-2xl border border-border) bg-card) p-5 transition-colors hover:bg-primary-600) hover:text-primary-50">
+    <div className="rounded-2xl border border-border bg-primary-600 text-primary-50 p-5 transition-colors hover:bg-primary-600 hover:text-primary-50">
       <div className="flex items-start justify-between">
         <div>
           <div className="text-xs text-muted-fg) group-hover:text-primary-100">
@@ -36,7 +37,7 @@ function StatCard({ label, value, icon, href }) {
           <div className="mt-1 text-2xl font-semibold">{value}</div>
         </div>
 
-        <div className="rounded-xl bg-accent-700) p-2 text-accent-50">
+        <div className="rounded-xl bg-accent-700 p-2 text-accent-50">
           <IconComponent
             icon={icon}
             title={label}
@@ -52,17 +53,17 @@ function StatCard({ label, value, icon, href }) {
 
 function EmptyList({ title, hint }) {
   return (
-    <div className="rounded-xl border border-border) bg-primary-100) p-4 text-sm">
-      <div className="font-semibold text-fg">{title}</div>
-      <div className="mt-1 text-muted-fg">{hint}</div>
+    <div className="rounded-xl border border-border bg-accent-600 text-accent-50 p-4 text-sm">
+      <div className="font-semibold">{title}</div>
+      <div className="mt-1">{hint}</div>
     </div>
   );
 }
 
 function DetailCard({ icon, label, value, hint }) {
   return (
-    <div className="rounded-xl border border-border) bg-card) p-4">
-      <div className="flex items-center gap-2 text-xs text-muted-fg">
+    <div className="rounded-xl border border-border bg-accent-600 text-accent-50 p-4">
+      <div className="flex items-center gap-2 text-xs">
         {icon ? (
           <IconComponent
             icon={icon}
@@ -72,8 +73,8 @@ function DetailCard({ icon, label, value, hint }) {
         ) : null}
         {label}
       </div>
-      <div className="mt-1 text-sm font-semibold text-fg">{value}</div>
-      {hint ? <div className="mt-1 text-xs text-muted-fg">{hint}</div> : null}
+      <div className="mt-1 text-sm font-semibold">{value}</div>
+      {hint ? <div className="mt-1 text-xs">{hint}</div> : null}
     </div>
   );
 }
@@ -103,13 +104,13 @@ export default async function VaultOverviewPage({ params }) {
         <StatCard
           label="Currencies"
           value={currencies_count}
-          icon={"/svg/two-coins.svg"}
+          icon={BackpackIcon}
           href={`/account/vaults/${vaultId}/currencies`}
         />
         <StatCard
           label="Containers"
           value={containers_count}
-          icon={"/svg/backpack.svg"}
+          icon={BackpackIcon}
           href={`/account/vaults/${vaultId}/containers`}
         />
         <StatCard
