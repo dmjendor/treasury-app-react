@@ -143,6 +143,58 @@ export async function acceptPermissionInvite({ permissionId, userId }) {
 }
 
 /**
+- Accept a pending permission invite for a user.
+- @param {{ permissionId?: string, vaultId: string, email: string, userId: string }} params
+- @returns {Promise<{ ok: boolean, error: string, data: any }>}
+  */
+export async function acceptPendingPermissionInvite({
+  permissionId,
+  vaultId,
+  email,
+  userId,
+}) {
+  if (!vaultId || !email || !userId) {
+    return {
+      ok: false,
+      error: "vaultId, email, and userId are required.",
+      data: null,
+    };
+  }
+
+  const supabase = getSupabase();
+  const acceptedAt = new Date().toISOString();
+  const cleanEmail = normalizeEmail(email);
+
+  let q = supabase
+    .from("permissions")
+    .update({
+      user_id: userId,
+      email: null,
+      accepted_at: acceptedAt,
+    })
+    .eq("vault_id", vaultId)
+    .eq("can_view", true)
+    .is("user_id", null);
+
+  if (permissionId) {
+    q = q.eq("id", permissionId);
+  } else {
+    q = q.eq("email", cleanEmail);
+  }
+
+  const { data, error } = await q.select(
+    "id, vault_id, user_id, accepted_at, can_view",
+  );
+
+  if (error) return { ok: false, error: error.message, data: null };
+  if (!data || data.length === 0) {
+    return { ok: false, error: "Invite is no longer valid.", data: null };
+  }
+
+  return { ok: true, error: "", data: data[0] };
+}
+
+/**
  *
  * - Fetch a vault name for an invite.
  * - @param {{ vaultId: string }} params
@@ -372,6 +424,5 @@ export async function getVaultMembersWithPermissions(vaultId, userId) {
     .not("user_id", "is", null)
     .order("accepted_at", { ascending: false });
 
-  console.log(data, error);
   return { data: data || [], error };
 }

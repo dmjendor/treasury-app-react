@@ -6,7 +6,7 @@ import { sendInviteEmail } from "@/app/_lib/email/sendInviteEmail";
 import {
   upsertPermissionInvite,
   getPermissionInvite,
-  acceptPermissionInvite,
+  acceptPendingPermissionInvite,
   getVaultNameForInvite,
   getAllUsersForVault,
   getPermissionByVaultAndUserId,
@@ -107,9 +107,9 @@ export async function acceptInviteAction({ token }) {
       : "";
 
     const session = await auth();
-    const user = session?.user?.user_id;
+    const userId = session?.user?.userId;
 
-    if (!user) return { ok: false, error: "Not signed in.", data: null };
+    if (!userId) return { ok: false, error: "Not signed in.", data: null };
 
     const myEmail = normalizeEmail(session?.user?.email);
     if (!myEmail || myEmail !== invitedEmail) {
@@ -120,32 +120,25 @@ export async function acceptInviteAction({ token }) {
       };
     }
 
-    const inviteRes = await getPermissionInvite({
+    const acceptRes = await acceptPendingPermissionInvite({
       permissionId,
       vaultId,
       email: invitedEmail,
+      userId: userId,
     });
 
-    if (!inviteRes.ok) return inviteRes;
-
-    const row = inviteRes.data;
-
-    if (!row?.can_view) {
-      return { ok: false, error: "Invite is no longer valid.", data: null };
-    }
-
-    if (row.user_id) {
+    if (acceptRes.ok) {
       return { ok: true, error: "", data: { vault_id: vaultId } };
     }
 
-    const acceptRes = await acceptPermissionInvite({
-      permissionId: row.id,
-      userId: user.id,
-    });
+    if (permissionId) {
+      const inviteRes = await getPermissionInvite({ permissionId });
+      if (inviteRes.ok && inviteRes.data?.user_id) {
+        return { ok: true, error: "", data: { vault_id: vaultId } };
+      }
+    }
 
-    if (!acceptRes.ok) return acceptRes;
-
-    return { ok: true, error: "", data: { vault_id: vaultId } };
+    return acceptRes;
   } catch (e) {
     return {
       ok: false,
@@ -181,9 +174,8 @@ export async function updateMemberPermissions({
 
   // owner only
   const vault = await getVaultById(vaultId);
-  console.log(vault);
+
   if (!vault) return { ok: false, error: "Vault not found.", data: null };
-  console.log(vault.user_id, userId);
   if (String(vault.user_id) !== String(userId)) {
     return {
       ok: false,
