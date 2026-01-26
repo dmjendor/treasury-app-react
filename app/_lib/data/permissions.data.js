@@ -5,6 +5,7 @@
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
+import { tryCreateVaultLog } from "@/app/_lib/data/logs.data";
 
 /**
  *
@@ -138,6 +139,13 @@ export async function acceptPermissionInvite({ permissionId, userId }) {
     .eq("id", permissionId);
 
   if (error) return { ok: false, error: error.message, data: null };
+  await tryCreateVaultLog({
+    vaultId,
+    source: "permissions",
+    action: "invite_accepted",
+    entityType: "permissions",
+    entityId: permissionId,
+  });
 
   return { ok: true, error: "", data: { accepted_at: acceptedAt } };
 }

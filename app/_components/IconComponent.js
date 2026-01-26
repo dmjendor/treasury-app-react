@@ -61,16 +61,8 @@ function isReactIcon(icon) {
  * - title: accessible label when not decorative
  * - decorative: boolean (default true)
  */
-function IconComponent({
-  icon,
-  size = "md",
-  variant = "primary",
-  className = "",
-  title,
-  decorative = true,
-}) {
+function IconComponent({ icon, size = "md", title, decorative = true }) {
   const { hw, text } = sizeToClasses(size);
-  const variantClass = variantToClass(variant);
 
   const a11yProps = decorative
     ? { "aria-hidden": true }
@@ -80,7 +72,7 @@ function IconComponent({
     return (
       <ImgIcon
         src={icon}
-        className={cx(hw, variantClass, className)}
+        className={cx(hw)}
         alt={!decorative ? title || "Icon" : ""}
         {...a11yProps}
       />
@@ -91,7 +83,7 @@ function IconComponent({
     return (
       <RaIcon
         name={icon}
-        className={cx(text, className, variantClass)}
+        className={cx(hw)}
         title={!decorative ? title : undefined}
         {...a11yProps}
       />
@@ -102,7 +94,7 @@ function IconComponent({
     const ReactIcon = icon;
     return (
       <ReactIcon
-        className={cx(hw, className, variantClass)}
+        className={cx(hw)}
         title={!decorative ? title : undefined}
         {...a11yProps}
       />

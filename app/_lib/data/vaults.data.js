@@ -177,9 +177,7 @@ export async function getMemberVaultsForUser(userId) {
         vaults:vault_id (
           id,
           name,
-          user_id,
-          created_at,
-          updated_at
+          user_id
         )
       `,
     )

@@ -7,10 +7,14 @@ import {
 
 export async function createTreasureAction(payload) {
   try {
-    await createTreasureDb(payload);
-    return { ok: true };
+    const result = await createTreasureDb(payload, { includeLog: true });
+    return { ok: true, error: null, data: { log: result?.log ?? null } };
   } catch (e) {
-    return { ok: false, error: e?.message || "Create treasure failed." };
+    return {
+      ok: false,
+      error: e?.message || "Create treasure failed.",
+      data: null,
+    };
   }
 }
 
@@ -27,4 +31,33 @@ export async function getDefaultTreasuresAction({ vaultId }) {
       data: null,
     };
   }
+}
+
+//TODO update the edit treasures workflow to use an updateTreasureAction so we can handle logging.
+export async function updateTreasureAction(payload) {
+  try {
+    const updateResult = await updateTreasure({ id, vaultId, patch });
+
+    if (updateResult.ok) {
+      const { before, after } = updateResult.data;
+
+      const logInput = await buildVaultLogInput({
+        vaultId,
+        source: "treasures",
+        action: "update",
+        entityType: "treasures",
+        entityId: id,
+        before,
+        after,
+        labels: {
+          name: "Name",
+          description: "Description",
+          value: "Value",
+        },
+        message: "Treasure updated",
+      });
+
+      await safeCreateVaultLog({ tryCreateVaultLog, input: logInput });
+    }
+  } catch (error) {}
 }

@@ -78,7 +78,7 @@ export default function TreasuresTable({
                     <div className="flex gap-2">
                       <LinkButton
                         href={`/account/vaults/${vaultId}/treasures/${t.id}/edit`}
-                        variant="outline"
+                        variant="primary"
                         size="sm"
                       >
                         Edit

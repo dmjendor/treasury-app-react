@@ -1,8 +1,17 @@
-export function getButtonClasses({ variant = "primary", size = "md" }) {
+export function getButtonClasses({
+  variant = "primary",
+  size = "md",
+  focus = "ring", // "ring" | "none"
+}) {
   const base =
     "inline-flex items-center justify-center gap-2 rounded-lg font-medium " +
     "transition-colors select-none " +
-    "focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 focus:ring-offset-bg";
+    "focus:outline-none";
+
+  const focusClasses =
+    focus === "none"
+      ? "focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+      : "focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 focus:ring-offset-bg";
 
   const sizing =
     size === "sm"
@@ -29,5 +38,5 @@ export function getButtonClasses({ variant = "primary", size = "md" }) {
       "bg-primary-700 text-primary-50 border border-border hover:bg-primary-200 hover:text-primary-800";
   }
 
-  return `${base} ${sizing} ${variantClasses}`;
+  return `${base} ${focusClasses} ${sizing} ${variantClasses}`;
 }

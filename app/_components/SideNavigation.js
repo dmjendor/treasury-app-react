@@ -1,20 +1,33 @@
 "use client";
-import { HiHome } from "react-icons/hi";
 import SignOutButton from "./SignOutButton";
-import Link from "next/link";
 import { useParams, usePathname } from "next/navigation";
-import { HiOutlinePlusCircle } from "react-icons/hi2";
+import {
+  HiOutlineChevronDown,
+  HiOutlineChevronUp,
+  HiOutlinePlusCircle,
+} from "react-icons/hi2";
 import NavLink from "./NavLink";
 import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 import ChestIcon from "@/app/_components/icons/ChestIcon";
+import { useState } from "react";
+import { NavButton } from "@/app/_components/NavButton";
+import IconComponent from "@/app/_components/IconComponent";
 
-function SideNavigation() {
+function SideNavigation({ memberVaultLinks, userId, currentVault }) {
   const params = useParams();
   const pathname = usePathname();
 
   const vaultId = params?.vaultId; // available when route includes [vaultId]
+  const inAccountVaultRoute = pathname?.startsWith("/account/vaults/");
   const inVault = Boolean(vaultId);
+  const ownsCurrentVault =
+    inVault &&
+    inAccountVaultRoute &&
+    Boolean(userId) &&
+    (currentVault ? currentVault.user_id === userId : true);
+
+  const [showTools, setShowTools] = useState(true);
 
   const vaultBase = inVault
     ? `/account/vaults/${encodeURIComponent(vaultId)}`
@@ -41,67 +54,97 @@ function SideNavigation() {
           ""
         )}
         {/* Vault scoped */}
-        {inVault && (
+        {/* Vault scoped (owner only) */}
+        {ownsCurrentVault && (
+          <div className="space-y-2">
+            <NavButton
+              variant="accent"
+              onClick={() => setShowTools((s) => !s)}
+              aria-expanded={showTools}
+              iconRight={showTools ? HiOutlineChevronUp : HiOutlineChevronDown}
+            >
+              Current vault
+            </NavButton>
+
+            {showTools ? (
+              <div className="space-y-2">
+                <NavLink
+                  href={`${vaultBase}`}
+                  icon="ra-scroll-unfurled"
+                  label="Overview"
+                  active={pathname === vaultBase}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/containers`}
+                  icon={BackpackIcon}
+                  label="Containers"
+                  active={pathname?.startsWith(`${vaultBase}/containers`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/treasures`}
+                  icon="ra-sword"
+                  label="Treasures"
+                  active={pathname?.startsWith(`${vaultBase}/treasures`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/valuables`}
+                  icon="ra-diamond"
+                  label="Valuables"
+                  active={pathname?.startsWith(`${vaultBase}/valuables`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/currencies`}
+                  icon={TwoCoinsIcon}
+                  label="Currencies"
+                  active={pathname?.startsWith(`${vaultBase}/currencies`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/members`}
+                  icon="ra-double-team"
+                  label="Members"
+                  active={pathname?.startsWith(`${vaultBase}/members`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/permissions`}
+                  icon="ra-three-keys"
+                  label="Permissions"
+                  active={pathname?.startsWith(`${vaultBase}/permissions`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/settings`}
+                  icon="ra-cog"
+                  label="Settings"
+                  active={pathname?.startsWith(`${vaultBase}/settings`)}
+                />
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {memberVaultLinks && (
           <div className="space-y-2">
             <div className="px-3 text-xs uppercase tracking-wide text-muted-fg">
-              Current vault
+              Vaults
             </div>
-
-            <NavLink
-              href={`${vaultBase}`}
-              icon="ra-scroll-unfurled"
-              label="Overview"
-              active={pathname === vaultBase}
-            />
-
-            <NavLink
-              href={`${vaultBase}/containers`}
-              icon={BackpackIcon}
-              label="Containers"
-              active={pathname?.startsWith(`${vaultBase}/containers`)}
-            />
-
-            <NavLink
-              href={`${vaultBase}/treasures`}
-              icon="ra-sword"
-              label="Treasures"
-              active={pathname?.startsWith(`${vaultBase}/treasures`)}
-            />
-
-            <NavLink
-              href={`${vaultBase}/valuables`}
-              icon="ra-diamond"
-              label="Valuables"
-              active={pathname?.startsWith(`${vaultBase}/valuables`)}
-            />
-
-            <NavLink
-              href={`${vaultBase}/currencies`}
-              icon={TwoCoinsIcon}
-              label="Currencies"
-              active={pathname?.startsWith(`${vaultBase}/currencies`)}
-            />
-
-            <NavLink
-              href={`${vaultBase}/members`}
-              icon="ra-double-team"
-              label="Members"
-              active={pathname?.startsWith(`${vaultBase}/members`)}
-            />
-
-            <NavLink
-              href={`${vaultBase}/permissions`}
-              icon="ra-three-keys"
-              label="Permissions"
-              active={pathname?.startsWith(`${vaultBase}/permissions`)}
-            />
-
-            <NavLink
-              href={`${vaultBase}/settings`}
-              icon="ra-cog"
-              label="Settings"
-              active={pathname === "/account/settings"}
-            />
+            {memberVaultLinks.map((link) => {
+              return (
+                <NavLink
+                  key={link.id}
+                  href={link.href}
+                  icon={ChestIcon}
+                  label={link.name}
+                  className="text-accent-700"
+                  active={pathname?.startsWith("/public/vaults/")}
+                />
+              );
+            })}
           </div>
         )}
         <li className="mt-auto">

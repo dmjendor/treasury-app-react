@@ -5,6 +5,7 @@
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
+import { tryCreateVaultLog } from "@/app/_lib/data/logs.data";
 
 /**
  * Fetch treasures for a vault.
@@ -18,6 +19,7 @@ export async function getTreasuresForVault(vaultId) {
     .from("treasures")
     .select("*")
     .eq("vault_id", vaultId)
+    .or("archived.is.null,archived.eq.false")
     .order("name", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -38,6 +40,7 @@ export async function getTreasuresForContainer(vaultId, containerId) {
     .select("*")
     .eq("vault_id", vaultId)
     .eq("container_id", containerId)
+    .or("archived.is.null,archived.eq.false")
     .order("name", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -49,7 +52,7 @@ export async function getTreasuresForContainer(vaultId, containerId) {
  * @param {object} treasureObj
  * @returns {Promise<Array<object>>}
  */
-export async function createTreasureDb(treasureObj) {
+export async function createTreasureDb(treasureObj, options = {}) {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("treasures")
@@ -57,6 +60,23 @@ export async function createTreasureDb(treasureObj) {
     .select();
 
   if (error) throw new Error(error.message);
+
+  const createdTreasure = Array.isArray(data) ? data[0] : null;
+  const logInput = await buildVaultLogInput({
+    vaultId: createdTreasure.vault_id,
+    source: "treasures",
+    action: "create",
+    entityType: "treasures",
+    entityId: createdTreasure.id,
+    after: createdTreasure,
+    message: "Treasure created",
+  });
+
+  await safeCreateVaultLog({ tryCreateVaultLog, input: logInput });
+  if (!logResult.ok) {
+    console.error("Treasure log failed:", logResult.error);
+  }
+
   return data;
 }
 
@@ -91,6 +111,7 @@ export async function getTreasureForVaultById(vaultId, treasureId) {
     .select("*")
     .eq("vault_id", vaultId)
     .eq("id", treasureId)
+    .or("archived.is.null,archived.eq.false")
     .single();
 
   if (error) throw new Error(error.message);
@@ -104,12 +125,20 @@ export async function getTreasureForVaultById(vaultId, treasureId) {
  */
 export async function deleteTreasureForVaultById(vaultId, treasureId) {
   const supabase = await getSupabase();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("treasures")
-    .delete()
+    .update({ archived: true })
     .eq("vault_id", vaultId)
     .eq("id", treasureId);
   if (error) throw new Error(error.message);
+
+  await tryCreateVaultLog({
+    vaultId,
+    source: "treasures",
+    action: "archive",
+    entityType: "treasures",
+    entityId: treasureId,
+  });
 }
 
 /**
@@ -126,14 +155,26 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
   delete safeUpdates.id;
   delete safeUpdates.vault_id;
 
-  const { data, error } = await supabase
+  const { data: before, error: beforeError } = await supabase
+    .from("treasures")
+    .select("*")
+    .eq("id", id)
+    .eq("vault_id", vaultId)
+    .single();
+
+  if (beforeError) return { ok: false, error: beforeError.message, data: null };
+
+  const { data: after, error: updateError } = await supabase
     .from("treasures")
     .update(safeUpdates)
-    .eq("id", treasureId)
+    .eq("id", id)
     .eq("vault_id", vaultId)
     .select("*")
     .single();
 
-  if (error) throw new Error(error.message);
+  if (updateError) return { ok: false, error: updateError.message, data: null };
+
+  return { ok: true, error: null, data: { before, after } };
+
   return data;
 }

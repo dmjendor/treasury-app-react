@@ -8,7 +8,10 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/app/_lib/auth";
 import { formDataToObject, requireUserId } from "@/app/_lib/actions/_utils";
-import { updateVaultSettingsDb } from "@/app/_lib/data/vaults.data";
+import {
+  getMemberVaultsForUser,
+  updateVaultSettingsDb,
+} from "@/app/_lib/data/vaults.data";
 
 /**
  * Create a vault.
@@ -75,4 +78,17 @@ export async function updateVaultSettingsAction(input) {
       error: e?.message || "Failed to update vault settings.",
     };
   }
+}
+
+export async function getMemberVaultNavItemsAction(userId) {
+  const { data, error } = await getMemberVaultsForUser(userId);
+  if (error) return { data: null, error };
+
+  const items = data.map((v) => ({
+    id: v.id,
+    name: v.name,
+    href: `/public/vaults/${v.id}`,
+  }));
+
+  return { data: items, error: null };
 }
