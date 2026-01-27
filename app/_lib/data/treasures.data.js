@@ -61,22 +61,6 @@ export async function createTreasureDb(treasureObj, options = {}) {
 
   if (error) throw new Error(error.message);
 
-  const createdTreasure = Array.isArray(data) ? data[0] : null;
-  const logInput = await buildVaultLogInput({
-    vaultId: createdTreasure.vault_id,
-    source: "treasures",
-    action: "create",
-    entityType: "treasures",
-    entityId: createdTreasure.id,
-    after: createdTreasure,
-    message: "Treasure created",
-  });
-
-  await safeCreateVaultLog({ tryCreateVaultLog, input: logInput });
-  if (!logResult.ok) {
-    console.error("Treasure log failed:", logResult.error);
-  }
-
   return data;
 }
 
@@ -158,7 +142,7 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
   const { data: before, error: beforeError } = await supabase
     .from("treasures")
     .select("*")
-    .eq("id", id)
+    .eq("id", treasureId)
     .eq("vault_id", vaultId)
     .single();
 
@@ -167,7 +151,7 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
   const { data: after, error: updateError } = await supabase
     .from("treasures")
     .update(safeUpdates)
-    .eq("id", id)
+    .eq("id", treasureId)
     .eq("vault_id", vaultId)
     .select("*")
     .single();
@@ -175,6 +159,4 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
   if (updateError) return { ok: false, error: updateError.message, data: null };
 
   return { ok: true, error: null, data: { before, after } };
-
-  return data;
 }

@@ -454,14 +454,20 @@
 }
 
 @layer components {
+  .spinner-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8, 12, 18, 0.35);
+    z-index: 1000;
+  }
+
   .spinner {
-    margin: 3.2rem auto 1.6rem;
     width: 60px;
     aspect-ratio: 1;
     border-radius: 50%;
-    position: absolute;
-    top: auto;
-    bottom: auto;
     border: 8px solid var(--color-primary-900);
     border-right-color: var(--color-primary-200);
     animation: rotate 1s infinite linear;

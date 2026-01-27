@@ -3,6 +3,7 @@ import "@/app/_styles/globals.css";
 import "@/app/_styles/rpg-awesome.min.css";
 import Header from "./_components/Header";
 import ToasterProvider from "@/app/_components/ToasterProvider";
+import Providers from "@/app/_context/Providers";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +32,12 @@ export default function RootLayout({ children, modal }) {
       <body
         className={`bg-surface-900 text-primary-100 min-h-screen antialiased flex flex-col relative `}
       >
-        <Header />
-        {children}
-        {modal}
-        <ToasterProvider />
+        <Providers>
+          <Header />
+          {children}
+          {modal}
+          <ToasterProvider />
+        </Providers>
       </body>
     </html>
   );

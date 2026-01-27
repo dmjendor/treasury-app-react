@@ -7,6 +7,8 @@ import LogsControlsClient from "@/app/_components/LogsControlsCLient";
 import IconComponent from "@/app/_components/IconComponent";
 import { LinkButton } from "@/app/_components/LinkButton";
 import { getRouteParams } from "@/app/_lib/routing/params";
+import { formatChangesSummary } from "@/app/utils/loggingUtils";
+import { getSearchParams } from "@/app/_lib/routing/searchParams";
 
 function clampPage(n) {
   const x = Number(n);
@@ -19,11 +21,10 @@ function parsePageSize(n) {
 }
 
 function statusStyles(status) {
-  if (status === "ok")
-    return "text-accent-300 border-accent-700 bg-primary-600";
+  if (status === "ok") return "text-accent-200 border-accent-700 bg-accent-600";
   if (status === "warning")
-    return "text-accent-200 border-accent-700 bg-primary-600";
-  return "text-danger-300 border-danger-700 bg-primary-600";
+    return "text-warning-200 border-warning-700 bg-warning-600";
+  return "text-danger-300 border-danger-700 bg-danger-600";
 }
 
 function safeJsonPreview(value) {
@@ -37,10 +38,9 @@ function safeJsonPreview(value) {
 
 export default async function VaultLogsPage({ params, searchParams }) {
   const { vaultId } = await getRouteParams(params);
-
-  const page = clampPage(searchParams?.page);
-  const pageSize = parsePageSize(searchParams?.pageSize);
-
+  const { pageData, pageSizeData } = await getSearchParams(searchParams);
+  const page = clampPage(pageData);
+  const pageSize = parsePageSize(pageSizeData);
   const result = await getVaultLogs({ vaultId, page, pageSize });
   const logs = result.ok ? result.data.logs : [];
   const total = result.ok ? result.data.total : 0;
@@ -97,10 +97,7 @@ export default async function VaultLogsPage({ params, searchParams }) {
                     Status
                   </th>
                   <th className="text-left text-primary-200 text-xs font-medium px-4 py-3">
-                    Entity
-                  </th>
-                  <th className="text-left text-primary-200 text-xs font-medium px-4 py-3">
-                    Actor
+                    Change By
                   </th>
                   <th className="text-left text-primary-200 text-xs font-medium px-4 py-3">
                     Message
@@ -127,12 +124,8 @@ export default async function VaultLogsPage({ params, searchParams }) {
                       ? new Date(log.created_at).toLocaleString()
                       : "";
 
-                    const actor =
-                      log.actor_email || log.actor_user_id || "System";
-                    const entity = log.entity_type
-                      ? `${log.entity_type}${log.entity_id ? `:${log.entity_id}` : ""}`
-                      : "";
-
+                    const actor = log.actor_email || "System";
+                    const changesSummary = formatChangesSummary(log.changes, 2);
                     const changesPreview = safeJsonPreview(log.changes);
                     const metaPreview = safeJsonPreview(log.meta);
 
@@ -156,23 +149,15 @@ export default async function VaultLogsPage({ params, searchParams }) {
                               statusStyles(log.status),
                             ].join(" ")}
                           >
-                            <IconComponent
-                              icon="Circle"
-                              className="h-3 w-3"
-                            />
                             {log.status}
                           </span>
                         </td>
 
-                        <td className="px-4 py-3 text-primary-100 text-sm max-w-[360px] truncate">
-                          {entity}
-                        </td>
-
-                        <td className="px-4 py-3 text-primary-100 text-sm max-w-[240px] truncate">
+                        <td className="px-4 py-3 text-primary-100 text-sm max-w-60 truncate">
                           {actor}
                         </td>
 
-                        <td className="px-4 py-3 text-primary-100 text-sm max-w-[520px] truncate">
+                        <td className="px-4 py-3 text-primary-100 text-sm max-w-130 truncate">
                           {log.message || ""}
                         </td>
 
@@ -200,8 +185,8 @@ export default async function VaultLogsPage({ params, searchParams }) {
                                     <div className="text-primary-200 text-xs mb-2">
                                       changes
                                     </div>
-                                    <pre className="text-primary-50 text-xs whitespace-pre-wrap break-words">
-                                      {changesPreview}
+                                    <pre className="text-primary-50 text-xs whitespace-pre-wrap wrap-break-word">
+                                      {changesSummary}
                                     </pre>
                                   </div>
                                 ) : null}
@@ -211,7 +196,7 @@ export default async function VaultLogsPage({ params, searchParams }) {
                                     <div className="text-primary-200 text-xs mb-2">
                                       meta
                                     </div>
-                                    <pre className="text-primary-50 text-xs whitespace-pre-wrap break-words">
+                                    <pre className="text-primary-50 text-xs whitespace-pre-wrap wrap-break-word">
                                       {metaPreview}
                                     </pre>
                                   </div>

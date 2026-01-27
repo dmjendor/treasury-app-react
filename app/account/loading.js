@@ -1,5 +1,5 @@
-import Spinner from "@/app/_components/Spinner";
+import SpinnerGate from "@/app/_components/SpinnerGate";
 
 export default function Loading() {
-  return <Spinner />;
+  return <SpinnerGate />;
 }

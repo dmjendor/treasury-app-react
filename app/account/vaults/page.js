@@ -1,4 +1,4 @@
-import Spinner from "@/app/_components/Spinner";
+import SpinnerGate from "@/app/_components/SpinnerGate";
 import VaultList from "@/app/_components/VaultList";
 import { Suspense } from "react";
 
@@ -9,7 +9,7 @@ export const metadata = {
 function page() {
   return (
     <div>
-      <Suspense fallback={<Spinner />}>
+      <Suspense fallback={<SpinnerGate />}>
         <VaultList />
       </Suspense>
     </div>

@@ -8,7 +8,7 @@ import NewTreasuresClient from "@/app/_components/NewTreasuresClient";
 export default async function Page() {
   return (
     <Modal title="Add Treasure">
-      <NewTreasuresClient isModal />
+      <NewTreasuresClient isModal={true} />
     </Modal>
   );
 }

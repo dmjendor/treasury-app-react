@@ -33,6 +33,7 @@ function variantToClass(variant) {
   if (variant === "primary-dark") return "text-primary-800";
   if (variant === "danger") return "text-danger-200";
   if (variant === "danger-dark") return "text-danger-800";
+  if (variant === "success") return "text-success-800";
   if (variant === "inherit") return "";
   return "text-fg";
 }

@@ -13,6 +13,7 @@ import ChestIcon from "@/app/_components/icons/ChestIcon";
 import { useState } from "react";
 import { NavButton } from "@/app/_components/NavButton";
 import IconComponent from "@/app/_components/IconComponent";
+import HoldingsIcon from "@/app/_components/icons/CashIcon";
 
 function SideNavigation({ memberVaultLinks, userId, currentVault }) {
   const params = useParams();
@@ -81,6 +82,12 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
                   label="Containers"
                   active={pathname?.startsWith(`${vaultBase}/containers`)}
                 />
+                <NavLink
+                  href={`${vaultBase}/holdings`}
+                  icon={HoldingsIcon}
+                  label="Holdings"
+                  active={pathname?.startsWith(`${vaultBase}/holdings`)}
+                />
 
                 <NavLink
                   href={`${vaultBase}/treasures`}
@@ -95,7 +102,7 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
                   label="Valuables"
                   active={pathname?.startsWith(`${vaultBase}/valuables`)}
                 />
-
+                <hr />
                 <NavLink
                   href={`${vaultBase}/currencies`}
                   icon={TwoCoinsIcon}
@@ -108,6 +115,13 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
                   icon="ra-double-team"
                   label="Members"
                   active={pathname?.startsWith(`${vaultBase}/members`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/logs`}
+                  icon="ra-eyeball"
+                  label="Logs"
+                  active={pathname?.startsWith(`${vaultBase}/logs`)}
                 />
 
                 <NavLink

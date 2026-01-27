@@ -1,5 +1,5 @@
 /**
- * Data: Coin
+ * Data: Holdings
  * Server only.
  */
 import "server-only";
@@ -7,7 +7,7 @@ import { getSupabase } from "@/app/_lib/supabase";
 import { auth } from "@/app/_lib/auth";
 
 /**
- * - Get currency balances for a vault from unarchived coin entries.
+ * - Get currency balances for a vault from unarchived holdings entries.
  * - @param {string} vaultId
  * - @returns {Promise<Array<{currency_id:string,name:string,code:string,total_value:number}>>}
  */
@@ -17,7 +17,7 @@ export const getVaultCurrencyBalances = async function (vaultId) {
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
-    .from("coin")
+    .from("holdings")
     .select(
       `
         value,
@@ -57,17 +57,17 @@ export const getVaultCurrencyBalances = async function (vaultId) {
 };
 
 /**
- * - List unarchived coin entries for a vault.
+ * - List unarchived holdings entries for a vault.
  * - @param {string} vaultId
  * - @returns {Promise<Array<{id:string,value:number,currency_id:string,timestamp:string,changeby:string|null}>>}
  */
-export const listUnarchivedCoinEntries = async function (vaultId) {
+export const listUnarchivedHoldingsEntries = async function (vaultId) {
   const session = await auth();
   if (!session) throw new Error("You must be logged in.");
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
-    .from("coin")
+    .from("holdings")
     .select("id,value,currency_id,timestamp,changeby")
     .eq("vault_id", vaultId)
     .eq("archived", false)
@@ -78,11 +78,15 @@ export const listUnarchivedCoinEntries = async function (vaultId) {
 };
 
 /**
- * - Create a coin entry for a vault.
+ * - Create a holdings entry for a vault.
  * - @param {{ vaultId:string, currencyId:string, value:number }} input
  * - @returns {Promise<{id:string,value:number,currency_id:string,vault_id:string,archived:boolean,timestamp:string}>}
  */
-export const createCoinEntry = async function ({ vaultId, currencyId, value }) {
+export const createHoldingsEntry = async function ({
+  vaultId,
+  currencyId,
+  value,
+}) {
   const session = await auth();
   if (!session) throw new Error("You must be logged in.");
 
@@ -94,7 +98,7 @@ export const createCoinEntry = async function ({ vaultId, currencyId, value }) {
   const userId = session?.user?.userId || null;
 
   const { data, error } = await supabase
-    .from("coin")
+    .from("holdings")
     .insert({
       vault_id: vaultId,
       currency_id: currencyId,
@@ -111,11 +115,11 @@ export const createCoinEntry = async function ({ vaultId, currencyId, value }) {
 };
 
 /**
- * - Archive coin entries by id for a vault.
+ * - Archive holdings entries by id for a vault.
  * - @param {{ vaultId:string, ids:string[] }} input
  * - @returns {Promise<number>}
  */
-export const archiveCoinEntries = async function ({ vaultId, ids }) {
+export const archiveHoldingsEntries = async function ({ vaultId, ids }) {
   const session = await auth();
   if (!session) throw new Error("You must be logged in.");
   if (!Array.isArray(ids) || ids.length === 0) return 0;
@@ -123,7 +127,7 @@ export const archiveCoinEntries = async function ({ vaultId, ids }) {
   const supabase = await getSupabase();
 
   const { count, error } = await supabase
-    .from("coin")
+    .from("holdings")
     .update({ archived: true })
     .eq("vault_id", vaultId)
     .eq("archived", false)
@@ -135,7 +139,7 @@ export const archiveCoinEntries = async function ({ vaultId, ids }) {
 };
 
 /**
- * - Get unarchived coin totals per currency for a vault.
+ * - Get unarchived holdings totals per currency for a vault.
  * - @param {string} vaultId
  * - @returns {Promise<Record<string, { currency_id:string, total:number, ids:string[] }>>}
  */
@@ -145,7 +149,7 @@ export const getUnarchivedTotalsByCurrency = async function (vaultId) {
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
-    .from("coin")
+    .from("holdings")
     .select("id,currency_id,value")
     .eq("vault_id", vaultId)
     .eq("archived", false);
@@ -163,11 +167,11 @@ export const getUnarchivedTotalsByCurrency = async function (vaultId) {
 };
 
 /**
- * - Split unarchived coin totals for a vault into equal shares and archive the consumed entries.
+ * - Split unarchived holdings totals for a vault into equal shares and archive the consumed entries.
  * - @param {{ vaultId:string, partyMemberCount:number, keepPartyShare:boolean }} input
  * - @returns {Promise<{byCurrency:Array<{currency_id:string,total:number,shares:number,share_amount:number,remainder:number,archived_count:number,created_count:number}>}>}
  */
-export const splitVaultCoin = async function ({
+export const splitVaultHoldings = async function ({
   vaultId,
   partyMemberCount,
   keepPartyShare,
@@ -214,7 +218,7 @@ export const splitVaultCoin = async function ({
   }
 
   const allIds = results.flatMap((r) => r.ids);
-  const archivedCount = await archiveCoinEntries({ vaultId, ids: allIds });
+  const archivedCount = await archiveHoldingsEntries({ vaultId, ids: allIds });
 
   if (archivedCount !== allIds.length) {
     throw new Error(
@@ -252,7 +256,7 @@ export const splitVaultCoin = async function ({
   let createdCount = 0;
   if (newRows.length > 0) {
     const { data: created, error: insertError } = await supabase
-      .from("coin")
+      .from("holdings")
       .insert(newRows)
       .select("id");
     if (insertError) throw insertError;

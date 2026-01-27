@@ -2,11 +2,11 @@
 
 import {
   getVaultCurrencyBalances,
-  listUnarchivedCoinEntries,
-  createCoinEntry,
-  archiveCoinEntries,
-  splitVaultCoin,
-} from "@/app/_lib/data/coin.data";
+  listUnarchivedHoldingsEntries,
+  createHoldingsEntry,
+  archiveHoldingsEntries,
+  splitVaultHoldings,
+} from "@/app/_lib/data/holdings.data";
 
 /**
  * - Get currency balances for a vault.
@@ -27,75 +27,77 @@ export const getVaultCurrencyBalancesAction = async function ({ vaultId }) {
 };
 
 /**
- * - List unarchived coin entries for a vault.
+ * - List unarchived holdings entries for a vault.
  * - @param {{ vaultId:string }} input
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
-export const listUnarchivedCoinEntriesAction = async function ({ vaultId }) {
+export const listUnarchivedHoldingsEntriesAction = async function ({
+  vaultId,
+}) {
   try {
-    const data = await listUnarchivedCoinEntries(vaultId);
+    const data = await listUnarchivedHoldingsEntries(vaultId);
     return { ok: true, error: null, data };
   } catch (e) {
     return {
       ok: false,
-      error: e?.message || "Could not load coin entries.",
+      error: e?.message || "Could not load holdings entries.",
       data: null,
     };
   }
 };
 
 /**
- * - Create a coin entry for a vault.
+ * - Create a holdings entry for a vault.
  * - @param {{ vaultId:string, currencyId:string, value:number }} input
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
-export const createCoinEntryAction = async function ({
+export const createHoldingsEntryAction = async function ({
   vaultId,
   currencyId,
   value,
 }) {
   try {
-    const data = await createCoinEntry({ vaultId, currencyId, value });
+    const data = await createHoldingsEntry({ vaultId, currencyId, value });
     return { ok: true, error: null, data };
   } catch (e) {
     return {
       ok: false,
-      error: e?.message || "Could not create coin entry.",
+      error: e?.message || "Could not create holdings entry.",
       data: null,
     };
   }
 };
 
 /**
- * - Archive coin entries by id for a vault.
+ * - Archive holdings entries by id for a vault.
  * - @param {{ vaultId:string, ids:string[] }} input
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
-export const archiveCoinEntriesAction = async function ({ vaultId, ids }) {
+export const archiveHoldingsEntriesAction = async function ({ vaultId, ids }) {
   try {
-    const count = await archiveCoinEntries({ vaultId, ids });
+    const count = await archiveHoldingsEntries({ vaultId, ids });
     return { ok: true, error: null, data: { archivedCount: count } };
   } catch (e) {
     return {
       ok: false,
-      error: e?.message || "Could not archive coin entries.",
+      error: e?.message || "Could not archive holdings entries.",
       data: null,
     };
   }
 };
 
 /**
- * - Split unarchived coin totals and archive consumed entries.
+ * - Split unarchived holdings totals and archive consumed entries.
  * - @param {{ vaultId:string, partyMemberCount:number, keepPartyShare:boolean }} input
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
-export const splitVaultCoinAction = async function ({
+export const splitVaultHoldingsAction = async function ({
   vaultId,
   partyMemberCount,
   keepPartyShare,
 }) {
   try {
-    const data = await splitVaultCoin({
+    const data = await splitVaultHoldings({
       vaultId,
       partyMemberCount,
       keepPartyShare,
@@ -104,7 +106,7 @@ export const splitVaultCoinAction = async function ({
   } catch (e) {
     return {
       ok: false,
-      error: e?.message || "Could not split coin.",
+      error: e?.message || "Could not split holdings.",
       data: null,
     };
   }

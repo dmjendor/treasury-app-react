@@ -27,7 +27,7 @@ export async function buildVaultLogInput({
   const actorUserId = session?.user?.userId ?? null;
   const actorEmail = session?.user?.email ?? null;
 
-  let finalChanges = changes ?? null;
+  let finalChanges = changes ?? after;
 
   // If before/after provided, prefer diff format for GM friendly display
   if (before && after) {
