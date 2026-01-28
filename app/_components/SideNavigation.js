@@ -10,9 +10,10 @@ import NavLink from "./NavLink";
 import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 import ChestIcon from "@/app/_components/icons/ChestIcon";
+import ScrollQuillIcon from "@/app/_components/icons/ScrollQuillIcon";
 import { useState } from "react";
 import { NavButton } from "@/app/_components/NavButton";
-import IconComponent from "@/app/_components/IconComponent";
+
 import HoldingsIcon from "@/app/_components/icons/CashIcon";
 
 function SideNavigation({ memberVaultLinks, userId, currentVault }) {
@@ -77,12 +78,6 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
                 />
 
                 <NavLink
-                  href={`${vaultBase}/containers`}
-                  icon={BackpackIcon}
-                  label="Containers"
-                  active={pathname?.startsWith(`${vaultBase}/containers`)}
-                />
-                <NavLink
                   href={`${vaultBase}/holdings`}
                   icon={HoldingsIcon}
                   label="Holdings"
@@ -103,6 +98,20 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
                   active={pathname?.startsWith(`${vaultBase}/valuables`)}
                 />
                 <hr />
+                <NavLink
+                  href={`${vaultBase}/preprewards`}
+                  icon={ScrollQuillIcon}
+                  label="Prepare Rewards"
+                  active={pathname?.startsWith(`${vaultBase}/preprewards`)}
+                />
+
+                <NavLink
+                  href={`${vaultBase}/containers`}
+                  icon={BackpackIcon}
+                  label="Containers"
+                  active={pathname?.startsWith(`${vaultBase}/containers`)}
+                />
+
                 <NavLink
                   href={`${vaultBase}/currencies`}
                   icon={TwoCoinsIcon}

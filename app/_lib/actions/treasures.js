@@ -108,3 +108,45 @@ export async function updateTreasureAction({ id, vaultId, patch }) {
     };
   }
 }
+
+/**
+ * - Move a treasure to a new container.
+ * @param {{ vaultId: string, treasureId: string, containerId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}
+ */
+export async function moveTreasureToContainerAction({
+  vaultId,
+  treasureId,
+  containerId,
+}) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { ok: false, error: "You must be logged in.", data: null };
+    }
+
+    if (!vaultId) return { ok: false, error: "Missing vault id.", data: null };
+    if (!treasureId)
+      return { ok: false, error: "Missing treasure id.", data: null };
+
+    const updateResult = await updateTreasureForVaultById(vaultId, treasureId, {
+      container_id: containerId,
+    });
+
+    if (!updateResult.ok) {
+      return {
+        ok: false,
+        error: updateResult.error || "Move treasure failed.",
+        data: null,
+      };
+    }
+
+    return { ok: true, error: null, data: updateResult.data?.after || null };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || "Move treasure failed.",
+      data: null,
+    };
+  }
+}

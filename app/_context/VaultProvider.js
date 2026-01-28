@@ -1,22 +1,51 @@
 "use client";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const VaultContext = createContext(undefined);
 
 function VaultProvider({ children, vault }) {
   const [currentVault, setCurrentVault] = useState(vault ?? null);
+  const [holdingsVersion, setHoldingsVersion] = useState(0);
 
   function updateVault(next) {
     setCurrentVault(next ?? null);
   }
+
+  function invalidateHoldings() {
+    setHoldingsVersion((prev) => prev + 1);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("vault:holdings:invalidate", {
+          detail: { vaultId: currentVault?.id },
+        }),
+      );
+    }
+  }
+
+  useEffect(() => {
+    function handleInvalidate(event) {
+      const targetId = event?.detail?.vaultId;
+      if (!targetId || !currentVault?.id) return;
+      if (String(targetId) !== String(currentVault.id)) return;
+      setHoldingsVersion((prev) => prev + 1);
+    }
+
+    if (typeof window === "undefined") return;
+    window.addEventListener("vault:holdings:invalidate", handleInvalidate);
+    return () => {
+      window.removeEventListener("vault:holdings:invalidate", handleInvalidate);
+    };
+  }, [currentVault?.id]);
 
   const value = useMemo(
     () => ({
       vault: currentVault,
       setVault: setCurrentVault,
       updateVault,
+      holdingsVersion,
+      invalidateHoldings,
     }),
-    [currentVault]
+    [currentVault, holdingsVersion]
   );
 
   return (

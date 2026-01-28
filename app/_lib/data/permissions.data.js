@@ -434,3 +434,44 @@ export async function getVaultMembersWithPermissions(vaultId, userId) {
 
   return { data: data || [], error };
 }
+
+/**
+ * - Create an owner permissions row for a vault.
+ * @param {{ vaultId: string, userId: string }} params
+ * @returns {Promise<{ ok: boolean, error: string, data: any }>}
+ */
+export async function createOwnerPermission({ vaultId, userId }) {
+  if (!vaultId || !userId) {
+    return {
+      ok: false,
+      error: "vaultId and userId are required.",
+      data: null,
+    };
+  }
+
+  const supabase = await getSupabase();
+  const acceptedAt = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("permissions")
+    .insert({
+      vault_id: vaultId,
+      user_id: userId,
+      email: null,
+      can_view: true,
+      transfer_coin_in: true,
+      transfer_coin_out: true,
+      transfer_treasures_in: true,
+      transfer_treasures_out: true,
+      transfer_valuables_in: true,
+      transfer_valuables_out: true,
+      created_by: userId,
+      invited_at: null,
+      accepted_at: acceptedAt,
+    })
+    .select("*")
+    .single();
+
+  if (error) return { ok: false, error: error.message, data: null };
+  return { ok: true, error: "", data };
+}

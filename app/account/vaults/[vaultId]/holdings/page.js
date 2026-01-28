@@ -1,5 +1,6 @@
 // app/account/vaults/[vaultId]/holdings/page.js
 import HoldingsTableClient from "@/app/account/vaults/[vaultId]/holdings/HoldingsTableClient";
+import { LinkButton } from "@/app/_components/LinkButton";
 import { getCurrenciesForVault } from "@/app/_lib/data/currencies.data";
 import {
   getVaultCurrencyBalances,
@@ -112,10 +113,15 @@ export default async function HoldingsPage({ params, searchParams }) {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-fg">Holdings</h1>
-          <p className="text-sm text-muted-fg">
-            Showing {rows.length} of {total} entries.
-          </p>
         </div>
+        <LinkButton
+          href={`/account/vaults/${vaultId}/holdings/new`}
+          variant="accent"
+          size="lg"
+          className="self-start"
+        >
+          Add
+        </LinkButton>
       </header>
 
       {!loadError ? (
@@ -131,13 +137,11 @@ export default async function HoldingsPage({ params, searchParams }) {
                 className="rounded-2xl border border-border bg-primary-600 p-4 text-primary-50"
               >
                 <div className="text-xs text-primary-200">
-                  {card.code || card.name}
+                  {card.name} - Rate{" "}
+                  {Number.isFinite(Number(card.rate)) ? card.rate : "--"}
                 </div>
                 <div className="mt-1 text-2xl font-semibold">
-                  {formatAmount(card.total)}
-                </div>
-                <div className="mt-1 text-xs text-primary-200">
-                  Rate {Number.isFinite(Number(card.rate)) ? card.rate : "--"}
+                  {formatAmount(card.total)} {card.code}
                 </div>
               </div>
             ))}

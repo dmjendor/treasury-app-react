@@ -1,14 +1,18 @@
 // app/account/vaults/[vaultId]/holdings/HoldingsTableClient.js
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { HiOutlineTrash } from "react-icons/hi2";
 import { Button } from "@/app/_components/Button";
 import IconComponent from "@/app/_components/IconComponent";
 import { LinkButton } from "@/app/_components/LinkButton";
 import LogsControlsClient from "@/app/_components/LogsControlsCLient";
-import { archiveHoldingsEntriesAction } from "@/app/_lib/actions/holdings";
+import {
+  archiveHoldingsEntriesAction,
+  getHoldingsSnapshotAction,
+} from "@/app/_lib/actions/holdings";
+import { useVault } from "@/app/_context/VaultProvider";
 
 function formatTimestamp(value) {
   if (!value) return "";
@@ -36,13 +40,64 @@ export default function HoldingsTableClient({
   totalPages,
 }) {
   const router = useRouter();
+  const { holdingsVersion } = useVault();
   const [tableRows, setTableRows] = useState(Array.isArray(rows) ? rows : []);
+  const [deletedIds, setDeletedIds] = useState([]);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
+  const [localTotal, setLocalTotal] = useState(total);
+  const [localTotalPages, setLocalTotalPages] = useState(totalPages);
+  const [localCurrentPage, setLocalCurrentPage] = useState(currentPage);
 
   useEffect(() => {
     setTableRows(Array.isArray(rows) ? rows : []);
-  }, [rows]);
+    setDeletedIds([]);
+    setLocalTotal(total);
+    setLocalTotalPages(totalPages);
+    setLocalCurrentPage(currentPage);
+  }, [rows, total, totalPages, currentPage]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function refreshHoldings() {
+      if (!vaultId) return;
+      setError("");
+      const res = await getHoldingsSnapshotAction({ vaultId });
+      if (!res?.ok) {
+        if (!cancelled) {
+          setError(res?.error || "Could not load holdings entries.");
+        }
+        return;
+      }
+      if (cancelled) return;
+      const allRows = Array.isArray(res.data) ? res.data : [];
+      const nextTotal = allRows.length;
+      const nextTotalPages = Math.max(1, Math.ceil(nextTotal / pageSize));
+      const nextPage = Math.min(currentPage, nextTotalPages);
+      const startIndex = (nextPage - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+
+      setDeletedIds([]);
+      setTableRows(allRows.slice(startIndex, endIndex));
+      setLocalTotal(nextTotal);
+      setLocalTotalPages(nextTotalPages);
+      setLocalCurrentPage(nextPage);
+    }
+
+    refreshHoldings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [vaultId, holdingsVersion]);
+
+  const displayRows = useMemo(() => {
+    const list = Array.isArray(tableRows) ? tableRows : [];
+    if (!deletedIds.length) return list;
+    const deletedSet = new Set(deletedIds);
+    return list.filter((row) => !deletedSet.has(row.id));
+  }, [tableRows, deletedIds]);
 
 
   function hrefFor(nextPage) {
@@ -58,8 +113,9 @@ export default function HoldingsTableClient({
     setError("");
     setBusyId(entryId);
 
-    const snapshot = tableRows;
-    setTableRows((prev) => prev.filter((row) => row.id !== entryId));
+    setDeletedIds((prev) =>
+      prev.includes(entryId) ? prev : [...prev, entryId],
+    );
 
     const res = await archiveHoldingsEntriesAction({
       vaultId,
@@ -68,7 +124,7 @@ export default function HoldingsTableClient({
 
     if (!res?.ok) {
       setError(res?.error || "Delete failed.");
-      setTableRows(snapshot);
+      setDeletedIds((prev) => prev.filter((id) => id !== entryId));
       setBusyId("");
       return;
     }
@@ -81,7 +137,7 @@ export default function HoldingsTableClient({
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-fg">
-          Page {currentPage} of {totalPages} (Total: {total})
+          Page {localCurrentPage} of {localTotalPages} (Total: {localTotal})
         </p>
 
         <LogsControlsClient
@@ -116,7 +172,7 @@ export default function HoldingsTableClient({
               </tr>
             </thead>
             <tbody>
-              {tableRows.length === 0 ? (
+              {displayRows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}
@@ -126,7 +182,7 @@ export default function HoldingsTableClient({
                   </td>
                 </tr>
               ) : (
-                tableRows.map((row) => (
+                displayRows.map((row) => (
                   <tr
                     key={row.id}
                     className="border-b border-primary-800 last:border-b-0"
@@ -166,20 +222,20 @@ export default function HoldingsTableClient({
 
         <div className="flex items-center bg-accent-600 justify-between gap-4 px-4 py-3 border-t border-primary-800">
           <p className="text-primary-200 text-sm">
-            Page {currentPage} of {totalPages}
+            Page {localCurrentPage} of {localTotalPages}
           </p>
 
           <div className="flex items-center gap-2">
             <LinkButton
-              href={hrefFor(Math.max(1, currentPage - 1))}
-              aria-disabled={currentPage === 1}
+              href={hrefFor(Math.max(1, localCurrentPage - 1))}
+              aria-disabled={localCurrentPage === 1}
             >
               Prev
             </LinkButton>
 
             <LinkButton
-              href={hrefFor(Math.min(totalPages, currentPage + 1))}
-              aria-disabled={currentPage === totalPages}
+              href={hrefFor(Math.min(localTotalPages, localCurrentPage + 1))}
+              aria-disabled={localCurrentPage === localTotalPages}
             >
               Next
             </LinkButton>

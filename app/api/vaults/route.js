@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/app/_lib/auth";
 import { createVault } from "@/app/_lib/data/vaults.data";
+import { createOwnerPermission } from "@/app/_lib/data/permissions.data";
 
 function toBool(v) {
   return v === true || v === "true" || v === "on" || v === "1";
@@ -14,6 +15,15 @@ function toNumber(v, fallback = 0) {
 
 export async function POST(req) {
   try {
+    const session = await auth();
+    if (!session?.user?.userId) {
+      return NextResponse.json(
+        { error: "You must be logged in." },
+        { status: 401 },
+      );
+    }
+
+    const userId = session.user.userId;
     const body = await req.json();
 
     // Minimal validation
@@ -26,6 +36,7 @@ export async function POST(req) {
 
     const payload = {
       name: body.name.trim(),
+      user_id: userId,
 
       // IDs are optional for now
       system_id: body.system_id || null,
@@ -52,6 +63,17 @@ export async function POST(req) {
     };
 
     const created = await createVault(payload);
+    const permissionRes = await createOwnerPermission({
+      vaultId: created?.id,
+      userId,
+    });
+
+    if (!permissionRes.ok) {
+      return NextResponse.json(
+        { error: permissionRes.error || "Failed to add owner permission." },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ vault: created }, { status: 201 });
   } catch (err) {

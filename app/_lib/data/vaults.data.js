@@ -112,14 +112,16 @@ export async function assertVaultOwner(vaultId, userId) {
  * - @returns {Promise<any>}
  */
 export async function createVault(newVault) {
+  const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("vaults")
     .insert([newVault])
-    .select();
+    .select("*")
+    .single();
 
   if (error) throw new Error("Vault could not be created");
 
-  return data;
+  return data ?? null;
 }
 
 export async function updateVaultSettingsDb({ userId, vaultId, ...patch }) {
@@ -188,10 +190,9 @@ export async function getMemberVaultsForUser(userId) {
 
   if (error) return { data: null, error };
 
-  const memberVaults = (data || [])
-    .map((row) => row.vaults)
-    .filter(Boolean)
-    .filter((v) => String(v.user_id) !== String(userId));
+  const memberVaults = (data || []).map((row) => row.vaults);
+  // .filter(Boolean)
+  // .filter((v) => String(v.user_id) !== String(userId));
 
   return { data: memberVaults, error: null };
 }

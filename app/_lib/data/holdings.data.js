@@ -71,7 +71,7 @@ export const listUnarchivedHoldingsEntries = async function (vaultId) {
     .select("id,value,currency_id,timestamp,changeby")
     .eq("vault_id", vaultId)
     .eq("archived", false)
-    .order("timestamp", { ascending: true });
+    .order("timestamp", { ascending: false });
 
   if (error) throw error;
   return data || [];

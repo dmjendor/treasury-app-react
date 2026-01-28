@@ -8,6 +8,7 @@ import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
 import { LinkButton } from "@/app/_components/LinkButton";
 import { updateVaultSettingsAction } from "@/app/_lib/actions/vaults";
+import { addDefaultCurrenciesAction } from "@/app/_lib/actions/currencies";
 
 function toNumberOrNull(v) {
   if (v === "" || v == null) return null;
@@ -33,39 +34,59 @@ export default function VaultSettingsClient() {
   const [allowXferOut, setAllowXferOut] = useState(!!vault.allow_xfer_out);
 
   const [baseCurrencyId, setBaseCurrencyId] = useState(
-    vault.base_currency_id ?? ""
+    vault.base_currency_id ?? "",
   );
   const [commonCurrencyId, setCommonCurrencyId] = useState(
-    vault.common_currency_id ?? ""
+    vault.common_currency_id ?? "",
   );
 
   const [treasurySplitEnabled, setTreasurySplitEnabled] = useState(
-    !!vault.treasury_split_enabled
+    !!vault.treasury_split_enabled,
   );
   const [rewardPrepEnabled, setRewardPrepEnabled] = useState(
-    !!vault.reward_prep_enabled
+    !!vault.reward_prep_enabled,
   );
 
   const [voBuyMarkup, setVoBuyMarkup] = useState(
-    vault.vo_buy_markup != null ? String(vault.vo_buy_markup) : ""
+    vault.vo_buy_markup != null ? String(vault.vo_buy_markup) : "",
   );
   const [voSellMarkup, setVoSellMarkup] = useState(
-    vault.vo_sell_markup != null ? String(vault.vo_sell_markup) : ""
+    vault.vo_sell_markup != null ? String(vault.vo_sell_markup) : "",
   );
   const [itemBuyMarkup, setItemBuyMarkup] = useState(
-    vault.item_buy_markup != null ? String(vault.item_buy_markup) : ""
+    vault.item_buy_markup != null ? String(vault.item_buy_markup) : "",
   );
   const [itemSellMarkup, setItemSellMarkup] = useState(
-    vault.item_sell_markup != null ? String(vault.item_sell_markup) : ""
+    vault.item_sell_markup != null ? String(vault.item_sell_markup) : "",
   );
 
-  const [mergeSplit, setMergeSplit] = useState(vault.merge_split ?? "");
+  const [mergeSplit, setMergeSplit] = useState(
+    (vault.merge_split ?? "per_currency") === "base"
+  );
 
   // These lists need to come from somewhere.
   // Best place: fetch them in the vault layout and include them in the provider value.
   const themes = useMemo(() => vault.themeList ?? [], [vault]);
   const systems = useMemo(() => vault.systemList ?? [], [vault]);
   const currencies = useMemo(() => vault.currencyList ?? [], [vault]);
+  const systemsByFamily = useMemo(() => {
+    const map = new Map();
+    for (const system of systems) {
+      const family = system?.family ? String(system.family) : "Other";
+      if (!map.has(family)) map.set(family, []);
+      map.get(family).push(system);
+    }
+    for (const list of map.values()) {
+      list.sort((a, b) =>
+        String(a?.name || "").localeCompare(String(b?.name || "")),
+      );
+    }
+    return new Map(
+      [...map.entries()].sort((a, b) =>
+        String(a[0] || "").localeCompare(String(b[0] || "")),
+      ),
+    );
+  }, [systems]);
 
   if (!vault) {
     return (
@@ -75,6 +96,67 @@ export default function VaultSettingsClient() {
         </div>
       </div>
     );
+  }
+
+  async function handleSystemChange(nextSystemId) {
+    if (String(nextSystemId) === String(systemId || "")) return;
+    setSystemId(nextSystemId);
+
+    if (!nextSystemId) return;
+    const selected = systems.find((s) => String(s.id) === String(nextSystemId));
+    const defaultsRaw = selected?.default_currencies;
+    if (!defaultsRaw) return;
+
+    let defaults = defaultsRaw;
+    if (typeof defaultsRaw === "string") {
+      try {
+        defaults = JSON.parse(defaultsRaw);
+      } catch {
+        defaults = null;
+      }
+    }
+
+    if (!Array.isArray(defaults) || defaults.length === 0) return;
+
+    const confirmMessage = `Add default currencies for ${
+      selected?.name || "this system"
+    }?`;
+    const shouldAdd =
+      typeof window !== "undefined" ? window.confirm(confirmMessage) : false;
+
+    if (!shouldAdd) return;
+
+    setBusy(true);
+    setError("");
+
+    const res = await addDefaultCurrenciesAction({
+      vaultId: vault.id,
+      defaults,
+    });
+
+    if (!res?.ok) {
+      setError(res?.error || "Failed to add default currencies.");
+      setBusy(false);
+      return;
+    }
+
+    const created = Array.isArray(res?.data?.created) ? res.data.created : [];
+
+    const nextCurrencyList = [...(vault.currencyList ?? []), ...created];
+    const nextBase = res?.data?.baseCurrencyId;
+    const nextCommon = res?.data?.commonCurrencyId;
+
+    updateVault({
+      ...vault,
+      currencyList: nextCurrencyList,
+      base_currency_id: nextBase || vault.base_currency_id,
+      common_currency_id: nextCommon || vault.common_currency_id,
+    });
+
+    if (nextBase) setBaseCurrencyId(String(nextBase));
+    if (nextCommon) setCommonCurrencyId(String(nextCommon));
+
+    setBusy(false);
   }
 
   async function onSave(e) {
@@ -110,7 +192,7 @@ export default function VaultSettingsClient() {
       item_buy_markup: toNumberOrNull(itemBuyMarkup),
       item_sell_markup: toNumberOrNull(itemSellMarkup),
 
-      merge_split: mergeSplit || null,
+      merge_split: mergeSplit ? "base" : "per_currency",
     };
 
     const res = await updateVaultSettingsAction(payload);
@@ -196,16 +278,23 @@ export default function VaultSettingsClient() {
             id="system_id"
             label="System"
             value={systemId}
-            onChange={(e) => setSystemId(e.target.value)}
+            onChange={(e) => handleSystemChange(e.target.value)}
           >
             <option value="">Not set</option>
-            {systems.map((ed) => (
-              <option
-                key={ed.id}
-                value={ed.id}
+            {[...systemsByFamily.entries()].map(([family, list]) => (
+              <optgroup
+                key={family}
+                label={family}
               >
-                {ed.name}
-              </option>
+                {list.map((ed) => (
+                  <option
+                    key={ed.id}
+                    value={ed.id}
+                  >
+                    {ed.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </Select>
         </section>
@@ -271,30 +360,45 @@ export default function VaultSettingsClient() {
         <section className="space-y-4">
           <div className="text-sm font-semibold text-fg">Workflow</div>
 
-          <InputComponent
-            id="treasury_split_enabled"
-            type="checkbox"
-            label="Enable treasury splitting"
-            checked={treasurySplitEnabled}
-            onChange={(e) => setTreasurySplitEnabled(e.target.checked)}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <InputComponent
+              id="treasury_split_enabled"
+              type="checkbox"
+              label="Enable treasury splitting"
+              checked={treasurySplitEnabled}
+              onChange={(e) => setTreasurySplitEnabled(e.target.checked)}
+            />
+
+            <InputComponent
+              id="merge_split"
+              type="checkbox"
+              label="Merge all currencies to base before split"
+              hint="Split shares are presented in the highest denomination with fractions rounded down per currency."
+              checked={mergeSplit}
+              onChange={(e) => setMergeSplit(e.target.checked)}
+            />
+          </div>
 
           <InputComponent
             id="reward_prep_enabled"
             type="checkbox"
-            label="Enable reward prep"
+            disabled
+            label="Enable reward prep (coming soon&trade;))"
             checked={rewardPrepEnabled}
             onChange={(e) => setRewardPrepEnabled(e.target.checked)}
           />
         </section>
 
         <section className="space-y-4">
-          <div className="text-sm font-semibold text-fg">Markups</div>
+          <div className="text-sm font-semibold text-fg">
+            Markups (coming soon&trade;))
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <InputComponent
               id="vo_buy_markup"
               type="text"
+              disabled
               label="Valuable buy markup"
               hint="Example: 1.10 for +10%"
               value={voBuyMarkup}
@@ -302,6 +406,7 @@ export default function VaultSettingsClient() {
             />
             <InputComponent
               id="vo_sell_markup"
+              disabled
               type="text"
               label="Valuable sell markup"
               hint="Example: 0.90 for -10%"
@@ -310,6 +415,7 @@ export default function VaultSettingsClient() {
             />
             <InputComponent
               id="item_buy_markup"
+              disabled
               type="text"
               label="Item buy markup"
               value={itemBuyMarkup}
@@ -317,6 +423,7 @@ export default function VaultSettingsClient() {
             />
             <InputComponent
               id="item_sell_markup"
+              disabled
               type="text"
               label="Item sell markup"
               value={itemSellMarkup}
@@ -324,13 +431,7 @@ export default function VaultSettingsClient() {
             />
           </div>
 
-          <InputComponent
-            id="merge_split"
-            type="text"
-            label="Merge split"
-            value={mergeSplit}
-            onChange={(e) => setMergeSplit(e.target.value)}
-          />
+          {/* merge_split moved to Workflow */}
         </section>
 
         <div className="flex gap-2 pt-2">
