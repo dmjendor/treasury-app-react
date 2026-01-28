@@ -38,9 +38,9 @@ export default function FormField({
           className="
             grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl
             border border-border
-            bg-input text-input-fg
+
             px-4 py-3
-            hover:bg-surface
+
             transition-colors
           "
         >
@@ -51,7 +51,7 @@ export default function FormField({
           ) : null}
         </label>
 
-        {hint ? <div className="text-xs text-muted-fg">{hint}</div> : null}
+        {hint ? <div className="text-xs">{hint}</div> : null}
         {error ? <div className="text-xs text-danger-600">{error}</div> : null}
       </div>
     );

@@ -28,6 +28,7 @@ export default function VaultSettingsClient() {
   const [active, setActive] = useState(!!vault.active);
 
   const [themeId, setThemeId] = useState(vault.theme_id ?? "");
+  const [initialThemeId] = useState(vault.theme_id ?? "");
   const [systemId, setSystemId] = useState(vault.system_id ?? "");
 
   const [allowXferIn, setAllowXferIn] = useState(!!vault.allow_xfer_in);
@@ -61,7 +62,7 @@ export default function VaultSettingsClient() {
   );
 
   const [mergeSplit, setMergeSplit] = useState(
-    (vault.merge_split ?? "per_currency") === "base"
+    (vault.merge_split ?? "per_currency") === "base",
   );
 
   // These lists need to come from somewhere.
@@ -69,6 +70,11 @@ export default function VaultSettingsClient() {
   const themes = useMemo(() => vault.themeList ?? [], [vault]);
   const systems = useMemo(() => vault.systemList ?? [], [vault]);
   const currencies = useMemo(() => vault.currencyList ?? [], [vault]);
+  const themeKey = useMemo(() => {
+    const selected = themes.find((t) => String(t.id) === String(themeId));
+    const key = selected?.theme_key || vault?.theme?.theme_key || "night";
+    return String(key).startsWith("theme-") ? String(key) : `theme-${key}`;
+  }, [themes, themeId, vault]);
   const systemsByFamily = useMemo(() => {
     const map = new Map();
     for (const system of systems) {
@@ -91,8 +97,8 @@ export default function VaultSettingsClient() {
   if (!vault) {
     return (
       <div className="p-6 max-w-4xl mx-auto text-fg">
-        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-fg">
-          Loading vault…
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-fg">
+          Loading vault...
         </div>
       </div>
     );
@@ -210,14 +216,14 @@ export default function VaultSettingsClient() {
     setBusy(false);
   }
 
+  const themeChanged = String(themeId) !== String(initialThemeId);
+
   return (
-    <div className="p-6 max-w-4xl mx-auto text-fg space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className={`${themeKey} p-6 max-w-4xl mx-auto text-fg space-y-6`}>
+      <header className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Vault settings</h1>
-          <p className="text-sm text-muted-fg">
-            Configure vault behavior and theme.
-          </p>
+          <h1 className="text-2xl font-semibold text-fg">Vault settings</h1>
+          <p className="text-sm text-fg">Configure vault behavior and theme.</p>
         </div>
 
         <LinkButton
@@ -230,7 +236,7 @@ export default function VaultSettingsClient() {
 
       <form
         onSubmit={onSave}
-        className="rounded-2xl border border-border bg-card text-card-fg p-5 space-y-6"
+        className="space-y-6"
       >
         {error ? (
           <div className="rounded-xl border border-danger-600 bg-danger-100 p-3 text-sm text-danger-700">
@@ -238,8 +244,11 @@ export default function VaultSettingsClient() {
           </div>
         ) : null}
 
-        <section className="space-y-4">
-          <div className="text-sm font-semibold text-fg">Basics</div>
+        <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
+            <span className="h-2 w-2 rounded-full bg-accent-500" />
+            Basics
+          </div>
 
           <InputComponent
             id="name"
@@ -274,6 +283,41 @@ export default function VaultSettingsClient() {
             ))}
           </Select>
 
+          {themeChanged ? (
+            <div className="rounded-2xl border border-border bg-surface-100 p-4 space-y-3 text-surface-800">
+              <div className="text-sm font-semibold">Theme preview</div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-border bg-primary-600 p-4 text-primary-200">
+                  <div className="text-xs uppercase tracking-wide text-primary-200">
+                    Primary
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-primary-100">
+                    Primary panel
+                  </div>
+                  <div className="mt-3 h-6 rounded-md bg-primary-400" />
+                </div>
+                <div className="rounded-xl border border-border bg-accent-600 p-4 text-accent-200">
+                  <div className="text-xs uppercase tracking-wide text-accent-200">
+                    Accent
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-accent-100">
+                    Accent panel
+                  </div>
+                  <div className="mt-3 h-6 rounded-md bg-accent-400" />
+                </div>
+                <div className="rounded-xl border border-border bg-surface-300 p-4 text-primary-900">
+                  <div className="text-xs uppercase tracking-wide text-primary-700">
+                    Surface
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-primary-900">
+                    Surface panel
+                  </div>
+                  <div className="mt-3 h-6 rounded-md bg-surface-400" />
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <Select
             id="system_id"
             label="System"
@@ -299,14 +343,18 @@ export default function VaultSettingsClient() {
           </Select>
         </section>
 
-        <section className="space-y-4">
-          <div className="text-sm font-semibold text-fg">Transfers</div>
+        <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
+            <span className="h-2 w-2 rounded-full bg-primary-500" />
+            Transfers
+          </div>
 
           <InputComponent
             id="allow_xfer_in"
             type="checkbox"
             label="Allow transfers in"
             checked={allowXferIn}
+            className="bg-accent-400 text-accent-700"
             onChange={(e) => setAllowXferIn(e.target.checked)}
           />
 
@@ -315,12 +363,16 @@ export default function VaultSettingsClient() {
             type="checkbox"
             label="Allow transfers out"
             checked={allowXferOut}
+            className="bg-accent-400 text-accent-700"
             onChange={(e) => setAllowXferOut(e.target.checked)}
           />
         </section>
 
-        <section className="space-y-4">
-          <div className="text-sm font-semibold text-fg">Currencies</div>
+        <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
+            <span className="h-2 w-2 rounded-full bg-accent-500" />
+            Currencies
+          </div>
 
           <Select
             id="base_currency_id"
@@ -357,8 +409,11 @@ export default function VaultSettingsClient() {
           </Select>
         </section>
 
-        <section className="space-y-4">
-          <div className="text-sm font-semibold text-fg">Workflow</div>
+        <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
+            <span className="h-2 w-2 rounded-full bg-warning-500" />
+            Workflow
+          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <InputComponent
@@ -366,32 +421,37 @@ export default function VaultSettingsClient() {
               type="checkbox"
               label="Enable treasury splitting"
               checked={treasurySplitEnabled}
+              className="bg-accent-400 text-accent-700"
               onChange={(e) => setTreasurySplitEnabled(e.target.checked)}
             />
-
-            <InputComponent
-              id="merge_split"
-              type="checkbox"
-              label="Merge all currencies to base before split"
-              hint="Split shares are presented in the highest denomination with fractions rounded down per currency."
-              checked={mergeSplit}
-              onChange={(e) => setMergeSplit(e.target.checked)}
-            />
+            {treasurySplitEnabled && (
+              <InputComponent
+                id="merge_split"
+                type="checkbox"
+                label="Merge all currencies to base before split"
+                hint="Split shares are presented in the highest denomination with fractions rounded down per currency."
+                checked={mergeSplit}
+                className="bg-accent-400 text-accent-700"
+                onChange={(e) => setMergeSplit(e.target.checked)}
+              />
+            )}
           </div>
 
           <InputComponent
             id="reward_prep_enabled"
             type="checkbox"
             disabled
-            label="Enable reward prep (coming soon&trade;))"
+            label="Enable reward prep (coming soon)"
             checked={rewardPrepEnabled}
+            className="bg-accent-400 text-accent-700"
             onChange={(e) => setRewardPrepEnabled(e.target.checked)}
           />
         </section>
 
-        <section className="space-y-4">
-          <div className="text-sm font-semibold text-fg">
-            Markups (coming soon&trade;))
+        <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
+            <span className="h-2 w-2 rounded-full bg-success-500" />
+            Markups (coming soon)
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -434,13 +494,13 @@ export default function VaultSettingsClient() {
           {/* merge_split moved to Workflow */}
         </section>
 
-        <div className="flex gap-2 pt-2">
+        <div className="flex flex-wrap gap-2 pt-2">
           <Button
             type="submit"
             variant="primary"
             disabled={busy}
           >
-            {busy ? "Saving…" : "Save changes"}
+            {busy ? "Saving..." : "Save changes"}
           </Button>
           <Button
             type="button"

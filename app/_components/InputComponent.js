@@ -21,14 +21,14 @@ const InputComponent = forwardRef(function Input(
     children,
     ...props
   },
-  ref
+  ref,
 ) {
   const fieldId = id || props.name;
 
   const fieldProps = Object.fromEntries(
     Object.entries(props).filter(
-      ([key]) => key.startsWith("data-") || key.startsWith("aria-")
-    )
+      ([key]) => key.startsWith("data-") || key.startsWith("aria-"),
+    ),
   );
 
   return (
@@ -39,6 +39,7 @@ const InputComponent = forwardRef(function Input(
       labelRight={labelRight}
       error={error}
       type={type}
+      className={className}
       {...fieldProps}
     >
       {children ? <div className="mb-2">{children}</div> : null}
