@@ -97,7 +97,7 @@ export default function VaultSettingsClient() {
   if (!vault) {
     return (
       <div className="p-6 max-w-4xl mx-auto text-fg">
-        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-fg">
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-fg">
           Loading vault...
         </div>
       </div>
@@ -219,16 +219,18 @@ export default function VaultSettingsClient() {
   const themeChanged = String(themeId) !== String(initialThemeId);
 
   return (
-    <div className={`${themeKey} p-6 max-w-4xl mx-auto text-fg space-y-6`}>
-      <header className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className={`${themeKey} p-6 max-w-4xl mx-auto text-fg space-y-8`}>
+      <header className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-fg">Vault settings</h1>
-          <p className="text-sm text-fg">Configure vault behavior and theme.</p>
+          <p className="text-sm text-muted-fg">
+            Configure vault behavior and theme.
+          </p>
         </div>
 
         <LinkButton
           href={`/account/vaults/${vault.id}`}
-          variant="outline"
+          variant="accent"
         >
           Back
         </LinkButton>
@@ -284,7 +286,7 @@ export default function VaultSettingsClient() {
           </Select>
 
           {themeChanged ? (
-            <div className="rounded-2xl border border-border bg-surface-100 p-4 space-y-3 text-surface-800">
+            <div className="rounded-2xl border border-border bg-surface-100 p-4 space-y-3 text-surface-900">
               <div className="text-sm font-semibold">Theme preview</div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-border bg-primary-600 p-4 text-primary-200">
@@ -354,7 +356,6 @@ export default function VaultSettingsClient() {
             type="checkbox"
             label="Allow transfers in"
             checked={allowXferIn}
-            className="bg-accent-400 text-accent-700"
             onChange={(e) => setAllowXferIn(e.target.checked)}
           />
 
@@ -363,7 +364,6 @@ export default function VaultSettingsClient() {
             type="checkbox"
             label="Allow transfers out"
             checked={allowXferOut}
-            className="bg-accent-400 text-accent-700"
             onChange={(e) => setAllowXferOut(e.target.checked)}
           />
         </section>
@@ -421,7 +421,6 @@ export default function VaultSettingsClient() {
               type="checkbox"
               label="Enable treasury splitting"
               checked={treasurySplitEnabled}
-              className="bg-accent-400 text-accent-700"
               onChange={(e) => setTreasurySplitEnabled(e.target.checked)}
             />
             {treasurySplitEnabled && (
@@ -431,7 +430,6 @@ export default function VaultSettingsClient() {
                 label="Merge all currencies to base before split"
                 hint="Split shares are presented in the highest denomination with fractions rounded down per currency."
                 checked={mergeSplit}
-                className="bg-accent-400 text-accent-700"
                 onChange={(e) => setMergeSplit(e.target.checked)}
               />
             )}
@@ -443,7 +441,6 @@ export default function VaultSettingsClient() {
             disabled
             label="Enable reward prep (coming soon)"
             checked={rewardPrepEnabled}
-            className="bg-accent-400 text-accent-700"
             onChange={(e) => setRewardPrepEnabled(e.target.checked)}
           />
         </section>

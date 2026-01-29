@@ -1,21 +1,17 @@
 import NextAuth from "next-auth";
-import Google from "@auth/core/providers/google";
 import { createUser, getUser } from "@/app/_lib/data/users.data";
+import { getAuthProviderConfigs } from "@/app/_lib/authProviders";
 
 const authConfig = {
   secret: process.env.NEXTAUTH_SECRET,
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-    }),
-  ],
+  providers: getAuthProviderConfigs(),
   callbacks: {
     authorized({ auth, request }) {
       return !!auth?.user;
     },
     async signIn({ user, account, profiler }) {
       try {
+        if (!user?.email) return false;
         const existingUser = await getUser(user.email);
 
         if (!existingUser)

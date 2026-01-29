@@ -24,8 +24,9 @@ export default function PrivacyPage() {
           <h2 className="text-base font-semibold text-fg">Information we collect</h2>
           <p className="text-muted-fg">
             We collect information you provide directly, such as your name and email address when
-            signing in using Google. We may also collect limited technical data such as browser
-            type, device information, and usage data to help improve the service.
+            signing in using a supported OAuth provider. We may also collect limited technical
+            data such as browser type, device information, and usage data to help improve the
+            service.
           </p>
 
           <h2 className="text-base font-semibold text-fg">How we use information</h2>
@@ -37,8 +38,8 @@ export default function PrivacyPage() {
 
           <h2 className="text-base font-semibold text-fg">Authentication</h2>
           <p className="text-muted-fg">
-            Party Treasury uses Google OAuth through NextAuth for authentication. We do not store
-            your password.
+            Party Treasury uses OAuth providers (Google, Facebook, and Twitch) through NextAuth
+            for authentication. We do not store your password.
           </p>
 
           <h2 className="text-base font-semibold text-fg">Data storage</h2>
@@ -55,9 +56,9 @@ export default function PrivacyPage() {
 
           <h2 className="text-base font-semibold text-fg">Third party services</h2>
           <p className="text-muted-fg">
-            We rely on third party services to operate the service, including Google for sign in,
-            Supabase for data storage, and Vercel for hosting. These providers have their own
-            privacy policies.
+            We rely on third party services to operate the service, including Google, Facebook,
+            and Twitch for sign in, Supabase for data storage, and Vercel for hosting. These
+            providers have their own privacy policies.
           </p>
 
           <h2 className="text-base font-semibold text-fg">Data sharing</h2>
@@ -92,7 +93,7 @@ export default function PrivacyPage() {
             .
           </p>
 
-          <p className="pt-2 text-xs text-muted-fg">Last updated: January 21, 2026</p>
+          <p className="pt-2 text-xs text-muted-fg">Last updated: January 29, 2026</p>
         </section>
       </div>
     </main>

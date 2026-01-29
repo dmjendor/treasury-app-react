@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Button } from "@/app/_components/Button";
 import { acceptInviteAction } from "@/app/_lib/actions/permissions";
 
@@ -25,10 +24,10 @@ export default function InviteClient({ sessionEmail, invite, token }) {
     setError("");
     setBusy(true);
 
-    // redirect back to this invite after OAuth
-    await signIn("google", {
-      callbackUrl: `/invite?token=${encodeURIComponent(token)}`,
-    });
+    const inviteUrl = `/invite?token=${encodeURIComponent(token)}`;
+    router.push(
+      `/login?callbackUrl=${encodeURIComponent(inviteUrl)}`,
+    );
   }
 
   async function handleJoin() {

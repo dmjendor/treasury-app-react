@@ -1,6 +1,7 @@
 "use client";
 
 import CreateMenu from "./CreateMenu";
+import Card from "@/app/_components/Card";
 import IconComponent from "@/app/_components/IconComponent";
 import ChestIcon from "@/app/_components/icons/ChestIcon";
 import { useVault } from "@/app/_context/VaultProvider";
@@ -14,14 +15,13 @@ export default function VaultHeader() {
   const { vault } = useVault();
   const vaultId = vault?.id ?? null;
   return (
-    <div className="mb-6 flex items-center justify-between gap-4 border-b border-border pb-4">
+    <Card className="mb-6 flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <div className="rounded-xl bg-accent-700 p-2">
+        <div className="rounded-xl bg-accent-600 p-2 text-accent-50">
           <IconComponent
             size="2xl"
             icon={ChestIcon}
             label="Treasure chest"
-            variant="accent"
           />
         </div>
 
@@ -29,7 +29,9 @@ export default function VaultHeader() {
           <h1 className="truncate text-xl font-semibold text-fg">
             {vault?.name || "Untitled Vault"}
           </h1>
-          <p className="text-xs text-muted-fg">Vault</p>
+          <p className="text-xs uppercase tracking-wide text-muted-fg">
+            Vault overview
+          </p>
         </div>
       </div>
 
@@ -38,6 +40,6 @@ export default function VaultHeader() {
         {/* Example future slot */}
         {vaultId ? <CreateMenu vaultId={vaultId} /> : null}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,43 +1,39 @@
 import {
-  HiOutlineArchiveBox,
-  HiOutlineGift,
-  HiOutlineCurrencyDollar,
-  HiOutlineSparkles,
   HiOutlineBolt,
   HiOutlineClock,
   HiOutlineBookOpen,
   HiOutlineSwatch,
 } from "react-icons/hi2";
 import Link from "next/link";
+import Card from "@/app/_components/Card";
 import { LinkButton } from "@/app/_components/LinkButton";
 import IconComponent from "@/app/_components/IconComponent";
-import { getUserVaults, getVaultById } from "@/app/_lib/data/vaults.data";
+import SubCard from "@/app/_components/SubCard";
+import { getVaultById } from "@/app/_lib/data/vaults.data";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 
 function Panel({ title, icon: Icon, children }) {
   return (
-    <section className="rounded-2xl border border-border bg-primary-400 p-6">
+    <Card className="rounded-2xl p-6">
       <div className="flex items-center gap-2">
-        {Icon ? <Icon className="h-5 w-5 text-accent-700" /> : null}
+        {Icon ? <Icon className="h-5 w-5 text-accent-500" /> : null}
         <h2 className="text-sm font-semibold text-fg">{title}</h2>
       </div>
       <div className="mt-4">{children}</div>
-    </section>
+    </Card>
   );
 }
 
 function StatCard({ label, value, icon, href }) {
   const content = (
-    <div className="rounded-2xl border border-border bg-primary-600 text-primary-50 p-5 transition-colors hover:bg-primary-600 hover:text-primary-50">
+    <Card className="rounded-2xl p-5 transition-shadow hover:shadow-lg">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs text-muted-fg) group-hover:text-primary-100">
-            {label}
-          </div>
-          <div className="mt-1 text-2xl font-semibold">{value}</div>
+          <div className="text-xs text-muted-fg">{label}</div>
+          <div className="mt-1 text-2xl font-semibold text-fg">{value}</div>
         </div>
 
-        <div className="rounded-xl bg-accent-700 p-2 text-accent-50">
+        <div className="rounded-xl bg-accent-600 p-2 text-accent-50">
           <IconComponent
             icon={icon}
             title={label}
@@ -45,7 +41,7 @@ function StatCard({ label, value, icon, href }) {
           />
         </div>
       </div>
-    </div>
+    </Card>
   );
 
   return href ? <Link href={href}>{content}</Link> : content;
@@ -53,17 +49,17 @@ function StatCard({ label, value, icon, href }) {
 
 function EmptyList({ title, hint }) {
   return (
-    <div className="rounded-xl border border-border bg-accent-600 text-accent-50 p-4 text-sm">
+    <SubCard className="py-4 text-sm">
       <div className="font-semibold">{title}</div>
-      <div className="mt-1">{hint}</div>
-    </div>
+      <div className="mt-1 text-subcard-fg/80">{hint}</div>
+    </SubCard>
   );
 }
 
 function DetailCard({ icon, label, value, hint }) {
   return (
-    <div className="rounded-xl border border-border bg-accent-600 text-accent-50 p-4">
-      <div className="flex items-center gap-2 text-xs">
+    <SubCard>
+      <div className="flex items-center gap-2 text-xs text-subcard-fg/80">
         {icon ? (
           <IconComponent
             icon={icon}
@@ -74,8 +70,8 @@ function DetailCard({ icon, label, value, hint }) {
         {label}
       </div>
       <div className="mt-1 text-sm font-semibold">{value}</div>
-      {hint ? <div className="mt-1 text-xs">{hint}</div> : null}
-    </div>
+      {hint ? <div className="mt-1 text-xs text-subcard-fg/80">{hint}</div> : null}
+    </SubCard>
   );
 }
 
@@ -161,7 +157,7 @@ export default async function VaultOverviewPage({ params }) {
 
             <DetailCard
               label="Permissions"
-              value="GM only (for now"
+              value="GM only (for now)"
               hint="Later you can add players and set roles."
             />
           </div>
@@ -205,9 +201,10 @@ export default async function VaultOverviewPage({ params }) {
 
         <div className="mt-4 text-xs text-muted-fg">
           These are placeholders now. Later, you can conditionally show the best
-          next step based on what’s missing.
+          next step based on what's missing.
         </div>
       </Panel>
     </div>
   );
 }
+

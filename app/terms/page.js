@@ -29,9 +29,9 @@ export default function TermsPage() {
 
           <h2 className="text-base font-semibold text-fg">2. Accounts and access</h2>
           <p className="text-muted-fg">
-            Sign in is provided through Google OAuth via NextAuth. You are responsible for
-            maintaining the security of your account and for all activity that occurs under your
-            account.
+            Sign in is provided through OAuth providers (Google, Facebook, and Twitch) via
+            NextAuth. You are responsible for maintaining the security of your account and for
+            all activity that occurs under your account.
           </p>
 
           <h2 className="text-base font-semibold text-fg">3. Vaults, members, and permissions</h2>
@@ -57,8 +57,9 @@ export default function TermsPage() {
 
           <h2 className="text-base font-semibold text-fg">6. Third party services</h2>
           <p className="text-muted-fg">
-            The service depends on third party providers such as Google, Supabase, and Vercel. Your
-            use of those services may be governed by their own terms and policies.
+            The service depends on third party providers such as Google, Facebook, Twitch,
+            Supabase, and Vercel. Your use of those services may be governed by their own terms
+            and policies.
           </p>
 
           <h2 className="text-base font-semibold text-fg">7. Availability and changes</h2>
@@ -103,7 +104,7 @@ export default function TermsPage() {
             .
           </p>
 
-          <p className="pt-2 text-xs text-muted-fg">Last updated: January 21, 2026</p>
+          <p className="pt-2 text-xs text-muted-fg">Last updated: January 29, 2026</p>
         </section>
       </div>
     </main>
