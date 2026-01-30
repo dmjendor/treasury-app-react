@@ -1,7 +1,8 @@
 // app/public/vaults/[vaultId]/PublicVaultOverviewClient.js
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import IconComponent from "@/app/_components/IconComponent";
 import { LinkButton } from "@/app/_components/LinkButton";
 import CashIcon from "@/app/_components/icons/CashIcon";
@@ -113,6 +114,23 @@ export default function PublicVaultOverviewClient({
   valuables,
   isOwner,
 }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    function handleInvalidate(event) {
+      const targetId = event?.detail?.vaultId;
+      if (!targetId || !vaultId) return;
+      if (String(targetId) !== String(vaultId)) return;
+      router.refresh();
+    }
+
+    if (typeof window === "undefined") return;
+    window.addEventListener("vault:holdings:invalidate", handleInvalidate);
+    return () => {
+      window.removeEventListener("vault:holdings:invalidate", handleInvalidate);
+    };
+  }, [router, vaultId]);
+
   const balanceMap = new Map(
     (Array.isArray(balances) ? balances : []).map((balance) => [
       String(balance.currency_id),
@@ -195,7 +213,7 @@ export default function PublicVaultOverviewClient({
             icon={CashIcon}
             action={
               <LinkButton
-                href={`/account/vaults/${vaultId}/holdings`}
+                href={`/account/vaults/${vaultId}/holdings/split`}
                 variant="accent"
                 size="sm"
               >

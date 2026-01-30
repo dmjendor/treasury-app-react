@@ -134,6 +134,7 @@ export default function VaultSettingsClient() {
 
     setBusy(true);
     setError("");
+    console.log(vault, vault.id);
 
     const res = await addDefaultCurrenciesAction({
       vaultId: vault.id,
@@ -209,8 +210,15 @@ export default function VaultSettingsClient() {
       return;
     }
 
-    // Update context with DB-returned values (source of truth)
-    updateVault(res.data);
+    // Preserve lists on the client when the update payload doesn't include them.
+    updateVault({
+      ...vault,
+      ...(res.data || {}),
+      themeList: vault.themeList,
+      systemList: vault.systemList,
+      currencyList: vault.currencyList,
+      containerList: vault.containerList,
+    });
 
     router.refresh();
     setBusy(false);

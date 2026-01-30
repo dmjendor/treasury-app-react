@@ -475,3 +475,22 @@ export async function createOwnerPermission({ vaultId, userId }) {
   if (error) return { ok: false, error: error.message, data: null };
   return { ok: true, error: "", data };
 }
+
+/**
+ * - Delete permissions rows for a user.
+ * @param {{ userId: string }} input
+ * @returns {Promise<number>}
+ */
+export async function deletePermissionsForUser({ userId }) {
+  if (!userId) throw new Error("User id is required.");
+  const supabase = await getSupabase();
+
+  const { count, error } = await supabase
+    .from("permissions")
+    .delete()
+    .eq("user_id", userId)
+    .select("id", { count: "exact" });
+
+  if (error) throw new Error(error.message);
+  return Number(count || 0);
+}

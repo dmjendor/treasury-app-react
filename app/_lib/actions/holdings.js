@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import {
   getVaultCurrencyBalances,
   listUnarchivedHoldingsEntries,
@@ -129,20 +130,25 @@ export const archiveHoldingsEntriesAction = async function ({ vaultId, ids }) {
 
 /**
  * - Split unarchived holdings totals and archive consumed entries.
- * - @param {{ vaultId:string, partyMemberCount:number, keepPartyShare:boolean }} input
+ * - @param {{ vaultId:string, partyMemberCount:number, keepPartyShare:boolean, mergeSplit?:boolean|string }} input
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
 export const splitVaultHoldingsAction = async function ({
   vaultId,
   partyMemberCount,
   keepPartyShare,
+  mergeSplit,
 }) {
   try {
     const data = await splitVaultHoldings({
       vaultId,
       partyMemberCount,
       keepPartyShare,
+      mergeSplit,
     });
+    revalidatePath(`/account/vaults/${vaultId}/holdings`);
+    revalidatePath(`/account/vaults/${vaultId}`);
+    revalidatePath(`/public/vaults/${vaultId}`);
     return { ok: true, error: null, data };
   } catch (e) {
     return {

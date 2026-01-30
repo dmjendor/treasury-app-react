@@ -1,3 +1,4 @@
+import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 
 export async function getThemes() {
@@ -7,4 +8,23 @@ export async function getThemes() {
   if (error) throw new Error("Themes could not be loaded");
 
   return data;
+}
+
+/**
+ * - Get a theme by id.
+ * @param {string} themeId
+ * @returns {Promise<any|null>}
+ */
+export async function getThemeById(themeId) {
+  if (!themeId) return null;
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("themes")
+    .select("*")
+    .eq("id", themeId)
+    .single();
+
+  if (error?.code === "PGRST116") return null;
+  if (error) throw error;
+  return data ?? null;
 }

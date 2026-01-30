@@ -216,3 +216,41 @@ Do not use `SectionDivider` for:
 - Divider should be paired with comfortable spacing, typically:
   - content block → `SectionDivider` → next content block
 - Do not reduce padding just because a divider exists.
+
+## Sections
+
+A `Section` is a semantic container used for page structure and grouping.
+
+### Mandatory usage
+
+- Do not use raw `<section>` tags for styled containers.
+- Use the shared `Section` component instead of `<section>` whenever:
+  - any background, border, radius, padding, or spacing is applied
+  - the container visually reads like a panel, block, or card-adjacent group
+  - the container is used to group multiple UI elements or subsections
+
+### Raw section tags (allowed only when unstyled)
+
+- Raw `<section>` tags are allowed only for semantics when they are essentially unstyled:
+  - no `bg-*`, `border-*`, `rounded-*`, `shadow-*`, or padding utilities
+  - layout-only classes such as `mt-*`, `mb-*`, `space-y-*`, `grid`, `flex`, `gap-*` are allowed
+
+### Styling rules
+
+- `Section` must use the semantic tokens:
+  - `bg-section-bg`
+  - `text-section-fg`
+  - `border-section-border`
+- Do not style sections using `bg-card`, `text-card-fg`, or similar direct card roles.
+- Do not use arbitrary values (e.g. `bg-[var(--section-bg)]`) when `bg-section-bg` exists.
+
+### Relationship to Card/SubCard
+
+- If the container visually looks like a card, use `Card` or `SubCard`.
+- If the container is structural grouping (page sections, grouped content areas), use `Section`.
+- Nested card rules still apply inside `Section`.
+
+### Enforcement
+
+- Any PR introducing a styled `<section>` tag must be changed to use `Section`.
+- If the `Section` component is missing a needed variant or role, add the semantic role to `globals.css` and update `Section`, do not bypass it with inline classes.

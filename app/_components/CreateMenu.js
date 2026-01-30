@@ -14,6 +14,8 @@ import ImgIcon from "@/app/_components/ImgIcon";
 import RaIcon from "@/app/_components/RaIcon";
 import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
+import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
+import GemsIcon from "@/app/_components/icons/GemsIcon";
 
 /**
  * Determines whether an icon value is a path to an image asset.
@@ -123,7 +125,7 @@ export default function CreateMenu({ vaultId }) {
     {
       label: "New treasure",
       href: `${base}/treasures/new`,
-      icon: "ra ra-sword",
+      icon: {BattleGearIcon},
     },
     {
       label: "New currency",
@@ -133,7 +135,7 @@ export default function CreateMenu({ vaultId }) {
     {
       label: "New valuable",
       href: `${base}/valuables/new`,
-      icon: "ra ra-gem",
+      icon: {GemsIcon},
     },
   ];
 

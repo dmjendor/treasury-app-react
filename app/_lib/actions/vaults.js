@@ -61,15 +61,16 @@ export async function updateVaultSettingsAction(input) {
       return { ok: false, error: "You must be logged in." };
 
     // Minimal validation
-    if (!input?.vaultId) return { ok: false, error: "Missing vault id." };
+    if (!input?.id) return { ok: false, error: "Missing vault id." };
 
     const updated = await updateVaultSettingsDb({
       userId: session.user.userId,
+      vaultId: input.id,
       ...input,
     });
 
-    revalidatePath(`/account/vaults/${input.vaultId}`);
-    revalidatePath(`/account/vaults/${input.vaultId}/currencies`);
+    revalidatePath(`/account/vaults/${input.id}`);
+    revalidatePath(`/account/vaults/${input.id}/currencies`);
 
     return { ok: true, data: updated };
   } catch (e) {

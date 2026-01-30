@@ -14,6 +14,7 @@ export default function NavLink({ href, icon, label, active }) {
     >
       <IconComponent
         icon={icon}
+        title={label}
         variant={active ? "primary" : "accent"}
       />
 

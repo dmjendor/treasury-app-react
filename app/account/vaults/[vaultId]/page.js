@@ -11,6 +11,8 @@ import IconComponent from "@/app/_components/IconComponent";
 import SubCard from "@/app/_components/SubCard";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
+import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
+import GemsIcon from "@/app/_components/icons/GemsIcon";
 
 function Panel({ title, icon: Icon, children }) {
   return (
@@ -70,7 +72,9 @@ function DetailCard({ icon, label, value, hint }) {
         {label}
       </div>
       <div className="mt-1 text-sm font-semibold">{value}</div>
-      {hint ? <div className="mt-1 text-xs text-subcard-fg/80">{hint}</div> : null}
+      {hint ? (
+        <div className="mt-1 text-xs text-subcard-fg/80">{hint}</div>
+      ) : null}
     </SubCard>
   );
 }
@@ -112,14 +116,14 @@ export default async function VaultOverviewPage({ params }) {
         <StatCard
           label="Treasures"
           value={treasure_count}
-          icon={"ra-sword"}
+          icon={BattleGearIcon}
           href={`/account/vaults/${vaultId}/treasures`}
         />
 
         <StatCard
           label="Valuables"
           value={valuables_count}
-          icon={"ra-diamond"}
+          icon={GemsIcon}
           href={`/account/vaults/${vaultId}/valuables`}
         />
       </div>
@@ -201,10 +205,9 @@ export default async function VaultOverviewPage({ params }) {
 
         <div className="mt-4 text-xs text-muted-fg">
           These are placeholders now. Later, you can conditionally show the best
-          next step based on what's missing.
+          next step based on what&apos;s missing.
         </div>
       </Panel>
     </div>
   );
 }
-

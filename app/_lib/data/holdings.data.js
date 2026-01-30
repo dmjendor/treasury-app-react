@@ -5,6 +5,30 @@
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 import { auth } from "@/app/_lib/auth";
+import { getVaultById } from "@/app/_lib/data/vaults.data";
+
+function toNumber(value, fallback = null) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+function sortByRateDesc(a, b) {
+  const left = toNumber(a?.rate, 0);
+  const right = toNumber(b?.rate, 0);
+  return right - left;
+}
+
+async function confirmAllArchived({ supabase, vaultId, ids }) {
+  if (!Array.isArray(ids) || ids.length === 0) return true;
+  const { data, error } = await supabase
+    .from("holdings")
+    .select("id")
+    .eq("vault_id", vaultId)
+    .eq("archived", false)
+    .in("id", ids);
+  if (error) throw error;
+  return (data || []).length === 0;
+}
 
 /**
  * - Get currency balances for a vault from unarchived holdings entries.
@@ -24,6 +48,7 @@ export const getVaultCurrencyBalances = async function (vaultId) {
         currencies:currency_id (
           id,
           name,
+          rate,
           code
         )
       `,
@@ -42,6 +67,7 @@ export const getVaultCurrencyBalances = async function (vaultId) {
         currency_id: cur.id,
         name: cur.name,
         code: cur.code,
+        rate: cur.rate,
         total_value: 0,
       };
 
@@ -50,9 +76,7 @@ export const getVaultCurrencyBalances = async function (vaultId) {
     }, {}),
   );
 
-  totals.sort((a, b) =>
-    String(a.name || "").localeCompare(String(b.name || "")),
-  );
+  totals.sort((a, b) => a.rate - b.rate);
   return totals;
 };
 
@@ -134,7 +158,9 @@ export const archiveHoldingsEntries = async function ({ vaultId, ids }) {
     .in("id", ids)
     .select("id", { count: "exact" });
 
-  if (error) throw error;
+  if (error) {
+    console.log(error);
+  }
   return Number(count || 0);
 };
 
@@ -168,13 +194,14 @@ export const getUnarchivedTotalsByCurrency = async function (vaultId) {
 
 /**
  * - Split unarchived holdings totals for a vault into equal shares and archive the consumed entries.
- * - @param {{ vaultId:string, partyMemberCount:number, keepPartyShare:boolean }} input
- * - @returns {Promise<{byCurrency:Array<{currency_id:string,total:number,shares:number,share_amount:number,remainder:number,archived_count:number,created_count:number}>}>}
+ * - @param {{ vaultId:string, partyMemberCount:number, keepPartyShare:boolean, mergeSplit?:boolean|string }} input
+ * - @returns {Promise<{byCurrency:Array<{currency_id:string,total?:number,shares:number,share_amount:number,remainder?:number,archived_count:number,created_count:number}>}>}
  */
 export const splitVaultHoldings = async function ({
   vaultId,
   partyMemberCount,
   keepPartyShare,
+  mergeSplit,
 }) {
   const session = await auth();
   if (!session) throw new Error("You must be logged in.");
@@ -192,65 +219,207 @@ export const splitVaultHoldings = async function ({
   }
 
   const shares = members + (keepPartyShare ? 1 : 0);
+  const mergeAll = mergeSplit === true || mergeSplit === "base";
 
-  const results = [];
-  for (const currencyId of currencyIds) {
-    const total = Number(totalsByCurrency[currencyId]?.total || 0);
-    const ids = totalsByCurrency[currencyId]?.ids || [];
+  if (!mergeAll) {
+    const results = [];
+    for (const currencyId of currencyIds) {
+      const total = Number(totalsByCurrency[currencyId]?.total || 0);
+      const ids = totalsByCurrency[currencyId]?.ids || [];
 
-    if (total <= 0) {
-      throw new Error(
-        "Cannot split when a currency total is zero or negative.",
-      );
+      if (total > 0) {
+        const shareAmount = Math.floor(total / shares);
+        const remainder = total - shareAmount * shares;
+
+        results.push({
+          currency_id: currencyId,
+          total,
+          shares,
+          share_amount: shareAmount,
+          remainder,
+          ids,
+        });
+      }
     }
 
-    const shareAmount = Math.floor(total / shares);
-    const remainder = total - shareAmount * shares;
-
-    results.push({
-      currency_id: currencyId,
-      total,
-      shares,
-      share_amount: shareAmount,
-      remainder,
-      ids,
+    const allIds = results.flatMap((r) => r.ids);
+    const archivedCount = await archiveHoldingsEntries({
+      vaultId,
+      ids: allIds,
     });
+
+    const supabase = await getSupabase();
+    if (archivedCount !== allIds.length) {
+      const cleared = await confirmAllArchived({
+        supabase,
+        vaultId,
+        ids: allIds,
+      });
+      if (!cleared) {
+        throw new Error(
+          "Split failed due to concurrent changes. Please try again.",
+        );
+      }
+    }
+    const userId = session?.user?.userId || null;
+
+    const newRows = [];
+    for (const r of results) {
+      if (keepPartyShare && r.share_amount > 0) {
+        newRows.push({
+          vault_id: vaultId,
+          currency_id: r.currency_id,
+          value: r.share_amount,
+          archived: false,
+          changeby: userId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+      if (r.remainder > 0) {
+        newRows.push({
+          vault_id: vaultId,
+          currency_id: r.currency_id,
+          value: r.remainder,
+          archived: false,
+          changeby: userId,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    }
+
+    let createdCount = 0;
+    if (newRows.length > 0) {
+      const { data: created, error: insertError } = await supabase
+        .from("holdings")
+        .insert(newRows)
+        .select("id");
+      if (insertError) throw insertError;
+      createdCount = (created || []).length;
+    }
+
+    const byCurrency = results.map((r) => ({
+      currency_id: r.currency_id,
+      total: r.total,
+      shares: r.shares,
+      share_amount: r.share_amount,
+      remainder: r.remainder,
+      archived_count: r.ids.length,
+      created_count:
+        (keepPartyShare && r.share_amount > 0 ? 1 : 0) +
+        (r.remainder > 0 ? 1 : 0),
+    }));
+
+    return {
+      byCurrency,
+      archived_count: archivedCount,
+      created_count: createdCount,
+    };
   }
 
-  const allIds = results.flatMap((r) => r.ids);
+  const vault = await getVaultById(vaultId);
+  const currencies = Array.isArray(vault?.currencyList)
+    ? vault.currencyList
+    : [];
+
+  const currencyMap = new Map(
+    (Array.isArray(currencies) ? currencies : []).map((currency) => [
+      String(currency.id),
+      currency,
+    ]),
+  );
+
+  const baseCurrency =
+    currencyMap.get(String(vault?.base_currency_id)) ||
+    (Array.isArray(currencies)
+      ? currencies.find((currency) => toNumber(currency?.rate) === 1)
+      : null);
+
+  if (!baseCurrency) {
+    throw new Error("A base currency (rate = 1) is required to merge splits.");
+  }
+
+  let totalBase = 0;
+  for (const currencyId of currencyIds) {
+    const total = toNumber(totalsByCurrency[currencyId]?.total, 0);
+    const currency = currencyMap.get(String(currencyId));
+    const rate = toNumber(currency?.rate);
+
+    if (!Number.isFinite(rate) || rate <= 0) {
+      throw new Error("All currencies need a valid rate to merge holdings.");
+    }
+
+    totalBase += total * rate;
+  }
+
+  const shareBase = totalBase / shares;
+  const sortedCurrencies = [...(currencies || [])].sort(sortByRateDesc);
+
+  let remaining = shareBase;
+  const perShare = [];
+
+  for (const currency of sortedCurrencies) {
+    const rate = toNumber(currency?.rate);
+    if (!Number.isFinite(rate) || rate <= 0) continue;
+    const qty = Math.floor(remaining / rate);
+    if (qty > 0) {
+      perShare.push({
+        currency_id: currency.id,
+        rate,
+        share_amount: qty,
+      });
+      remaining -= qty * rate;
+    }
+  }
+
+  const remainderRaw = Math.max(0, remaining * shares);
+  const totalRemainderBase = remainderRaw > 1e-6 ? remainderRaw : 0;
+
+  const allIds = currencyIds.flatMap(
+    (currencyId) => totalsByCurrency[currencyId]?.ids || [],
+  );
+
+  const supabase = await getSupabase();
   const archivedCount = await archiveHoldingsEntries({ vaultId, ids: allIds });
 
   if (archivedCount !== allIds.length) {
-    throw new Error(
-      "Split failed due to concurrent changes. Please try again.",
-    );
+    const cleared = await confirmAllArchived({
+      supabase,
+      vaultId,
+      ids: allIds,
+    });
+    if (!cleared) {
+      throw new Error(
+        "Split failed due to concurrent changes. Please try again.",
+      );
+    }
   }
-
-  const supabase = await getSupabase();
   const userId = session?.user?.userId || null;
 
   const newRows = [];
-  for (const r of results) {
-    if (keepPartyShare && r.share_amount > 0) {
-      newRows.push({
-        vault_id: vaultId,
-        currency_id: r.currency_id,
-        value: r.share_amount,
-        archived: false,
-        changeby: userId,
-        timestamp: new Date().toISOString(),
-      });
+  if (keepPartyShare) {
+    for (const r of perShare) {
+      if (r.share_amount > 0) {
+        newRows.push({
+          vault_id: vaultId,
+          currency_id: r.currency_id,
+          value: r.share_amount,
+          archived: false,
+          changeby: userId,
+          timestamp: new Date().toISOString(),
+        });
+      }
     }
-    if (r.remainder > 0) {
-      newRows.push({
-        vault_id: vaultId,
-        currency_id: r.currency_id,
-        value: r.remainder,
-        archived: false,
-        changeby: userId,
-        timestamp: new Date().toISOString(),
-      });
-    }
+  }
+
+  if (totalRemainderBase > 0) {
+    newRows.push({
+      vault_id: vaultId,
+      currency_id: baseCurrency.id,
+      value: totalRemainderBase,
+      archived: false,
+      changeby: userId,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   let createdCount = 0;
@@ -263,16 +432,12 @@ export const splitVaultHoldings = async function ({
     createdCount = (created || []).length;
   }
 
-  const byCurrency = results.map((r) => ({
+  const byCurrency = perShare.map((r) => ({
     currency_id: r.currency_id,
-    total: r.total,
-    shares: r.shares,
+    shares,
     share_amount: r.share_amount,
-    remainder: r.remainder,
-    archived_count: r.ids.length,
-    created_count:
-      (keepPartyShare && r.share_amount > 0 ? 1 : 0) +
-      (r.remainder > 0 ? 1 : 0),
+    archived_count: totalsByCurrency[r.currency_id]?.ids?.length || 0,
+    created_count: keepPartyShare && r.share_amount > 0 ? 1 : 0,
   }));
 
   return {

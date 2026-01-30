@@ -30,7 +30,7 @@ export default function RootLayout({ children, modal }) {
   return (
     <html lang="en">
       <body
-        className={`bg-surface-900 text-primary-100 min-h-screen antialiased flex flex-col relative `}
+        className={`bg-bg text-fg min-h-screen antialiased flex flex-col relative `}
       >
         <Providers>
           <Header />

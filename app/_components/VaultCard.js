@@ -1,5 +1,7 @@
 import IconComponent from "@/app/_components/IconComponent";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
+import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
+import GemsIcon from "@/app/_components/icons/GemsIcon";
 import TwoCoinsIcon from "@/app/_components/icons/TwoCoinsIcon";
 import Link from "next/link";
 import {
@@ -90,7 +92,7 @@ function VaultCard({ vault }) {
             value={containers_count}
           />
           <Stat
-            icon="ra-sword"
+            icon={BattleGearIcon}
             label="Treasure"
             value={treasures_count}
           />
@@ -100,7 +102,7 @@ function VaultCard({ vault }) {
             value={currencies_count}
           />
           <Stat
-            icon="ra-diamond"
+            icon={GemsIcon}
             label="Valuables"
             value={valuables_count}
           />

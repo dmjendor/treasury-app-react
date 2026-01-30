@@ -15,6 +15,10 @@ import { useState } from "react";
 import { NavButton } from "@/app/_components/NavButton";
 
 import HoldingsIcon from "@/app/_components/icons/CashIcon";
+import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
+import GemsIcon from "@/app/_components/icons/GemsIcon";
+import ScrollUnfurledIcon from "@/app/_components/icons/ScrollUnfurledIcon";
+import MinionsIcon from "@/app/_components/icons/MinionsIcon";
 
 function SideNavigation({ memberVaultLinks, userId, currentVault }) {
   const params = useParams();
@@ -72,7 +76,7 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
               <div className="space-y-2">
                 <NavLink
                   href={`${vaultBase}`}
-                  icon="ra-scroll-unfurled"
+                  icon={ScrollUnfurledIcon}
                   label="Overview"
                   active={pathname === vaultBase}
                 />
@@ -86,14 +90,14 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
 
                 <NavLink
                   href={`${vaultBase}/treasures`}
-                  icon="ra-sword"
+                  icon={BattleGearIcon}
                   label="Treasures"
                   active={pathname?.startsWith(`${vaultBase}/treasures`)}
                 />
 
                 <NavLink
                   href={`${vaultBase}/valuables`}
-                  icon="ra-diamond"
+                  icon={GemsIcon}
                   label="Valuables"
                   active={pathname?.startsWith(`${vaultBase}/valuables`)}
                 />
@@ -121,7 +125,7 @@ function SideNavigation({ memberVaultLinks, userId, currentVault }) {
 
                 <NavLink
                   href={`${vaultBase}/members`}
-                  icon="ra-double-team"
+                  icon={MinionsIcon}
                   label="Members"
                   active={pathname?.startsWith(`${vaultBase}/members`)}
                 />

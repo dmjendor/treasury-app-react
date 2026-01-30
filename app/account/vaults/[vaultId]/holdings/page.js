@@ -114,14 +114,22 @@ export default async function HoldingsPage({ params, searchParams }) {
         <div>
           <h1 className="text-2xl font-semibold text-fg">Holdings</h1>
         </div>
-        <LinkButton
-          href={`/account/vaults/${vaultId}/holdings/new`}
-          variant="accent"
-          size="lg"
-          className="self-start"
-        >
-          Add
-        </LinkButton>
+        <div className="flex items-center gap-2 self-start">
+          <LinkButton
+            href={`/account/vaults/${vaultId}/holdings/split`}
+            variant="outline"
+            size="lg"
+          >
+            Split holdings
+          </LinkButton>
+          <LinkButton
+            href={`/account/vaults/${vaultId}/holdings/new`}
+            variant="accent"
+            size="lg"
+          >
+            Add
+          </LinkButton>
+        </div>
       </header>
 
       {!loadError ? (

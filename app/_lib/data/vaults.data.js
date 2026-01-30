@@ -35,7 +35,7 @@ export async function getVaultById(id) {
   const { data: vault, error } = await supabase
     .from("vaults")
     .select(
-      "id, user_id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )",
+      "id, user_id, active, base_currency_id, common_currency_id, system_id, name, theme_id, merge_split, treasury_split_enabled, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )",
     )
     .eq("id", id)
     .single();

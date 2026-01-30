@@ -144,3 +144,28 @@ JSDoc format:
  * @returns {Promise<type>}
  */
 ```
+
+## Error handling (required)
+
+- Do not throw raw database or server errors directly to the UI.
+- Server-side errors must be handled in one of the following ways:
+  - Log the error on the server using `console.error` / `console.log` (or equivalent), **and**
+  - Return a structured error payload to the client (`{ ok: false, error: "…" }`)
+- Client components must handle returned errors gracefully and surface them to the user via UI feedback (e.g. toast notifications or inline messages).
+
+### Rules
+
+- Server actions must always return `{ ok, error, data }` and never throw for expected failure cases.
+- Database errors should be:
+  - logged server-side for debugging
+  - translated into user-safe messages before being sent to the client
+- Do not expose raw SQL errors, stack traces, or internal details to end users.
+
+### UI handling
+
+- The UI should:
+  - display a toast or inline message when `ok === false`
+  - avoid crashing or breaking layout due to an error response
+- Silent failures are not acceptable.
+
+If an error

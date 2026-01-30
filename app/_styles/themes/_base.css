@@ -79,6 +79,10 @@
   --color-bg: var(--bg);
   --color-fg: var(--fg);
 
+  --color-section: var(--section);
+  --color-section-fg: var(--section-fg);
+  --color-section-border: var(--section-border);
+
   --color-card: var(--card);
   --color-card-fg: var(--card-fg);
   --color-subcard: var(--subcard);
@@ -104,6 +108,10 @@
   /* Layout */
   --bg: var(--primary-800);
   --fg: var(--primary-100);
+
+  --section: var(--primary-600);
+  --section-fg: var(--primary-100);
+  --section-border: var(--accent-500);
 
   --card: var(--primary-700);
   --card-fg: var(--primary-100);
@@ -156,6 +164,10 @@
   /* Layout */
   --bg: var(--primary-200);
   --fg: var(--primary-800);
+
+  --section: var(--primary-400);
+  --section-fg: var(--primary-800);
+  --section-border: var(--accent-600);
 
   --card: var(--primary-300);
   --card-fg: var(--primary-800);
