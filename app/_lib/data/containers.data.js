@@ -13,15 +13,21 @@ import { auth } from "@/app/_lib/auth";
  */
 export const getContainersForVault = async function (vaultId) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getContainersForVault failed: no session");
+    return [];
+  }
   const supabase = await getSupabase();
   const { data: containers, error } = await supabase
     .from("containers")
     .select("id,name,is_hidden, treasures(count), valuables(count)")
     .eq("vault_id", vaultId);
-  if (error) throw new Error("Containers could not be loaded");
+  if (error) {
+    console.error("getContainersForVault failed", error);
+    return [];
+  }
 
-  return containers;
+  return containers ?? [];
 };
 
 /**
@@ -36,9 +42,12 @@ export async function createContainerInDb(newContainer) {
     .insert([newContainer])
     .select();
 
-  if (error) throw new Error("Container could not be created");
+  if (error) {
+    console.error("createContainerInDb failed", error);
+    return null;
+  }
 
-  return data;
+  return data ?? null;
 }
 
 /**
@@ -49,14 +58,20 @@ export async function createContainerInDb(newContainer) {
  */
 export async function deleteContainerDb(containerId, vaultId) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("deleteContainerDb failed: no session");
+    return { ok: false, error: "You must be logged in." };
+  }
   const supabase = await getSupabase();
 
   const { error } = await supabase
     .from("containers")
     .delete()
     .eq("id", containerId);
-  if (error) throw new Error("Container could not be deleted");
+  if (error) {
+    console.error("deleteContainerDb failed", error);
+    return { ok: false, error: "Container could not be deleted." };
+  }
 
   return { ok: true };
 }
@@ -68,13 +83,19 @@ export async function deleteContainerDb(containerId, vaultId) {
  */
 export const getDefaultContainers = async function () {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getDefaultContainers failed: no session");
+    return [];
+  }
   const supabase = await getSupabase();
   const { data: containers, error } = await supabase
     .from("defaultcontainers")
     .select("name");
 
-  if (error) throw new Error("Default Containers could not be loaded");
+  if (error) {
+    console.error("getDefaultContainers failed", error);
+    return [];
+  }
 
-  return containers;
+  return containers ?? [];
 };

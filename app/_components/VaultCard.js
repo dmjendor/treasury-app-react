@@ -59,18 +59,6 @@ function VaultCard({ vault }) {
 
           <div className="flex items-center gap-2">
             <Link
-              href={`/account/vaults/${id}/edit`}
-              className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-fg transition-colors hover:bg-surface hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              aria-label={`Edit ${name ?? "vault"}`}
-            >
-              <IconComponent
-                icon={HiOutlinePencilSquare}
-                title="Edit"
-              />
-              <span className="hidden sm:inline">Edit</span>
-            </Link>
-
-            <Link
               href={`/account/vaults/${id}`}
               className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted-fg transition-colors hover:bg-surface hover:text-fg focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               aria-label={`View ${name ?? "vault"}`}

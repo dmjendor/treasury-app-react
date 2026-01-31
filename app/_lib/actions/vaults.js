@@ -21,6 +21,7 @@ import {
 export async function createVaultAction(formData) {
   try {
     const userId = await requireUserId(auth);
+    if (!userId) return { ok: false, error: "You must be logged in." };
     const data = await formDataToObject(formData);
 
     // Add owner to object before creating vault.
@@ -68,6 +69,10 @@ export async function updateVaultSettingsAction(input) {
       vaultId: input.id,
       ...input,
     });
+
+    if (!updated) {
+      return { ok: false, error: "Failed to update vault settings." };
+    }
 
     revalidatePath(`/account/vaults/${input.id}`);
     revalidatePath(`/account/vaults/${input.id}/currencies`);

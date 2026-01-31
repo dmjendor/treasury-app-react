@@ -6,6 +6,7 @@ import { getUserById } from "@/app/_lib/data/users.data";
 import { getVaultMemberPreferenceForUserAndVault } from "@/app/_lib/data/vaultMemberPreferences.data";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import { getRouteParams } from "@/app/_lib/routing/params";
+import { notFound } from "next/navigation";
 
 /**
  * Render the public vault layout with theme scope.
@@ -18,6 +19,7 @@ export default async function Layout({ children, params }) {
     getVaultById(vaultId),
     auth(),
   ]);
+  if (!vault) notFound();
 
   const userId = session?.user?.userId || null;
   const [memberPreference, profileTheme] = await Promise.all([

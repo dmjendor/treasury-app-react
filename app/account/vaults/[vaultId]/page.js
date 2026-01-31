@@ -13,6 +13,7 @@ import { getVaultById } from "@/app/_lib/data/vaults.data";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
 import GemsIcon from "@/app/_components/icons/GemsIcon";
+import { notFound } from "next/navigation";
 
 function Panel({ title, icon: Icon, children }) {
   return (
@@ -83,6 +84,9 @@ export default async function VaultOverviewPage({ params }) {
   const resolvedParams =
     typeof params?.then === "function" ? await params : params;
   const { vaultId } = resolvedParams;
+  const vault = await getVaultById(vaultId);
+  if (!vault) notFound();
+
   const {
     id,
     active,
@@ -95,7 +99,7 @@ export default async function VaultOverviewPage({ params }) {
     treasure_count,
     currencies_count,
     valuables_count,
-  } = await getVaultById(vaultId);
+  } = vault;
 
   return (
     <div className="space-y-8 text-fg">

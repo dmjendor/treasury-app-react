@@ -26,7 +26,8 @@ function json(body, status = 200) {
 export async function GET(_request, { params }) {
   try {
     const session = await auth();
-    if (!session) throw new Error("You must be logged in.");
+    if (!session)
+      return json({ ok: false, error: "You must be logged in." }, 401);
     const userId = session.user.userId;
 
     const { vaultId, treasureId } = await params;
@@ -35,17 +36,14 @@ export async function GET(_request, { params }) {
     if (!treasureId)
       return json({ ok: false, error: "treasureId is required." }, 400);
 
-    await assertVaultOwner(vaultId, userId);
+    const isOwner = await assertVaultOwner(vaultId, userId);
+    if (!isOwner) return json({ ok: false, error: "Vault access denied." }, 403);
 
     const data = await getTreasureForVaultById(vaultId, treasureId);
     if (!data) return json({ ok: false, error: "Treasure not found." }, 404);
 
     return json({ ok: true, data });
   } catch (err) {
-    if (err?.message === "You must be logged in.")
-      return json({ ok: false, error: err.message }, 401);
-    if (err?.message === "Vault access denied.")
-      return json({ ok: false, error: err.message }, 403);
     return json({ ok: false, error: err?.message || "Unexpected error." }, 500);
   }
 }
@@ -60,7 +58,8 @@ export async function GET(_request, { params }) {
 export async function PATCH(request, { params }) {
   try {
     const session = await auth();
-    if (!session) throw new Error("You must be logged in.");
+    if (!session)
+      return json({ ok: false, error: "You must be logged in." }, 401);
 
     const userId = session.user.userId;
     const { vaultId, treasureId } = await params;
@@ -75,17 +74,23 @@ export async function PATCH(request, { params }) {
       return json({ ok: false, error: "Invalid JSON body." }, 400);
     }
 
-    await assertVaultOwner(vaultId, userId);
+    const isOwner = await assertVaultOwner(vaultId, userId);
+    if (!isOwner) return json({ ok: false, error: "Vault access denied." }, 403);
 
-    const data = await updateTreasureForVaultById(vaultId, treasureId, updates);
-    if (!data) return json({ ok: false, error: "Treasure not found." }, 404);
+    const updateResult = await updateTreasureForVaultById(
+      vaultId,
+      treasureId,
+      updates,
+    );
+    if (!updateResult?.ok) {
+      return json(
+        { ok: false, error: updateResult?.error || "Treasure not found." },
+        404,
+      );
+    }
 
-    return json({ ok: true, data });
+    return json({ ok: true, data: updateResult.data?.after || null });
   } catch (err) {
-    if (err?.message === "You must be logged in.")
-      return json({ ok: false, error: err.message }, 401);
-    if (err?.message === "Vault access denied.")
-      return json({ ok: false, error: err.message }, 403);
     return json({ ok: false, error: err?.message || "Unexpected error." }, 500);
   }
 }
@@ -100,7 +105,8 @@ export async function PATCH(request, { params }) {
 export async function DELETE(_request, { params }) {
   try {
     const session = await auth();
-    if (!session) throw new Error("You must be logged in.");
+    if (!session)
+      return json({ ok: false, error: "You must be logged in." }, 401);
 
     const userId = session.user.userId;
     const { vaultId, treasureId } = await params;
@@ -110,15 +116,15 @@ export async function DELETE(_request, { params }) {
     if (!treasureId)
       return json({ ok: false, error: "treasureId is required." }, 400);
 
-    await assertVaultOwner(vaultId, userId);
-    await deleteTreasureForVaultById(vaultId, treasureId);
+    const isOwner = await assertVaultOwner(vaultId, userId);
+    if (!isOwner) return json({ ok: false, error: "Vault access denied." }, 403);
+    const deleted = await deleteTreasureForVaultById(vaultId, treasureId);
+    if (!deleted) {
+      return json({ ok: false, error: "Failed to delete treasure." }, 500);
+    }
 
     return json({ ok: true });
   } catch (err) {
-    if (err?.message === "You must be logged in.")
-      return json({ ok: false, error: err.message }, 401);
-    if (err?.message === "Vault access denied.")
-      return json({ ok: false, error: err.message }, 403);
     return json({ ok: false, error: err?.message || "Unexpected error." }, 500);
   }
 }

@@ -49,10 +49,16 @@ export async function cleanInputs(text) {
  */
 export async function requireUserId(authFn) {
   const session = await authFn();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("requireUserId failed: no session");
+    return null;
+  }
 
   const userId = session?.user?.userId;
-  if (!userId) throw new Error("You must be logged in.");
+  if (!userId) {
+    console.error("requireUserId failed: missing user id");
+    return null;
+  }
 
   return userId;
 }

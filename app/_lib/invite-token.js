@@ -25,7 +25,10 @@ function sign(payloadJson, secret) {
  */
 export function createInviteToken(payload) {
   const secret = process.env.INVITE_SECRET;
-  if (!secret) throw new Error("Missing INVITE_SECRET.");
+  if (!secret) {
+    console.error("createInviteToken failed: missing INVITE_SECRET");
+    return null;
+  }
 
   const json = JSON.stringify(payload);
   const body = base64urlEncode(json);
@@ -36,7 +39,10 @@ export function createInviteToken(payload) {
 
 export function verifyInviteToken(token) {
   const secret = process.env.INVITE_SECRET;
-  if (!secret) throw new Error("Missing INVITE_SECRET.");
+  if (!secret) {
+    console.error("verifyInviteToken failed: missing INVITE_SECRET");
+    return { ok: false, error: "Invite tokens are not configured." };
+  }
 
   if (!token || typeof token !== "string") {
     return { ok: false, error: "Invalid token." };

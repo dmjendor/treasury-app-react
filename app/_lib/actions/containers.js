@@ -8,7 +8,11 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/app/_lib/auth";
 import { requireUserId, toBool } from "@/app/_lib/actions/_utils";
-import { deleteContainerDb } from "@/app/_lib/data/containers.data";
+import {
+  createContainerInDb,
+  deleteContainerDb,
+  getContainersForVault,
+} from "@/app/_lib/data/containers.data";
 
 /**
  * Create a container in a vault.
@@ -17,7 +21,8 @@ import { deleteContainerDb } from "@/app/_lib/data/containers.data";
  */
 export async function createContainerAction(formData) {
   try {
-    await requireUserId(auth);
+    const userId = await requireUserId(auth);
+    if (!userId) return { ok: false, error: "You must be logged in." };
 
     const vaultId = formData.get("vault_id")?.toString();
     const name = formData.get("name")?.toString().trim();
@@ -27,19 +32,14 @@ export async function createContainerAction(formData) {
     if (!name || name.length < 2)
       return { ok: false, error: "Container name is required." };
 
-    const res = await fetch(
-      `/api/vaults/${encodeURIComponent(vaultId)}/containers`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-        body: JSON.stringify({ name, is_hidden }),
-      }
-    );
+    const created = await createContainerInDb({
+      vault_id: vaultId,
+      name,
+      is_hidden,
+    });
 
-    if (!res.ok) {
-      const raw = await res.text().catch(() => "");
-      return { ok: false, error: raw || "Failed to create container." };
+    if (!Array.isArray(created) || created.length === 0) {
+      return { ok: false, error: "Failed to create container." };
     }
 
     revalidatePath(`/account/vaults/${vaultId}/containers`);
@@ -57,15 +57,40 @@ export async function createContainerAction(formData) {
  */
 export async function deleteContainerAction(containerId, vaultId) {
   try {
-    await requireUserId(auth);
+    const userId = await requireUserId(auth);
+    if (!userId) return { ok: false, error: "You must be logged in." };
 
     if (!containerId || !vaultId) return { ok: false, error: "Missing id." };
 
-    await deleteContainerDb(containerId);
+    const result = await deleteContainerDb(containerId, vaultId);
+    if (!result?.ok) {
+      return { ok: false, error: result?.error || "Failed to delete container." };
+    }
 
     revalidatePath(`/account/vaults/${vaultId}/containers`);
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err?.message || "Failed to delete container." };
+  }
+}
+
+/**
+ * List containers for a vault.
+ * @param {{ vaultId: string }} input
+ * @returns {Promise<{ ok: boolean, error?: string, data?: any[] }>}
+ */
+export async function listContainersForVaultAction({ vaultId }) {
+  try {
+    const userId = await requireUserId(auth);
+    if (!userId) return { ok: false, error: "You must be logged in." };
+    if (!vaultId) return { ok: false, error: "Missing vaultId." };
+
+    const data = await getContainersForVault(vaultId);
+    return { ok: true, data: Array.isArray(data) ? data : [] };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err?.message || "Failed to load containers.",
+    };
   }
 }

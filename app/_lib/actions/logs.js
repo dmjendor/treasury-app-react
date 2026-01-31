@@ -12,16 +12,15 @@ import {
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
 export const getVaultLogsAction = async function ({ vaultId, limit, before }) {
-  try {
-    const data = await listVaultLogs({ vaultId, limit, before });
-    return { ok: true, error: null, data };
-  } catch (e) {
+  const result = await listVaultLogs({ vaultId, limit, before });
+  if (!result?.ok) {
     return {
       ok: false,
-      error: e?.message || "Could not load logs.",
+      error: result?.error || "Could not load logs.",
       data: null,
     };
   }
+  return { ok: true, error: null, data: result.data };
 };
 
 /**
@@ -36,22 +35,21 @@ export const getEntityLogsAction = async function ({
   limit,
   before,
 }) {
-  try {
-    const data = await listEntityLogs({
-      vaultId,
-      entityType,
-      entityId,
-      limit,
-      before,
-    });
-    return { ok: true, error: null, data };
-  } catch (e) {
+  const result = await listEntityLogs({
+    vaultId,
+    entityType,
+    entityId,
+    limit,
+    before,
+  });
+  if (!result?.ok) {
     return {
       ok: false,
-      error: e?.message || "Could not load logs.",
+      error: result?.error || "Could not load logs.",
       data: null,
     };
   }
+  return { ok: true, error: null, data: result.data };
 };
 
 /**
@@ -60,14 +58,13 @@ export const getEntityLogsAction = async function ({
  * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
 export const addVaultLogAction = async function (input) {
-  try {
-    const data = await createVaultLog(input);
-    return { ok: true, error: null, data };
-  } catch (e) {
+  const result = await createVaultLog(input);
+  if (!result?.ok) {
     return {
       ok: false,
-      error: e?.message || "Could not write log.",
+      error: result?.error || "Could not write log.",
       data: null,
     };
   }
+  return { ok: true, error: null, data: result.data };
 };

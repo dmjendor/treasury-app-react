@@ -12,9 +12,15 @@ import { getSupabase } from "@/app/_lib/supabase";
  * @returns {Promise<Array<{id:string,vault_id:string,user_id:string,display_name:string|null,theme_key:string|null}>>}
  */
 export async function getVaultMemberPreferencesForUser(userId) {
-  if (!userId) throw new Error("User id is required.");
+  if (!userId) {
+    console.error("getVaultMemberPreferencesForUser failed: missing user id");
+    return [];
+  }
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getVaultMemberPreferencesForUser failed: no session");
+    return [];
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -22,7 +28,10 @@ export async function getVaultMemberPreferencesForUser(userId) {
     .select("id,vault_id,user_id,display_name,theme_key")
     .eq("user_id", userId);
 
-  if (error) throw error;
+  if (error) {
+    console.error("getVaultMemberPreferencesForUser failed", error);
+    return [];
+  }
   return data || [];
 }
 
@@ -37,11 +46,19 @@ export async function upsertVaultMemberPreference({
   displayName,
   themeKey,
 }) {
-  if (!userId || !vaultId) throw new Error("User id and vault id are required.");
+  if (!userId || !vaultId) {
+    console.error("upsertVaultMemberPreference failed: missing ids");
+    return null;
+  }
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
-  if (String(session.user.userId) !== String(userId))
-    throw new Error("You do not have access to update this preference.");
+  if (!session) {
+    console.error("upsertVaultMemberPreference failed: no session");
+    return null;
+  }
+  if (String(session.user.userId) !== String(userId)) {
+    console.error("upsertVaultMemberPreference failed: access denied");
+    return null;
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -58,8 +75,11 @@ export async function upsertVaultMemberPreference({
     .select("id,vault_id,user_id,display_name,theme_key")
     .single();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("upsertVaultMemberPreference failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -73,7 +93,10 @@ export async function getVaultMemberPreferenceForUserAndVault({
 }) {
   if (!userId || !vaultId) return null;
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getVaultMemberPreferenceForUserAndVault failed: no session");
+    return null;
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -84,8 +107,11 @@ export async function getVaultMemberPreferenceForUserAndVault({
     .single();
 
   if (error?.code === "PGRST116") return null;
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("getVaultMemberPreferenceForUserAndVault failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -94,9 +120,15 @@ export async function getVaultMemberPreferenceForUserAndVault({
  * @returns {Promise<number>}
  */
 export async function deleteVaultMemberPreferencesForUser({ userId }) {
-  if (!userId) throw new Error("User id is required.");
+  if (!userId) {
+    console.error("deleteVaultMemberPreferencesForUser failed: missing user id");
+    return 0;
+  }
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("deleteVaultMemberPreferencesForUser failed: no session");
+    return 0;
+  }
 
   const supabase = await getSupabase();
   const { count, error } = await supabase
@@ -104,6 +136,9 @@ export async function deleteVaultMemberPreferencesForUser({ userId }) {
     .delete()
     .eq("user_id", userId)
     .select("id", { count: "exact" });
-  if (error) throw error;
+  if (error) {
+    console.error("deleteVaultMemberPreferencesForUser failed", error);
+    return 0;
+  }
   return Number(count || 0);
 }

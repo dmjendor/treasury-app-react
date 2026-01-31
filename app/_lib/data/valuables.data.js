@@ -20,7 +20,10 @@ export async function getValuablesForVault(vaultId) {
     .eq("vault_id", vaultId)
     .order("name", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getValuablesForVault failed", error);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -40,7 +43,10 @@ export async function getValuablesForContainer(vaultId, containerId) {
     .eq("container_id", containerId)
     .order("name", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getValuablesForContainer failed", error);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -56,8 +62,11 @@ export async function createValuableDb(valuableObj) {
     .insert([valuableObj])
     .select();
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    console.error("createValuableDb failed", error);
+    return [];
+  }
+  return data ?? [];
 }
 
 /**
@@ -66,16 +75,20 @@ export async function createValuableDb(valuableObj) {
  * @returns {Promise<Array<object>>}
  */
 export async function getDefaultValuables(vaultId) {
-  const { system_id } = await getVaultById(vaultId);
+  const vault = await getVaultById(vaultId);
+  if (!vault?.system_id) return [];
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("defaultvaluables")
     .select("*")
-    .eq("system_id", system_id);
+    .eq("system_id", vault.system_id);
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    console.error("getDefaultValuables failed", error);
+    return [];
+  }
+  return data ?? [];
 }
 
 /**
@@ -93,8 +106,11 @@ export async function getValuableForVaultById(vaultId, valuableId) {
     .eq("id", valuableId)
     .single();
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    console.error("getValuableForVaultById failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -109,7 +125,11 @@ export async function deleteValuableForVaultById(vaultId, valuableId) {
     .delete()
     .eq("vault_id", vaultId)
     .eq("id", valuableId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("deleteValuableForVaultById failed", error);
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -126,7 +146,19 @@ export async function updateValuableForVaultById(vaultId, valuableId, updates) {
   delete safeUpdates.id;
   delete safeUpdates.vault_id;
 
-  const { data, error } = await supabase
+  const { data: before, error: beforeError } = await supabase
+    .from("valuables")
+    .select("*")
+    .eq("id", valuableId)
+    .eq("vault_id", vaultId)
+    .single();
+
+  if (beforeError) {
+    console.error("updateValuableForVaultById before fetch failed", beforeError);
+    return { ok: false, error: "Valuable could not be loaded.", data: null };
+  }
+
+  const { data: after, error: updateError } = await supabase
     .from("valuables")
     .update(safeUpdates)
     .eq("id", valuableId)
@@ -134,6 +166,64 @@ export async function updateValuableForVaultById(vaultId, valuableId, updates) {
     .select("*")
     .single();
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (updateError) {
+    console.error("updateValuableForVaultById update failed", updateError);
+    return { ok: false, error: "Valuable could not be updated.", data: null };
+  }
+
+  return { ok: true, error: null, data: { before, after } };
+}
+
+/**
+ * Transfer a valuable to another vault and container.
+ * @param {{ fromVaultId: string, toVaultId: string, valuableId: string, containerId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: { before: any, after: any } | null }>}
+ */
+export async function transferValuableToVault({
+  fromVaultId,
+  toVaultId,
+  valuableId,
+  containerId,
+}) {
+  const supabase = await getSupabase();
+
+  const { data: beforeRows, error: beforeError } = await supabase
+    .from("valuables")
+    .select("*")
+    .eq("id", valuableId)
+    .eq("vault_id", fromVaultId);
+
+  if (beforeError) {
+    console.error("transferValuableToVault: before fetch failed", beforeError);
+    return { ok: false, error: "Valuable could not be loaded.", data: null };
+  }
+
+  if (!Array.isArray(beforeRows) || beforeRows.length !== 1) {
+    return { ok: false, error: "Valuable not found.", data: null };
+  }
+
+  const before = beforeRows[0];
+
+  const { data: afterRows, error: updateError } = await supabase
+    .from("valuables")
+    .update({
+      vault_id: toVaultId,
+      container_id: containerId,
+    })
+    .eq("id", valuableId)
+    .eq("vault_id", fromVaultId)
+    .select("*");
+
+  if (updateError) {
+    console.error("transferValuableToVault: update failed", updateError);
+    return { ok: false, error: "Valuable could not be transferred.", data: null };
+  }
+
+  if (!Array.isArray(afterRows) || afterRows.length !== 1) {
+    return { ok: false, error: "Valuable could not be transferred.", data: null };
+  }
+
+  const after = afterRows[0];
+
+  return { ok: true, error: null, data: { before, after } };
 }

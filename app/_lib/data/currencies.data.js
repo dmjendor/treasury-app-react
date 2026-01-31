@@ -19,7 +19,10 @@ export async function getCurrenciesForVault(vaultId) {
     .eq("vault_id", vaultId)
     .order("name", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getCurrenciesForVault failed", error);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -27,7 +30,7 @@ export async function getCurrenciesForVault(vaultId) {
  * - Get a currency for a vault by id (vault boundary enforced).
  * - @param {string} vaultId
  * - @param {string} currencyId
- * - @returns {Promise<any>}
+ * - @returns {Promise<any|null>}
  */
 export async function getCurrencyForVaultById(vaultId, currencyId) {
   const supabase = await getSupabase();
@@ -41,7 +44,10 @@ export async function getCurrencyForVaultById(vaultId, currencyId) {
 
   // PGRST116 = "Results contain 0 rows" for .single()
   if (error?.code === "PGRST116") return null;
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getCurrencyForVaultById failed", error);
+    return null;
+  }
 
   return data ?? null;
 }
@@ -50,7 +56,7 @@ export async function getCurrencyForVaultById(vaultId, currencyId) {
  * - Create a currency in a vault.
  * - @param {string} vaultId
  * - @param {any} input
- * - @returns {Promise<any>}
+ * - @returns {Promise<any|null>}
  */
 export async function createCurrencyForVault(vaultId, input) {
   const supabase = await getSupabase();
@@ -63,8 +69,11 @@ export async function createCurrencyForVault(vaultId, input) {
     .select("*")
     .single();
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    console.error("createCurrencyForVault failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /////////////
@@ -92,7 +101,10 @@ export async function updateCurrencyForVaultById(vaultId, currencyId, updates) {
     .single();
 
   if (error?.code === "PGRST116") return null;
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("updateCurrencyForVaultById failed", error);
+    return null;
+  }
 
   return data ?? null;
 }
@@ -101,7 +113,7 @@ export async function updateCurrencyForVaultById(vaultId, currencyId, updates) {
  * - Delete a currency for a vault by id (vault boundary enforced).
  * - @param {string} vaultId
  * - @param {string} currencyId
- * - @returns {Promise<void>}
+ * - @returns {Promise<boolean>}
  */
 export async function deleteCurrencyForVaultById(vaultId, currencyId) {
   const supabase = await getSupabase();
@@ -112,5 +124,9 @@ export async function deleteCurrencyForVaultById(vaultId, currencyId) {
     .eq("id", currencyId)
     .eq("vault_id", vaultId);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("deleteCurrencyForVaultById failed", error);
+    return false;
+  }
+  return true;
 }

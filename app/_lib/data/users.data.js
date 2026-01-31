@@ -19,7 +19,7 @@ export async function getUser(email) {
     .eq("email", email)
     .single();
   if (error) {
-    console.error(error);
+    console.error("getUser failed", error);
   }
   // No error here! We handle the possibility of no user in the sign in callback
   return data;
@@ -35,11 +35,11 @@ export async function createUser(newUser) {
   const { data, error } = await supabase.from("users").insert([newUser]);
 
   if (error) {
-    console.error(error);
-    throw new Error("User could not be created");
+    console.error("createUser failed", error);
+    return null;
   }
 
-  return data;
+  return data ?? null;
 }
 
 /**
@@ -48,15 +48,21 @@ export async function createUser(newUser) {
  * @returns {Promise<any>}
  */
 export async function getUserById(userId) {
-  if (!userId) throw new Error("User id is required.");
+  if (!userId) {
+    console.error("getUserById failed: missing user id");
+    return null;
+  }
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("users")
     .select("*")
     .eq("id", userId)
     .single();
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("getUserById failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -65,13 +71,17 @@ export async function getUserById(userId) {
  * @returns {Promise<void>}
  */
 export async function updateUserSourceByEmail({ email, source }) {
-  if (!email || !source) return;
+  if (!email || !source) return false;
   const supabase = await getSupabase();
   const { error } = await supabase
     .from("users")
     .update({ source })
     .eq("email", email);
-  if (error) throw error;
+  if (error) {
+    console.error("updateUserSourceByEmail failed", error);
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -80,10 +90,17 @@ export async function updateUserSourceByEmail({ email, source }) {
  * @returns {Promise<void>}
  */
 export async function deleteUserById({ userId }) {
-  if (!userId) throw new Error("User id is required.");
+  if (!userId) {
+    console.error("deleteUserById failed: missing user id");
+    return false;
+  }
   const supabase = await getSupabase();
   const { error } = await supabase.from("users").delete().eq("id", userId);
-  if (error) throw error;
+  if (error) {
+    console.error("deleteUserById failed", error);
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -92,7 +109,10 @@ export async function deleteUserById({ userId }) {
  * @returns {Promise<any>}
  */
 export async function updateUserTheme({ userId, themeId }) {
-  if (!userId) throw new Error("User id is required.");
+  if (!userId) {
+    console.error("updateUserTheme failed: missing user id");
+    return null;
+  }
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("users")
@@ -100,6 +120,9 @@ export async function updateUserTheme({ userId, themeId }) {
     .eq("id", userId)
     .select("*")
     .single();
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("updateUserTheme failed", error);
+    return null;
+  }
+  return data ?? null;
 }

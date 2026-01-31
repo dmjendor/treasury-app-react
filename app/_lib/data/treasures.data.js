@@ -22,7 +22,10 @@ export async function getTreasuresForVault(vaultId) {
     .or("archived.is.null,archived.eq.false")
     .order("name", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getTreasuresForContainer failed", error);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -43,7 +46,10 @@ export async function getTreasuresForContainer(vaultId, containerId) {
     .or("archived.is.null,archived.eq.false")
     .order("name", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("createTreasureDb failed", error);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -59,9 +65,12 @@ export async function createTreasureDb(treasureObj, options = {}) {
     .insert([treasureObj])
     .select();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getTreasuresForVault failed", error);
+    return [];
+  }
 
-  return data;
+  return data ?? [];
 }
 
 /**
@@ -70,16 +79,20 @@ export async function createTreasureDb(treasureObj, options = {}) {
  * @returns {Promise<Array<object>>}
  */
 export async function getDefaultTreasures(vaultId) {
-  const { system_id } = await getVaultById(vaultId);
+  const vault = await getVaultById(vaultId);
+  if (!vault?.system_id) return [];
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("defaulttreasures")
     .select("*")
-    .eq("system_id", system_id);
+    .eq("system_id", vault.system_id);
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    console.error("getDefaultTreasures failed", error);
+    return [];
+  }
+  return data ?? [];
 }
 
 /**
@@ -98,8 +111,11 @@ export async function getTreasureForVaultById(vaultId, treasureId) {
     .or("archived.is.null,archived.eq.false")
     .single();
 
-  if (error) throw new Error(error.message);
-  return data;
+  if (error) {
+    console.error("getTreasureForVaultById failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -114,7 +130,10 @@ export async function deleteTreasureForVaultById(vaultId, treasureId) {
     .update({ archived: true })
     .eq("vault_id", vaultId)
     .eq("id", treasureId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("deleteTreasureForVaultById failed", error);
+    return false;
+  }
 
   await tryCreateVaultLog({
     vaultId,
@@ -123,6 +142,7 @@ export async function deleteTreasureForVaultById(vaultId, treasureId) {
     entityType: "treasures",
     entityId: treasureId,
   });
+  return true;
 }
 
 /**
@@ -146,7 +166,10 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
     .eq("vault_id", vaultId)
     .single();
 
-  if (beforeError) return { ok: false, error: beforeError.message, data: null };
+  if (beforeError) {
+    console.error("updateTreasureForVaultById before fetch failed", beforeError);
+    return { ok: false, error: "Treasure could not be loaded.", data: null };
+  }
 
   const { data: after, error: updateError } = await supabase
     .from("treasures")
@@ -156,7 +179,64 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
     .select("*")
     .single();
 
-  if (updateError) return { ok: false, error: updateError.message, data: null };
+  if (updateError) {
+    console.error("updateTreasureForVaultById update failed", updateError);
+    return { ok: false, error: "Treasure could not be updated.", data: null };
+  }
+
+  return { ok: true, error: null, data: { before, after } };
+}
+
+/**
+ * Transfer a treasure to another vault and container.
+ * @param {{ fromVaultId: string, toVaultId: string, treasureId: string, containerId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: { before: any, after: any } | null }>}
+ */
+export async function transferTreasureToVault({
+  fromVaultId,
+  toVaultId,
+  treasureId,
+  containerId,
+}) {
+  const supabase = await getSupabase();
+
+  const { data: beforeRows, error: beforeError } = await supabase
+    .from("treasures")
+    .select("*")
+    .eq("id", treasureId)
+    .eq("vault_id", fromVaultId);
+
+  if (beforeError) {
+    console.error("transferTreasureToVault: before fetch failed", beforeError);
+    return { ok: false, error: "Treasure could not be loaded.", data: null };
+  }
+
+  if (!Array.isArray(beforeRows) || beforeRows.length !== 1) {
+    return { ok: false, error: "Treasure not found.", data: null };
+  }
+
+  const before = beforeRows[0];
+
+  const { data: afterRows, error: updateError } = await supabase
+    .from("treasures")
+    .update({
+      vault_id: toVaultId,
+      container_id: containerId,
+    })
+    .eq("id", treasureId)
+    .eq("vault_id", fromVaultId)
+    .select("*");
+
+  if (updateError) {
+    console.error("transferTreasureToVault: update failed", updateError);
+    return { ok: false, error: "Treasure could not be transferred.", data: null };
+  }
+
+  if (!Array.isArray(afterRows) || afterRows.length !== 1) {
+    return { ok: false, error: "Treasure could not be transferred.", data: null };
+  }
+
+  const after = afterRows[0];
 
   return { ok: true, error: null, data: { before, after } };
 }

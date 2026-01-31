@@ -23,6 +23,12 @@ export async function POST(req, { params }) {
       is_hidden,
       vault_id: vaultId,
     });
+    if (!Array.isArray(created) || created.length === 0) {
+      return NextResponse.json(
+        { error: "Failed to create container" },
+        { status: 500 },
+      );
+    }
     return NextResponse.json({ container: created }, { status: 201 });
   } catch (e) {
     return NextResponse.json(

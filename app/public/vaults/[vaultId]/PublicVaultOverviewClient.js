@@ -101,7 +101,7 @@ function EmptyState({ title, message }) {
 
 /**
  * Render the public vault overview.
- * @param {{ vaultId: string, vault: any, balances: any[], containers: any[], currencies: any[], treasures: any[], valuables: any[], isOwner: boolean }} props
+ * @param {{ vaultId: string, vault: any, balances: any[], containers: any[], currencies: any[], treasures: any[], valuables: any[], isOwner: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean }} props
  * @returns {JSX.Element}
  */
 export default function PublicVaultOverviewClient({
@@ -113,6 +113,8 @@ export default function PublicVaultOverviewClient({
   treasures,
   valuables,
   isOwner,
+  canTransferTreasureOut = false,
+  canTransferValuableOut = false,
 }) {
   const router = useRouter();
 
@@ -271,6 +273,8 @@ export default function PublicVaultOverviewClient({
               baseCurrencyId={vault?.base_currency_id}
               commonCurrencyId={vault?.common_currency_id}
               isOwner={isOwner}
+              canTransferTreasureOut={canTransferTreasureOut}
+              canTransferValuableOut={canTransferValuableOut}
             />
           )}
         </SectionCard>

@@ -18,11 +18,15 @@ import { revalidatePath } from "next/cache";
  */
 export async function deleteCurrencyAction({ vaultId, currencyId }) {
   try {
-    await requireUserId(auth);
+    const userId = await requireUserId(auth);
+    if (!userId) return { ok: false, error: "You must be logged in." };
 
     if (!currencyId || !vaultId) return { ok: false, error: "Missing id." };
 
-    await deleteCurrencyForVaultById(vaultId, currencyId);
+    const deleted = await deleteCurrencyForVaultById(vaultId, currencyId);
+    if (!deleted) {
+      return { ok: false, error: "Failed to delete currency." };
+    }
 
     revalidatePath(`/account/vaults/${vaultId}/currencies`);
     return { ok: true };
@@ -38,7 +42,8 @@ export async function deleteCurrencyAction({ vaultId, currencyId }) {
  */
 export async function addDefaultCurrenciesAction({ vaultId, defaults }) {
   try {
-    await requireUserId(auth);
+    const userId = await requireUserId(auth);
+    if (!userId) return { ok: false, error: "You must be logged in." };
 
     if (!vaultId) return { ok: false, error: "Missing vault id." };
     if (!Array.isArray(defaults) || defaults.length === 0) {

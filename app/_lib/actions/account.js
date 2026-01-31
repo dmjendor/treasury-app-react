@@ -37,6 +37,10 @@ export async function upsertVaultMemberPreferenceAction({
       themeKey,
     });
 
+    if (!data) {
+      return { ok: false, error: "Could not save preferences.", data: null };
+    }
+
     revalidatePath("/account");
     revalidatePath(`/account/vaults/${vaultId}`);
     revalidatePath(`/public/vaults/${vaultId}`);
@@ -72,9 +76,13 @@ export async function deleteAccountAction() {
 
     const userId = session.user.userId;
 
-    await deleteVaultMemberPreferencesForUser({ userId });
-    await deletePermissionsForUser({ userId });
-    await deleteUserById({ userId });
+    const prefsDeleted = await deleteVaultMemberPreferencesForUser({ userId });
+    const permsDeleted = await deletePermissionsForUser({ userId });
+    const userDeleted = await deleteUserById({ userId });
+
+    if (userDeleted === false) {
+      return { ok: false, error: "Could not cancel account.", data: null };
+    }
 
     revalidatePath("/account");
     revalidatePath("/account/vaults");
@@ -104,6 +112,10 @@ export async function updateProfileThemeAction({ themeId }) {
       userId: session.user.userId,
       themeId: themeId || null,
     });
+
+    if (!data) {
+      return { ok: false, error: "Could not update profile theme.", data: null };
+    }
 
     revalidatePath("/account");
 

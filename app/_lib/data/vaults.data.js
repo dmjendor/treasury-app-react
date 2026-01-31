@@ -5,7 +5,6 @@
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 import { auth } from "@/app/_lib/auth";
-import { notFound } from "next/navigation";
 import { getThemes } from "@/app/_lib/data/themes.data";
 import { getSystems } from "@/app/_lib/data/systems.data";
 import { getCurrenciesForVault } from "@/app/_lib/data/currencies.data";
@@ -29,16 +28,24 @@ function normalizeVault(vault) {
  */
 export async function getVaultById(id) {
   if (!id) {
-    throw new Error("getVaultById: missing vault id");
+    console.error("getVaultById failed: missing vault id");
+    return null;
   }
   const supabase = await getSupabase();
   const { data: vault, error } = await supabase
     .from("vaults")
     .select(
-      "id, user_id, active, base_currency_id, common_currency_id, system_id, name, theme_id, merge_split, treasury_split_enabled, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )",
+      "id, user_id, active, allow_xfer_in, allow_xfer_out, base_currency_id, common_currency_id, system_id, name, theme_id, merge_split, treasury_split_enabled, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system:systems( id, name )",
     )
     .eq("id", id)
     .single();
+
+  if (error) {
+    console.error("getVaultById failed", error);
+    return null;
+  }
+
+  if (!vault) return null;
 
   const [containerList, themeList, systemList, currencyList] =
     await Promise.all([
@@ -49,19 +56,13 @@ export async function getVaultById(id) {
     ]);
 
   const normalizedVault = normalizeVault(vault);
-  const vaultCtx = {
+  return {
     ...normalizedVault,
     containerList,
     themeList,
     systemList,
     currencyList,
   };
-
-  if (error) {
-    console.error(error);
-  }
-
-  return vaultCtx;
 }
 
 /**
@@ -71,16 +72,22 @@ export async function getVaultById(id) {
 export const getUserVaults = async function () {
   const supabase = await getSupabase();
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getUserVaults failed: no session");
+    return [];
+  }
   const { data: vaults, error } = await supabase
     .from("vaults")
     .select(
-      "id, active, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system: systems( id, name)",
+      "id, active, allow_xfer_in, allow_xfer_out, base_currency_id, common_currency_id, system_id, name, theme_id, containers(count), treasures(count), currencies(count), valuables(count), theme:themes ( id, theme_key, name ), system: systems( id, name)",
     )
     .eq("user_id", session.user.userId)
     .order("name");
 
-  if (error) throw new Error("Vaults could not be loaded");
+  if (error) {
+    console.error("getUserVaults failed", error);
+    return [];
+  }
 
   const normalizedVaults = Array.isArray(vaults)
     ? vaults.map(normalizeVault)
@@ -103,7 +110,11 @@ export async function assertVaultOwner(vaultId, userId) {
     .eq("user_id", userId)
     .single();
 
-  if (error || !data) throw new Error("Vault access denied.");
+  if (error || !data) {
+    if (error) console.error("assertVaultOwner failed", error);
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -119,7 +130,10 @@ export async function createVault(newVault) {
     .select("*")
     .single();
 
-  if (error) throw new Error("Vault could not be created");
+  if (error) {
+    console.error("createVault failed", error);
+    return null;
+  }
 
   return data ?? null;
 }
@@ -159,8 +173,11 @@ export async function updateVaultSettingsDb({ userId, vaultId, ...patch }) {
     .select("*")
     .single();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("updateVaultSettingsDb failed", error);
+    return null;
+  }
+  return data ?? null;
 }
 
 /**
@@ -188,7 +205,10 @@ export async function getMemberVaultsForUser(userId) {
     .not("accepted_at", "is", null) // optional, but helps enforce "accepted"
     .order("name", { foreignTable: "vaults", ascending: true });
 
-  if (error) return { data: null, error };
+  if (error) {
+    console.error("getMemberVaultsForUser failed", error);
+    return { data: null, error: "Member vaults could not be loaded." };
+  }
 
   const memberVaults = (data || []).map((row) => row.vaults);
   // .filter(Boolean)

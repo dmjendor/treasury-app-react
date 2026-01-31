@@ -4,6 +4,7 @@
  */
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
+import { getUserVaults } from "@/app/_lib/data/vaults.data";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import { tryCreateVaultLog } from "@/app/_lib/data/logs.data";
 
@@ -26,7 +27,10 @@ export async function getAllUsersForVault(vaultId) {
     .order("accepted_at", { ascending: false, nullsFirst: true })
     .order("invited_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("getAllUsersForVault failed", error);
+    return [];
+  }
   return data ?? [];
 }
 
@@ -72,8 +76,10 @@ export async function upsertPermissionInvite({ vaultId, email, createdBy }) {
     .select("id, vault_id, email, invited_at, accepted_at, can_view, user_id")
     .single();
 
-  console.log(error);
-  if (error) return { ok: false, error: error.message, data: null };
+  if (error) {
+    console.error("upsertPermissionInvite failed", error);
+    return { ok: false, error: "Could not create invite.", data: null };
+  }
 
   return { ok: true, error: "", data };
 }
@@ -108,7 +114,10 @@ export async function getPermissionInvite({ permissionId, vaultId, email }) {
 
   const { data, error } = await q;
 
-  if (error) return { ok: false, error: error.message, data: null };
+  if (error) {
+    console.error("getPermissionInvite failed", error);
+    return { ok: false, error: "Invite could not be loaded.", data: null };
+  }
   return { ok: true, error: "", data };
 }
 
@@ -138,7 +147,10 @@ export async function acceptPermissionInvite({ permissionId, userId }) {
     })
     .eq("id", permissionId);
 
-  if (error) return { ok: false, error: error.message, data: null };
+  if (error) {
+    console.error("acceptPermissionInvite failed", error);
+    return { ok: false, error: "Invite could not be accepted.", data: null };
+  }
   await tryCreateVaultLog({
     vaultId,
     source: "permissions",
@@ -194,7 +206,10 @@ export async function acceptPendingPermissionInvite({
     "id, vault_id, user_id, accepted_at, can_view",
   );
 
-  if (error) return { ok: false, error: error.message, data: null };
+  if (error) {
+    console.error("acceptPendingPermissionInvite failed", error);
+    return { ok: false, error: "Invite could not be accepted.", data: null };
+  }
   if (!data || data.length === 0) {
     return { ok: false, error: "Invite is no longer valid.", data: null };
   }
@@ -220,7 +235,10 @@ export async function getVaultNameForInvite({ vaultId }) {
     .eq("id", vaultId)
     .single();
 
-  if (error) return { ok: false, error: error.message, data: null };
+  if (error) {
+    console.error("getVaultNameForInvite failed", error);
+    return { ok: false, error: "Vault could not be loaded.", data: null };
+  }
   return { ok: true, error: "", data: { name: data?.name || "" } };
 }
 
@@ -243,7 +261,11 @@ export async function getMembersByVaultId(vaultId) {
     .not("user_id", "is", null)
     .order("accepted_at", { ascending: false });
 
-  return { data: data || [], error };
+  if (error) {
+    console.error("getMembersByVaultId failed", error);
+    return { data: [], error: "Members could not be loaded." };
+  }
+  return { data: data || [], error: null };
 }
 
 /**
@@ -265,7 +287,11 @@ export async function getInvitesByVaultId(vaultId) {
     .is("user_id", null)
     .order("invited_at", { ascending: false });
 
-  return { data: data || [], error };
+  if (error) {
+    console.error("getInvitesByVaultId failed", error);
+    return { data: [], error: "Invites could not be loaded." };
+  }
+  return { data: data || [], error: null };
 }
 
 // 🧩 Core reads
@@ -288,7 +314,77 @@ export async function getPermissionByVaultAndUserId(vaultId, userId) {
     .eq("vault_id", vaultId)
     .eq("user_id", userId);
 
-  return { data: data || [], error };
+  if (error) {
+    console.error("getPermissionByVaultAndUserId failed", error);
+    return { data: [], error: "Permissions could not be loaded." };
+  }
+  return { data: data || [], error: null };
+}
+
+/**
+ * - Fetch transfer permissions with vault info for a user.
+ * @param {string} userId
+ * @returns {Promise<{ data: Array<object>, error: any }>}
+ */
+export async function getTransferVaultsForUser(userId) {
+  if (!userId) {
+    return { data: [], error: "userId is required." };
+  }
+  const supabase = await getSupabase();
+  const { data: permissionRows, error } = await supabase
+    .from("permissions")
+    .select(
+      `
+      vault_id,
+      can_view,
+      transfer_treasures_in,
+      transfer_treasures_out,
+      transfer_valuables_in,
+      transfer_valuables_out,
+      vaults:vault_id (
+        id,
+        name,
+        user_id,
+        allow_xfer_in,
+        allow_xfer_out
+      )
+    `,
+    )
+    .eq("user_id", userId)
+    .eq("can_view", true);
+
+  if (error) {
+    console.error("getTransferVaultsForUser failed", error);
+    return { data: [], error: "Transfer vaults could not be loaded." };
+  }
+
+  const owned = await getUserVaults();
+  const ownedRows = (owned || []).map((vault) => ({
+    vault_id: vault.id,
+    can_view: true,
+    transfer_treasures_in: true,
+    transfer_treasures_out: true,
+    transfer_valuables_in: true,
+    transfer_valuables_out: true,
+    vaults: {
+      id: vault.id,
+      name: vault.name,
+      user_id: vault.user_id,
+      allow_xfer_in: vault.allow_xfer_in,
+      allow_xfer_out: vault.allow_xfer_out,
+    },
+  }));
+
+  const merged = new Map();
+  for (const row of permissionRows || []) {
+    if (!row?.vaults) continue;
+    merged.set(String(row.vaults.id), row);
+  }
+  for (const row of ownedRows) {
+    merged.set(String(row.vaults.id), row);
+  }
+
+  return { data: [...merged.values()], error: null };
 }
 
 /**
@@ -311,7 +407,11 @@ export async function getInviteByVaultAndEmail(vaultId, email) {
     .is("user_id", null)
     .order("invited_at", { ascending: false });
 
-  return { data: data || [], error };
+  if (error) {
+    console.error("getInviteByVaultAndEmail failed", error);
+    return { data: [], error: "Invite could not be loaded." };
+  }
+  return { data: data || [], error: null };
 }
 
 // 🧩 Core writes
@@ -432,7 +532,11 @@ export async function getVaultMembersWithPermissions(vaultId, userId) {
     .not("user_id", "is", null)
     .order("accepted_at", { ascending: false });
 
-  return { data: data || [], error };
+  if (error) {
+    console.error("getVaultMembersWithPermissions failed", error);
+    return { data: [], error: "Permissions could not be loaded." };
+  }
+  return { data: data || [], error: null };
 }
 
 /**
@@ -472,7 +576,10 @@ export async function createOwnerPermission({ vaultId, userId }) {
     .select("*")
     .single();
 
-  if (error) return { ok: false, error: error.message, data: null };
+  if (error) {
+    console.error("createOwnerPermission failed", error);
+    return { ok: false, error: "Owner permissions could not be created.", data: null };
+  }
   return { ok: true, error: "", data };
 }
 
@@ -482,7 +589,10 @@ export async function createOwnerPermission({ vaultId, userId }) {
  * @returns {Promise<number>}
  */
 export async function deletePermissionsForUser({ userId }) {
-  if (!userId) throw new Error("User id is required.");
+  if (!userId) {
+    console.error("deletePermissionsForUser failed: missing user id");
+    return 0;
+  }
   const supabase = await getSupabase();
 
   const { count, error } = await supabase
@@ -491,6 +601,9 @@ export async function deletePermissionsForUser({ userId }) {
     .eq("user_id", userId)
     .select("id", { count: "exact" });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("deletePermissionsForUser failed", error);
+    return 0;
+  }
   return Number(count || 0);
 }

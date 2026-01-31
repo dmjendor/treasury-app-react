@@ -2,7 +2,10 @@ import { Resend } from "resend";
 
 export async function sendInviteEmail({ toEmail, inviteUrl, vaultName }) {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error("Missing RESEND_API_KEY.");
+  if (!apiKey) {
+    console.error("sendInviteEmail failed: missing RESEND_API_KEY");
+    return { ok: false, error: "Email configuration is missing.", data: null };
+  }
 
   const resend = new Resend(apiKey);
 

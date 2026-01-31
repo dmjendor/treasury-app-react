@@ -5,9 +5,12 @@ export async function getThemes() {
   const supabase = await getSupabase();
   const { data, error } = await supabase.from("themes").select("*");
 
-  if (error) throw new Error("Themes could not be loaded");
+  if (error) {
+    console.error("getThemes failed", error);
+    return [];
+  }
 
-  return data;
+  return data ?? [];
 }
 
 /**
@@ -25,6 +28,9 @@ export async function getThemeById(themeId) {
     .single();
 
   if (error?.code === "PGRST116") return null;
-  if (error) throw error;
+  if (error) {
+    console.error("getThemeById failed", error);
+    return null;
+  }
   return data ?? null;
 }

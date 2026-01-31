@@ -9,11 +9,13 @@ import { auth } from "@/app/_lib/auth";
 /**
  * - Create a log entry in a vault.
  * - @param {{ vaultId:string, action:string, entityType?:string, entityId?:string, changes?:any, status?:string, source?:string, message?:string, requestId?:string, meta?:any }} input
- * - @returns {Promise<any>}
+ * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
 export const createVaultLog = async function (input) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    return { ok: false, error: "You must be logged in.", data: null };
+  }
 
   const supabase = await getSupabase();
 
@@ -42,8 +44,12 @@ export const createVaultLog = async function (input) {
     .select("*")
     .single();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("createVaultLog failed", error);
+    return { ok: false, error: "Log entry could not be created.", data: null };
+  }
+
+  return { ok: true, error: null, data };
 };
 
 /**
@@ -53,12 +59,20 @@ export const createVaultLog = async function (input) {
  */
 export const tryCreateVaultLog = async function (input) {
   try {
-    const data = await createVaultLog(input);
-    return { ok: true, error: null, data };
+    const result = await createVaultLog(input);
+    if (!result?.ok) {
+      return {
+        ok: false,
+        error: result?.error || "Could not write log.",
+        data: null,
+      };
+    }
+    return { ok: true, error: null, data: result.data };
   } catch (e) {
+    console.error("tryCreateVaultLog failed", e);
     return {
       ok: false,
-      error: e?.message || "Could not write log.",
+      error: "Could not write log.",
       data: null,
     };
   }
@@ -67,11 +81,13 @@ export const tryCreateVaultLog = async function (input) {
 /**
  * - List logs for a vault.
  * - @param {{ vaultId:string, limit?:number, before?:string }} input
- * - @returns {Promise<any[]>}
+ * - @returns {Promise<{ok:boolean,error:string|null,data:any[]}>}
  */
 export const listVaultLogs = async function ({ vaultId, limit = 50, before }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    return { ok: false, error: "You must be logged in.", data: [] };
+  }
 
   const supabase = await getSupabase();
 
@@ -87,14 +103,17 @@ export const listVaultLogs = async function ({ vaultId, limit = 50, before }) {
   }
 
   const { data, error } = await q;
-  if (error) throw error;
-  return data || [];
+  if (error) {
+    console.error("listVaultLogs failed", error);
+    return { ok: false, error: "Logs could not be loaded.", data: [] };
+  }
+  return { ok: true, error: null, data: data || [] };
 };
 
 /**
  * - List logs for a specific entity in a vault.
  * - @param {{ vaultId:string, entityType:string, entityId:string, limit?:number, before?:string }} input
- * - @returns {Promise<any[]>}
+ * - @returns {Promise<{ok:boolean,error:string|null,data:any[]}>}
  */
 export const listEntityLogs = async function ({
   vaultId,
@@ -104,7 +123,9 @@ export const listEntityLogs = async function ({
   before,
 }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    return { ok: false, error: "You must be logged in.", data: [] };
+  }
 
   const supabase = await getSupabase();
 
@@ -122,18 +143,23 @@ export const listEntityLogs = async function ({
   }
 
   const { data, error } = await q;
-  if (error) throw error;
-  return data || [];
+  if (error) {
+    console.error("listEntityLogs failed", error);
+    return { ok: false, error: "Logs could not be loaded.", data: [] };
+  }
+  return { ok: true, error: null, data: data || [] };
 };
 
 /**
  * - Get a single log entry by id.
  * - @param {{ id:string }} input
- * - @returns {Promise<any>}
+ * - @returns {Promise<{ok:boolean,error:string|null,data:any}>}
  */
 export const getLogById = async function ({ id }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    return { ok: false, error: "You must be logged in.", data: null };
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -142,14 +168,17 @@ export const getLogById = async function ({ id }) {
     .eq("id", id)
     .single();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("getLogById failed", error);
+    return { ok: false, error: "Log entry could not be loaded.", data: null };
+  }
+  return { ok: true, error: null, data };
 };
 
 /**
  * - Build a logger helper for a vault and source.
  * - @param {{ vaultId:string, source:string, requestId?:string }} input
- * - @returns {Promise<(entry: {action:string, entityType?:string, entityId?:string, changes?:any, status?:string, message?:string, meta?:any}) => Promise<void>>}
+ * - @returns {Promise<{ok:boolean,error:string|null,data:((entry: {action:string, entityType?:string, entityId?:string, changes?:any, status?:string, message?:string, meta?:any}) => Promise<void>)|null}>}
  */
 export const createVaultLogger = async function ({
   vaultId,
@@ -157,9 +186,11 @@ export const createVaultLogger = async function ({
   requestId,
 }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    return { ok: false, error: "You must be logged in.", data: null };
+  }
 
-  return async function (entry) {
+  const logger = async function (entry) {
     await tryCreateVaultLog({
       vaultId,
       source,
@@ -173,6 +204,8 @@ export const createVaultLogger = async function ({
       meta: entry.meta,
     });
   };
+
+  return { ok: true, error: null, data: logger };
 };
 
 /**
@@ -214,7 +247,12 @@ export async function getVaultLogs({ vaultId, page = 1, pageSize = 20 }) {
     .range(from, to);
 
   if (error) {
-    return { ok: false, error: error.message, data: { logs: [], total: 0 } };
+    console.error("getVaultLogs failed", error);
+    return {
+      ok: false,
+      error: "Logs could not be loaded.",
+      data: { logs: [], total: 0 },
+    };
   }
 
   return {

@@ -98,16 +98,15 @@ export const createHoldingsEntryAction = async function ({
   currencyId,
   value,
 }) {
-  try {
-    const data = await createHoldingsEntry({ vaultId, currencyId, value });
-    return { ok: true, error: null, data };
-  } catch (e) {
+  const data = await createHoldingsEntry({ vaultId, currencyId, value });
+  if (!data) {
     return {
       ok: false,
-      error: e?.message || "Could not create holdings entry.",
+      error: "Could not create holdings entry.",
       data: null,
     };
   }
+  return { ok: true, error: null, data };
 };
 
 /**
@@ -139,22 +138,21 @@ export const splitVaultHoldingsAction = async function ({
   keepPartyShare,
   mergeSplit,
 }) {
-  try {
-    const data = await splitVaultHoldings({
-      vaultId,
-      partyMemberCount,
-      keepPartyShare,
-      mergeSplit,
-    });
-    revalidatePath(`/account/vaults/${vaultId}/holdings`);
-    revalidatePath(`/account/vaults/${vaultId}`);
-    revalidatePath(`/public/vaults/${vaultId}`);
-    return { ok: true, error: null, data };
-  } catch (e) {
+  const result = await splitVaultHoldings({
+    vaultId,
+    partyMemberCount,
+    keepPartyShare,
+    mergeSplit,
+  });
+  if (!result?.ok) {
     return {
       ok: false,
-      error: e?.message || "Could not split holdings.",
+      error: result?.error || "Could not split holdings.",
       data: null,
     };
   }
+  revalidatePath(`/account/vaults/${vaultId}/holdings`);
+  revalidatePath(`/account/vaults/${vaultId}`);
+  revalidatePath(`/public/vaults/${vaultId}`);
+  return { ok: true, error: null, data: result.data };
 };

@@ -4,6 +4,7 @@ import { getVaultCurrencyBalances } from "@/app/_lib/data/holdings.data";
 import { getMembersByVaultId } from "@/app/_lib/data/permissions.data";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import { getRouteParams } from "@/app/_lib/routing/params";
+import { notFound } from "next/navigation";
 
 function countMembersExcludingOwner(members, ownerId) {
   const list = Array.isArray(members) ? members : [];
@@ -25,6 +26,7 @@ export default async function Page({ params }) {
     getVaultCurrencyBalances(vaultId),
     getMembersByVaultId(vaultId),
   ]);
+  if (!vault) notFound();
 
   const members = Array.isArray(membersResult?.data)
     ? membersResult.data

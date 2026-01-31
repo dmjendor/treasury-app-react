@@ -93,7 +93,7 @@ export default function ContainerForm({
   return (
     <form
       action={formAction}
-      className="space-y-6"
+      className="p-5"
     >
       {/* Required for create and edit */}
       <InputComponent

@@ -26,7 +26,10 @@ async function confirmAllArchived({ supabase, vaultId, ids }) {
     .eq("vault_id", vaultId)
     .eq("archived", false)
     .in("id", ids);
-  if (error) throw error;
+  if (error) {
+    console.error("confirmAllArchived failed", error);
+    return false;
+  }
   return (data || []).length === 0;
 }
 
@@ -37,7 +40,10 @@ async function confirmAllArchived({ supabase, vaultId, ids }) {
  */
 export const getVaultCurrencyBalances = async function (vaultId) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getVaultCurrencyBalances failed: no session");
+    return [];
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -56,7 +62,10 @@ export const getVaultCurrencyBalances = async function (vaultId) {
     .eq("vault_id", vaultId)
     .eq("archived", false);
 
-  if (error) throw error;
+  if (error) {
+    console.error("getVaultCurrencyBalances failed", error);
+    return [];
+  }
 
   const totals = Object.values(
     (data || []).reduce((acc, row) => {
@@ -87,7 +96,10 @@ export const getVaultCurrencyBalances = async function (vaultId) {
  */
 export const listUnarchivedHoldingsEntries = async function (vaultId) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("listUnarchivedHoldingsEntries failed: no session");
+    return [];
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -97,7 +109,10 @@ export const listUnarchivedHoldingsEntries = async function (vaultId) {
     .eq("archived", false)
     .order("timestamp", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.error("listUnarchivedHoldingsEntries failed", error);
+    return [];
+  }
   return data || [];
 };
 
@@ -112,11 +127,16 @@ export const createHoldingsEntry = async function ({
   value,
 }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("createHoldingsEntry failed: no session");
+    return null;
+  }
 
   const numericValue = Number(value);
-  if (!Number.isFinite(numericValue))
-    throw new Error("Value must be a number.");
+  if (!Number.isFinite(numericValue)) {
+    console.error("createHoldingsEntry failed: invalid value", value);
+    return null;
+  }
 
   const supabase = await getSupabase();
   const userId = session?.user?.userId || null;
@@ -134,8 +154,11 @@ export const createHoldingsEntry = async function ({
     .select("id,value,currency_id,vault_id,archived,timestamp")
     .single();
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("createHoldingsEntry failed", error);
+    return null;
+  }
+  return data ?? null;
 };
 
 /**
@@ -145,7 +168,10 @@ export const createHoldingsEntry = async function ({
  */
 export const archiveHoldingsEntries = async function ({ vaultId, ids }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("archiveHoldingsEntries failed: no session");
+    return 0;
+  }
   if (!Array.isArray(ids) || ids.length === 0) return 0;
 
   const supabase = await getSupabase();
@@ -159,7 +185,8 @@ export const archiveHoldingsEntries = async function ({ vaultId, ids }) {
     .select("id", { count: "exact" });
 
   if (error) {
-    console.log(error);
+    console.error("archiveHoldingsEntries failed", error);
+    return 0;
   }
   return Number(count || 0);
 };
@@ -171,7 +198,10 @@ export const archiveHoldingsEntries = async function ({ vaultId, ids }) {
  */
 export const getUnarchivedTotalsByCurrency = async function (vaultId) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    console.error("getUnarchivedTotalsByCurrency failed: no session");
+    return {};
+  }
 
   const supabase = await getSupabase();
   const { data, error } = await supabase
@@ -180,7 +210,10 @@ export const getUnarchivedTotalsByCurrency = async function (vaultId) {
     .eq("vault_id", vaultId)
     .eq("archived", false);
 
-  if (error) throw error;
+  if (error) {
+    console.error("getUnarchivedTotalsByCurrency failed", error);
+    return {};
+  }
 
   const map = {};
   for (const row of data || []) {
@@ -204,18 +237,24 @@ export const splitVaultHoldings = async function ({
   mergeSplit,
 }) {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) {
+    return { ok: false, error: "You must be logged in.", data: null };
+  }
 
   const members = Number(partyMemberCount);
   if (!Number.isInteger(members) || members <= 0) {
-    throw new Error("Party member count must be a positive integer.");
+    return {
+      ok: false,
+      error: "Party member count must be a positive integer.",
+      data: null,
+    };
   }
 
   const totalsByCurrency = await getUnarchivedTotalsByCurrency(vaultId);
   const currencyIds = Object.keys(totalsByCurrency);
 
   if (currencyIds.length === 0) {
-    return { byCurrency: [] };
+    return { ok: true, error: null, data: { byCurrency: [] } };
   }
 
   const shares = members + (keepPartyShare ? 1 : 0);
@@ -256,9 +295,11 @@ export const splitVaultHoldings = async function ({
         ids: allIds,
       });
       if (!cleared) {
-        throw new Error(
-          "Split failed due to concurrent changes. Please try again.",
-        );
+        return {
+          ok: false,
+          error: "Split failed due to concurrent changes. Please try again.",
+          data: null,
+        };
       }
     }
     const userId = session?.user?.userId || null;
@@ -293,7 +334,14 @@ export const splitVaultHoldings = async function ({
         .from("holdings")
         .insert(newRows)
         .select("id");
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("splitVaultHoldings insert failed", insertError);
+        return {
+          ok: false,
+          error: "Holdings could not be updated.",
+          data: null,
+        };
+      }
       createdCount = (created || []).length;
     }
 
@@ -310,13 +358,20 @@ export const splitVaultHoldings = async function ({
     }));
 
     return {
-      byCurrency,
-      archived_count: archivedCount,
-      created_count: createdCount,
+      ok: true,
+      error: null,
+      data: {
+        byCurrency,
+        archived_count: archivedCount,
+        created_count: createdCount,
+      },
     };
   }
 
   const vault = await getVaultById(vaultId);
+  if (!vault) {
+    return { ok: false, error: "Vault could not be loaded.", data: null };
+  }
   const currencies = Array.isArray(vault?.currencyList)
     ? vault.currencyList
     : [];
@@ -335,7 +390,11 @@ export const splitVaultHoldings = async function ({
       : null);
 
   if (!baseCurrency) {
-    throw new Error("A base currency (rate = 1) is required to merge splits.");
+    return {
+      ok: false,
+      error: "A base currency (rate = 1) is required to merge splits.",
+      data: null,
+    };
   }
 
   let totalBase = 0;
@@ -345,7 +404,11 @@ export const splitVaultHoldings = async function ({
     const rate = toNumber(currency?.rate);
 
     if (!Number.isFinite(rate) || rate <= 0) {
-      throw new Error("All currencies need a valid rate to merge holdings.");
+      return {
+        ok: false,
+        error: "All currencies need a valid rate to merge holdings.",
+        data: null,
+      };
     }
 
     totalBase += total * rate;
@@ -388,9 +451,11 @@ export const splitVaultHoldings = async function ({
       ids: allIds,
     });
     if (!cleared) {
-      throw new Error(
-        "Split failed due to concurrent changes. Please try again.",
-      );
+      return {
+        ok: false,
+        error: "Split failed due to concurrent changes. Please try again.",
+        data: null,
+      };
     }
   }
   const userId = session?.user?.userId || null;
@@ -428,7 +493,14 @@ export const splitVaultHoldings = async function ({
       .from("holdings")
       .insert(newRows)
       .select("id");
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error("splitVaultHoldings insert failed", insertError);
+      return {
+        ok: false,
+        error: "Holdings could not be updated.",
+        data: null,
+      };
+    }
     createdCount = (created || []).length;
   }
 
@@ -441,8 +513,12 @@ export const splitVaultHoldings = async function ({
   }));
 
   return {
-    byCurrency,
-    archived_count: archivedCount,
-    created_count: createdCount,
+    ok: true,
+    error: null,
+    data: {
+      byCurrency,
+      archived_count: archivedCount,
+      created_count: createdCount,
+    },
   };
 };

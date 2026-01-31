@@ -22,10 +22,10 @@ function json(body, status = 200) {
  */
 async function requireUserId() {
   const session = await auth();
-  if (!session) throw new Error("You must be logged in.");
+  if (!session) return null;
 
   const userId = session?.user?.userId;
-  if (!userId) throw new Error("You must be logged in.");
+  if (!userId) return null;
 
   return userId;
 }
@@ -36,20 +36,18 @@ async function requireUserId() {
 export async function GET(_request, context) {
   try {
     const userId = await requireUserId();
+    if (!userId) return json({ ok: false, error: "You must be logged in." }, 401);
 
     const { vaultId } = await context.params;
     if (!vaultId)
       return json({ ok: false, error: "vaultId is required." }, 400);
 
-    await assertVaultOwner(vaultId, userId);
+    const isOwner = await assertVaultOwner(vaultId, userId);
+    if (!isOwner) return json({ ok: false, error: "Vault access denied." }, 403);
 
     const data = await getTreasuresForVault(vaultId);
     return json({ ok: true, data });
   } catch (err) {
-    if (err?.message === "You must be logged in.")
-      return json({ ok: false, error: err.message }, 401);
-    if (err?.message === "Vault access denied.")
-      return json({ ok: false, error: err.message }, 403);
     return json({ ok: false, error: err?.message || "Unexpected error." }, 500);
   }
 }

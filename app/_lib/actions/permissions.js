@@ -74,6 +74,13 @@ export async function inviteMemberAction({ vaultId, email }) {
       permission_id: permissionId,
       exp,
     });
+    if (!token) {
+      return {
+        ok: false,
+        error: "Invite token could not be created.",
+        data: null,
+      };
+    }
 
     const baseUrl =
       process.env.NEXT_PUBLIC_SITE_URL || "https://www.partytreasury.com";
@@ -82,7 +89,18 @@ export async function inviteMemberAction({ vaultId, email }) {
     const vaultNameRes = await getVaultNameForInvite({ vaultId });
     const vaultName = vaultNameRes.ok ? vaultNameRes.data.name : "";
 
-    await sendInviteEmail({ toEmail: cleanEmail, inviteUrl, vaultName });
+    const emailResult = await sendInviteEmail({
+      toEmail: cleanEmail,
+      inviteUrl,
+      vaultName,
+    });
+    if (!emailResult?.ok) {
+      return {
+        ok: false,
+        error: emailResult?.error || "Failed to send invite.",
+        data: null,
+      };
+    }
 
     return { ok: true, error: "", data: { inviteUrl } };
   } catch (e) {
