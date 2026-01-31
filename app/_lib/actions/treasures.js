@@ -3,6 +3,7 @@
 import {
   createTreasureDb,
   getDefaultTreasures,
+  getTreasureForVaultById,
   transferTreasureToVault,
   updateTreasureForVaultById,
 } from "@/app/_lib/data/treasures.data";
@@ -42,6 +43,23 @@ export async function getDefaultTreasuresAction({ vaultId }) {
 
   const rows = await getDefaultTreasures(vaultId);
   return { ok: true, error: null, data: Array.isArray(rows) ? rows : [] };
+}
+
+/**
+ * - Get a treasure for a vault by id.
+ * @param {{ vaultId: string, treasureId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: any }>}
+ */
+export async function getTreasureForVaultByIdAction({ vaultId, treasureId }) {
+  if (!vaultId || !treasureId) {
+    return { ok: false, error: "Missing treasure id.", data: null };
+  }
+
+  const data = await getTreasureForVaultById(vaultId, treasureId);
+  if (!data) {
+    return { ok: false, error: "Treasure not found.", data: null };
+  }
+  return { ok: true, error: null, data };
 }
 
 export async function updateTreasureAction({ id, vaultId, patch }) {

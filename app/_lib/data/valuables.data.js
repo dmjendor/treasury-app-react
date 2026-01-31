@@ -104,8 +104,9 @@ export async function getValuableForVaultById(vaultId, valuableId) {
     .select("*")
     .eq("vault_id", vaultId)
     .eq("id", valuableId)
-    .single();
+    .maybeSingle();
 
+  if (error?.code === "PGRST116") return null;
   if (error) {
     console.error("getValuableForVaultById failed", error);
     return null;
@@ -154,7 +155,10 @@ export async function updateValuableForVaultById(vaultId, valuableId, updates) {
     .single();
 
   if (beforeError) {
-    console.error("updateValuableForVaultById before fetch failed", beforeError);
+    console.error(
+      "updateValuableForVaultById before fetch failed",
+      beforeError,
+    );
     return { ok: false, error: "Valuable could not be loaded.", data: null };
   }
 
@@ -216,11 +220,19 @@ export async function transferValuableToVault({
 
   if (updateError) {
     console.error("transferValuableToVault: update failed", updateError);
-    return { ok: false, error: "Valuable could not be transferred.", data: null };
+    return {
+      ok: false,
+      error: "Valuable could not be transferred.",
+      data: null,
+    };
   }
 
   if (!Array.isArray(afterRows) || afterRows.length !== 1) {
-    return { ok: false, error: "Valuable could not be transferred.", data: null };
+    return {
+      ok: false,
+      error: "Valuable could not be transferred.",
+      data: null,
+    };
   }
 
   const after = afterRows[0];

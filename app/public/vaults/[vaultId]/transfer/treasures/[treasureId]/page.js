@@ -6,7 +6,7 @@ import {
   getPermissionByVaultAndUserId,
   getTransferVaultsForUser,
 } from "@/app/_lib/data/permissions.data";
-import { getTreasureForVaultById } from "@/app/_lib/data/treasures.data";
+import { getTreasureForVaultByIdAction } from "@/app/_lib/actions/treasures";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import { getRouteParams } from "@/app/_lib/routing/params";
 import { notFound } from "next/navigation";
@@ -45,13 +45,16 @@ export default async function Page({ params }) {
 
   const userId = session.user.userId;
 
-  const [vault, treasure, permRes, transferRes] = await Promise.all([
+  const [vault, treasureRes, permRes, transferRes] = await Promise.all([
     getVaultById(vaultId),
-    getTreasureForVaultById(vaultId, treasureId),
+    getTreasureForVaultByIdAction({ vaultId, treasureId }),
     getPermissionByVaultAndUserId(vaultId, userId),
     getTransferVaultsForUser(userId),
   ]);
   if (!vault) notFound();
+  if (!treasureRes?.ok) notFound();
+
+  const treasure = treasureRes.data;
 
   const permission = Array.isArray(permRes?.data) ? permRes.data[0] : null;
   const canTransferOut =

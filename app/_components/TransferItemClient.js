@@ -61,6 +61,7 @@ export default function TransferItemClient({
 
       const res = await listContainersForVaultAction({
         vaultId: selectedVaultId,
+        showAll: false,
       });
 
       if (cancelled) return;

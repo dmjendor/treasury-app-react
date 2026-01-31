@@ -64,7 +64,10 @@ export async function deleteContainerAction(containerId, vaultId) {
 
     const result = await deleteContainerDb(containerId, vaultId);
     if (!result?.ok) {
-      return { ok: false, error: result?.error || "Failed to delete container." };
+      return {
+        ok: false,
+        error: result?.error || "Failed to delete container.",
+      };
     }
 
     revalidatePath(`/account/vaults/${vaultId}/containers`);
@@ -79,13 +82,16 @@ export async function deleteContainerAction(containerId, vaultId) {
  * @param {{ vaultId: string }} input
  * @returns {Promise<{ ok: boolean, error?: string, data?: any[] }>}
  */
-export async function listContainersForVaultAction({ vaultId }) {
+export async function listContainersForVaultAction({
+  vaultId,
+  showAll = true,
+}) {
   try {
     const userId = await requireUserId(auth);
     if (!userId) return { ok: false, error: "You must be logged in." };
     if (!vaultId) return { ok: false, error: "Missing vaultId." };
 
-    const data = await getContainersForVault(vaultId);
+    const data = await getContainersForVault(vaultId, showAll);
     return { ok: true, data: Array.isArray(data) ? data : [] };
   } catch (err) {
     return {

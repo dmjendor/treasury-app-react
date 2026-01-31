@@ -3,6 +3,7 @@
 import {
   createValuableDb,
   getDefaultValuables,
+  getValuableForVaultById,
   transferValuableToVault,
   updateValuableForVaultById,
 } from "@/app/_lib/data/valuables.data";
@@ -27,6 +28,23 @@ export async function getDefaultValuablesAction({ vaultId }) {
 
   const rows = await getDefaultValuables(vaultId);
   return { ok: true, error: null, data: Array.isArray(rows) ? rows : [] };
+}
+
+/**
+ * - Get a valuable for a vault by id.
+ * @param {{ vaultId: string, valuableId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: any }>}
+ */
+export async function getValuableForVaultByIdAction({ vaultId, valuableId }) {
+  if (!vaultId || !valuableId) {
+    return { ok: false, error: "Missing valuable id.", data: null };
+  }
+
+  const data = await getValuableForVaultById(vaultId, valuableId);
+  if (!data) {
+    return { ok: false, error: "Valuable not found.", data: null };
+  }
+  return { ok: true, error: null, data };
 }
 
 /**

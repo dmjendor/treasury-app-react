@@ -109,8 +109,9 @@ export async function getTreasureForVaultById(vaultId, treasureId) {
     .eq("vault_id", vaultId)
     .eq("id", treasureId)
     .or("archived.is.null,archived.eq.false")
-    .single();
+    .maybeSingle();
 
+  if (error?.code === "PGRST116") return null;
   if (error) {
     console.error("getTreasureForVaultById failed", error);
     return null;

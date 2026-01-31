@@ -11,17 +11,24 @@ import { auth } from "@/app/_lib/auth";
  * - @param {string} vaultId
  * - @returns {Promise<any[]>}
  */
-export const getContainersForVault = async function (vaultId) {
+export const getContainersForVault = async function (vaultId, showAll = true) {
   const session = await auth();
   if (!session) {
     console.error("getContainersForVault failed: no session");
     return [];
   }
   const supabase = await getSupabase();
-  const { data: containers, error } = await supabase
+  const query = supabase
     .from("containers")
     .select("id,name,is_hidden, treasures(count), valuables(count)")
     .eq("vault_id", vaultId);
+
+  if (!showAll) {
+    query.eq("is_hidden", false);
+  }
+
+  const { data: containers, error } = await query;
+
   if (error) {
     console.error("getContainersForVault failed", error);
     return [];
