@@ -26,27 +26,58 @@ const rewardDetailsSchema = z.object({
    -------------------------- */
 
 const holdingRowSchema = z.object({
-  currency_code: z.string().trim().min(1, "Choose a currency"),
-
-  amount: z.coerce.number().int().min(0, "Amount must be 0 or more"),
+  currency_id: uuidString,
+  value: z.coerce.number().int().min(0, "Value must be 0 or more"),
 });
 
 /* --------------------------
    Step 3: Treasures
-   -------------------------- */
 
+
+   Matches TreasuresForm payload fields:
+   container_id, name, genericname, description, value, quantity, identified, magical, archived
+   UI-only valueUnit/displayValue are not stored here.
+-------------------------- */
 const prepTreasureRowSchema = z.object({
-  name: z.string().trim().min(1, "Treasure name is required"),
+  container_id: z.string().uuid("Choose a valid container"),
 
-  value_cp: z.coerce.number().int().min(0).optional().default(0),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Treasure name is required")
+    .max(120, "Treasure name must be under 120 characters"),
+
+  genericname: z
+    .string()
+    .trim()
+    .max(120, "Generic name must be under 120 characters")
+    .optional()
+    .nullable()
+    .default(null),
+
+  description: z
+    .string()
+    .trim()
+    .max(1000, "Description must be under 1000 characters")
+    .optional()
+    .nullable()
+    .default(null),
+
+  // Stored in base units (same as TreasuresForm payload.value)
+  value: z.coerce
+    .number()
+    .int("Value must be a whole number")
+    .min(0, "Value must be 0 or greater")
+    .default(0),
 
   quantity: z.coerce
     .number()
-    .int()
-    .min(1, "Quantity must be at least 1")
+    .int("Quantity must be a whole number")
+    .min(0, "Quantity must be 0 or greater")
     .default(1),
 
-  notes: z.string().trim().max(200).optional().default(""),
+  identified: z.coerce.boolean().default(false),
+  magical: z.coerce.boolean().default(false),
 });
 
 /* --------------------------
@@ -54,17 +85,26 @@ const prepTreasureRowSchema = z.object({
    -------------------------- */
 
 const prepValuableRowSchema = z.object({
-  name: z.string().trim().min(1, "Valuable name is required"),
+  container_id: z.string().uuid("Choose a valid container"),
 
-  value_cp: z.coerce.number().int().min(0).optional().default(0),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Valuable name is required")
+    .max(120, "Valuable name must be under 120 characters"),
+
+  // Stored in base units (same as ValuablesForm payload.value)
+  value: z.coerce
+    .number()
+    .int("Value must be a whole number")
+    .min(0, "Value must be 0 or greater")
+    .default(0),
 
   quantity: z.coerce
     .number()
-    .int()
-    .min(1, "Quantity must be at least 1")
+    .int("Quantity must be a whole number")
+    .min(0, "Quantity must be 0 or greater")
     .default(1),
-
-  notes: z.string().trim().max(200).optional().default(""),
 });
 
 /* --------------------------

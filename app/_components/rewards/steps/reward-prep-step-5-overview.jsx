@@ -5,26 +5,16 @@
 
 import SubCard from "@/app/_components/SubCard";
 
-const currencyOptions = [
-  { id: "11111111-1111-1111-1111-111111111111", label: "Gold" },
-  { id: "22222222-2222-2222-2222-222222222222", label: "Silver" },
-  { id: "33333333-3333-3333-3333-333333333333", label: "Copper" },
-];
+function nameFor(options, id) {
+  return options.find((option) => option.id === id)?.name || "Unknown";
+}
 
-const treasureOptions = [
-  { id: "44444444-4444-4444-4444-444444444444", label: "Gem pouch" },
-  { id: "55555555-5555-5555-5555-555555555555", label: "Ancient coin" },
-  { id: "66666666-6666-6666-6666-666666666666", label: "Silver idol" },
-];
+function codeFor(options, id) {
+  return options.find((option) => option.id === id)?.code || "";
+}
 
-const valuableOptions = [
-  { id: "77777777-7777-7777-7777-777777777777", label: "Art object" },
-  { id: "88888888-8888-8888-8888-888888888888", label: "Jeweled goblet" },
-  { id: "99999999-9999-9999-9999-999999999999", label: "Rare tapestry" },
-];
-
-function labelFor(options, id) {
-  return options.find((option) => option.id === id)?.label || "Unknown";
+function containerNameFor(options, id) {
+  return options.find((option) => option.id === id)?.name || "Unknown";
 }
 
 /**
@@ -32,11 +22,23 @@ function labelFor(options, id) {
  * @param {{ form: any }} props
  * @returns {JSX.Element}
  */
-export default function RewardPrepStepOverview({ form }) {
+export default function RewardPrepStepOverview({ form, vault }) {
   const values = form.watch();
   const name = typeof values.name === "string" ? values.name.trim() : "";
   const description =
     typeof values.description === "string" ? values.description.trim() : "";
+  const currencyOptions = vault?.currencyList;
+  const containerOptions = Array.isArray(vault?.containerList)
+    ? vault.containerList
+    : [];
+
+  const baseCurrency =
+    currencyOptions?.find(
+      (currency) =>
+        String(currency.id) === String(vault?.base_currency_id ?? ""),
+    ) || null;
+  const baseLabel =
+    baseCurrency?.code || baseCurrency?.symbol || baseCurrency?.name || "Base";
   const holdings = Array.isArray(values.holdings) ? values.holdings : [];
   const treasures = Array.isArray(values.treasures) ? values.treasures : [];
   const valuables = Array.isArray(values.valuables) ? values.valuables : [];
@@ -66,7 +68,8 @@ export default function RewardPrepStepOverview({ form }) {
           <div className="mt-2 space-y-1 text-sm text-fg">
             {holdings.map((row, index) => (
               <div key={`${row.currency_id}-${index}`}>
-                {labelFor(currencyOptions, row.currency_id)}: {row.amount}
+                {nameFor(currencyOptions, row.currency_id)}: {row.value}{" "}
+                {codeFor(currencyOptions, row.currency_id)}
               </div>
             ))}
           </div>
@@ -78,9 +81,22 @@ export default function RewardPrepStepOverview({ form }) {
           <div className="text-sm font-semibold text-fg">Treasures</div>
           <div className="mt-2 space-y-1 text-sm text-fg">
             {treasures.map((row, index) => (
-              <div key={`${row.defaulttreasure_id}-${index}`}>
-                {labelFor(treasureOptions, row.defaulttreasure_id)} x
-                {row.quantity}
+              <div key={`${row.name}-${index}`}>
+                {row.name} x{row.quantity ?? 0}
+                {row.genericname ? ` - ${row.genericname}` : ""}
+                {row.container_id
+                  ? ` - ${containerNameFor(
+                      containerOptions,
+                      row.container_id,
+                    )}`
+                  : ""}
+                {typeof row.value === "number"
+                  ? ` - ${row.value} ${baseLabel}`
+                  : ""}
+                {row.magical ? " - Magical" : ""}
+                {row.identified && row.magical ? " - Identified" : ""}
+                {row.archived ? " - Archived" : ""}
+                {row.description ? ` - ${row.description}` : ""}
               </div>
             ))}
           </div>
@@ -92,9 +108,9 @@ export default function RewardPrepStepOverview({ form }) {
           <div className="text-sm font-semibold text-fg">Valuables</div>
           <div className="mt-2 space-y-1 text-sm text-fg">
             {valuables.map((row, index) => (
-              <div key={`${row.defaultvaluable_id}-${index}`}>
-                {labelFor(valuableOptions, row.defaultvaluable_id)} x
-                {row.quantity}
+              <div key={`${row.name}-${index}`}>
+                {row.name} x{row.quantity}
+                {typeof row.value === "number" ? ` • ${row.value}` : ""}
               </div>
             ))}
           </div>
@@ -107,3 +123,7 @@ export default function RewardPrepStepOverview({ form }) {
     </div>
   );
 }
+
+
+
+

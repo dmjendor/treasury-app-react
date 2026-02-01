@@ -4,9 +4,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
-import DefaultValuablePicker from "@/app/_components/DefaultValuablePicker";
 import InputComponent from "@/app/_components/InputComponent";
-import { createValuableAction } from "@/app/_lib/actions/valuables";
+import {
+  createValuableAction,
+  generateValuablesAction,
+  getDefaultValuablesAction,
+} from "@/app/_lib/actions/valuables";
 
 function asNumber(value) {
   const n = Number(value);
@@ -27,7 +30,6 @@ export default function ValuablesForm({
   onClose,
   onSaved, // called with payload on submit
 
-  defaultValuables, // new only
   submitting = false,
   error = "",
 }) {
@@ -84,11 +86,41 @@ export default function ValuablesForm({
   const [valueLabel, setValueLabel] = useState(commonLabel);
   const [displayValue, setDisplayValue] = useState("");
   const [showDefaults, setShowDefaults] = useState(false);
+  const [generatorError, setGeneratorError] = useState("");
+  const [generatorBusy, setGeneratorBusy] = useState(false);
+  const [defaultValuables, setDefaultValuables] = useState([]);
+  const [categoryId, setCategoryId] = useState("");
+  const [rangeId, setRangeId] = useState("");
+  const [generateCount, setGenerateCount] = useState("1");
 
   const [quantity, setQuantity] = useState("1");
 
   const canUseDefaults =
-    !isEdit && Array.isArray(defaultValuables) && defaultValuables.length > 0;
+    !isEdit &&
+    (generatorError ||
+      (Array.isArray(defaultValuables) && defaultValuables.length > 0));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      if (!vaultId) return;
+      const res = await getDefaultValuablesAction({ vaultId });
+      if (cancelled) return;
+      if (!res?.ok) {
+        setDefaultValuables([]);
+        setGeneratorError(res?.error || "Failed to load categories.");
+        return;
+      }
+      setGeneratorError("");
+      setDefaultValuables(Array.isArray(res?.data) ? res.data : []);
+    }
+
+    loadCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, [vaultId]);
 
   useEffect(() => {
     setFormError(error || "");
@@ -152,19 +184,6 @@ export default function ValuablesForm({
     };
   }, [isEdit, vaultId, valuableId, commonRate]);
 
-  function applyDefaultValuable({ defaultValuable, value }) {
-    setName(defaultValuable?.name ?? "");
-
-    const base = Number(value) || 0;
-    setValueBase(base);
-
-    if (valueUnit === "common") {
-      setDisplayValue(commonRate ? formatNumberString(base / commonRate) : "");
-    } else {
-      setDisplayValue(formatNumberString(base));
-    }
-  }
-
   function handleDisplayValueChange(nextStr) {
     setDisplayValue(nextStr);
 
@@ -199,10 +218,106 @@ export default function ValuablesForm({
     setValueUnit(unit);
   }
 
+  const { categories, ranges, selectedRange, selectedCategory } = useMemo(() => {
+    const rows = Array.isArray(defaultValuables) ? defaultValuables : [];
+    const categoryList = rows
+      .filter((row) => row.parent_id == null)
+      .map((row) => ({
+        id: String(row.id),
+        name: row.name || "Category",
+        raw: row,
+      }))
+      .sort((a, b) =>
+        String(a.name).localeCompare(String(b.name), undefined, {
+          sensitivity: "base",
+        }),
+      );
+
+    const rangeList = rows
+      .filter((row) => categoryId && String(row.parent_id) === String(categoryId))
+      .map((row) => ({
+        id: String(row.id),
+        low: Number(row.low_value) || 0,
+        high: Number(row.high_value) || 0,
+        raw: row,
+      }))
+      .sort((a, b) => a.low - b.low);
+
+    const selected =
+      rangeId && rangeList.length > 0
+        ? rangeList.find((row) => row.id === rangeId) || null
+        : null;
+    const category =
+      categoryId && categoryList.length > 0
+        ? categoryList.find((row) => row.id === categoryId) || null
+        : null;
+
+    return {
+      categories: categoryList,
+      ranges: rangeList,
+      selectedRange: selected,
+      selectedCategory: category,
+    };
+  }, [defaultValuables, categoryId, rangeId]);
+
+  const commonCurrencyCode = useMemo(() => {
+    return (
+      commonCurrency?.code ||
+      commonCurrency?.symbol ||
+      commonCurrency?.name ||
+      "Common"
+    );
+  }, [commonCurrency]);
+
+  function resolveCategoryKey(row) {
+    if (!row) return "";
+    if (row.category_key) return String(row.category_key);
+    if (row.key) return String(row.key);
+    if (row.slug) return String(row.slug);
+    return String(row.name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+  }
+
   function validateNonNegativeNumber(raw, label) {
     const n = asNumber(raw);
     if (!Number.isFinite(n) || n < 0) return `${label} must be 0 or greater.`;
     return "";
+  }
+
+  async function handleGenerate() {
+    setGeneratorError("");
+
+    if (!vaultId) return setGeneratorError("Vault is required.");
+    if (!containerId) return setGeneratorError("Container is required.");
+    if (!selectedCategory) return setGeneratorError("Choose a category.");
+    if (!selectedRange) return setGeneratorError("Choose a value range.");
+
+    const qty = Math.max(1, Math.trunc(asNumber(generateCount) || 1));
+
+    setGeneratorBusy(true);
+    try {
+      const res = await generateValuablesAction({
+        vault_id: vaultId,
+        container_id: containerId,
+        category_key: resolveCategoryKey(selectedCategory.raw),
+        low_value: Math.round(selectedRange.low),
+        high_value: Math.round(selectedRange.high),
+        quantity: qty,
+      });
+
+      if (!res?.ok) {
+        throw new Error(res?.error || "Failed to generate valuables.");
+      }
+
+      router.replace(`/account/vaults/${vaultId}/valuables`);
+      router.refresh();
+    } catch (err) {
+      setGeneratorError(err?.message || "Failed to generate valuables.");
+    } finally {
+      setGeneratorBusy(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -312,10 +427,10 @@ export default function ValuablesForm({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm font-semibold text-fg">
-                Game system default valuables
+                Generated valuables
               </div>
               <div className="text-xs text-muted-fg">
-                Pick a category and item to prefill name and generate a value.
+                Pick a category and value range to generate a new valuable.
               </div>
             </div>
 
@@ -323,22 +438,83 @@ export default function ValuablesForm({
               variant="accent"
               onClick={() => setShowDefaults((s) => !s)}
             >
-              {showDefaults ? "Hide" : "Use defaults"}
+              {showDefaults ? "Hide" : "Generate"}
             </Button>
           </div>
 
           {showDefaults ? (
-            <div className="mt-3">
-              <DefaultValuablePicker
-                items={defaultValuables}
-                valueUnit={valueUnit}
-                commonRate={commonRate}
-                valueLabel={valueLabel}
-                onPick={(picked) => {
-                  applyDefaultValuable(picked);
-                  setShowDefaults(false);
+            <div className="mt-3 space-y-3">
+              {generatorError ? (
+                <div className="rounded-xl border border-danger-600 bg-danger-100 p-3 text-sm text-danger-700">
+                  {generatorError}
+                </div>
+              ) : null}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                id="gen-category"
+                label="Category"
+                hint="Choose a type of valuable."
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setRangeId("");
                 }}
+              >
+                <option value="">Choose...</option>
+                {categories.map((category) => (
+                  <option
+                    key={category.id}
+                    value={category.id}
+                  >
+                    {category.name}
+                  </option>
+                ))}
+              </Select>
+
+                <Select
+                  id="gen-range"
+                  label="Range"
+                  hint={
+                    categoryId
+                      ? "Select a value band."
+                      : "Pick a category first."
+                  }
+                  value={rangeId}
+                  onChange={(e) => setRangeId(e.target.value)}
+                  disabled={!categoryId}
+                >
+                  <option value="">Choose...</option>
+                  {ranges.map((range) => (
+                    <option
+                      key={range.id}
+                      value={range.id}
+                    >
+                      ({range.low} - {range.high}) {commonCurrencyCode}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              <InputComponent
+                id="gen-quantity"
+                label="How many"
+                type="number"
+                min={1}
+                value={generateCount}
+                onChange={(e) => setGenerateCount(e.target.value)}
               />
+
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="accent"
+                  disabled={generatorBusy}
+                  onClick={handleGenerate}
+                >
+                  {generatorBusy ? "Generating..." : "Generate valuables"}
+                </Button>
+              </div>
             </div>
           ) : null}
         </section>

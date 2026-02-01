@@ -7,7 +7,6 @@ import { useVault } from "@/app/_context/VaultProvider";
 export default function ValuablesFormWithVault({
   mode,
   valuableId,
-  defaultValuables,
   onClose,
   onSaved,
 }) {
@@ -18,7 +17,6 @@ export default function ValuablesFormWithVault({
       mode={mode}
       vault={vault}
       updateVault={updateVault}
-      defaultValuables={defaultValuables}
       valuableId={valuableId}
       onClose={onClose}
       onSaved={onSaved}

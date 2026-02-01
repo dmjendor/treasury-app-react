@@ -170,7 +170,12 @@ export default function RewardPrepWizard() {
         />
 
         <Section>
-          <StepComponent form={form} />
+          <StepComponent
+            form={form}
+            vault={vault}
+            currencies={vault?.currencyList ?? []}
+            baseCurrencyId={vault?.base_currency_id ?? null}
+          />
         </Section>
 
         {submitError ? <ErrorMessage error={submitError} /> : null}
@@ -220,7 +225,8 @@ export default function RewardPrepWizard() {
                 Next
               </Button>
             ) : null}
-            {step === 5 && !(submitStatus === "success" && isSubmitSuccessful) ? (
+            {step === 5 &&
+            !(submitStatus === "success" && isSubmitSuccessful) ? (
               <TimelockedButton
                 type="submit"
                 lockMs={2500}

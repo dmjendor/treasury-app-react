@@ -1,13 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LinkButton } from "@/app/_components/LinkButton";
 import ValuablesForm from "@/app/_components/ValuablesForm";
-import {
-  createValuableAction,
-  getDefaultValuablesAction,
-} from "@/app/_lib/actions/valuables";
+import { createValuableAction } from "@/app/_lib/actions/valuables";
 import { useVault } from "@/app/_context/VaultProvider";
 
 /**
@@ -20,26 +17,6 @@ export default function NewValuableClient({ isModal }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [defaultValuables, setDefaultValuables] = useState([]);
-  const vaultId = vault?.id;
-  useEffect(() => {
-    if (!vaultId) return;
-
-    async function load() {
-      setError("");
-      const res = await getDefaultValuablesAction({ vaultId });
-
-      if (!res.ok) {
-        setDefaultValuables([]);
-        setError(res.error || "Failed to load default valuables.");
-        return;
-      }
-
-      setDefaultValuables(Array.isArray(res.data) ? res.data : []);
-    }
-
-    load();
-  }, [vaultId]);
 
   async function handleCreate(payload) {
     setError("");
@@ -76,7 +53,7 @@ export default function NewValuableClient({ isModal }) {
         <div>
           {!isModal && <h1 className="text-2xl font-semibold">Add valuable</h1>}
           <p className="text-sm text-muted-fg">
-            Create valuable manually, or pick from your system defaults.
+            Create valuable manually, or generate one from a category.
           </p>
         </div>
         {!isModal && (
@@ -93,7 +70,6 @@ export default function NewValuableClient({ isModal }) {
         mode="new"
         vault={vault}
         updateVault={updateVault}
-        defaultValuables={defaultValuables}
         submitting={busy}
         error={error}
         onSaved={handleCreate}

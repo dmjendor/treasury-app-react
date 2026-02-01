@@ -346,13 +346,6 @@ export default function TreasuresForm({
           onChange={(e) => setName(e.target.value)}
         />
 
-        <InputComponent
-          id="genericname"
-          label="Generic name"
-          hint="Optional. Example: Mysterious Sword."
-          value={genericname}
-          onChange={(e) => setGenericname(e.target.value)}
-        />
 
         <Textarea
           label="Description"
@@ -400,6 +393,16 @@ export default function TreasuresForm({
             />
           )}
         </div>
+
+        {magical && !identified ? (
+          <InputComponent
+            id="genericname"
+            label="Generic name"
+            hint="Optional. Example: Mysterious Sword."
+            value={genericname}
+            onChange={(e) => setGenericname(e.target.value)}
+          />
+        ) : null}
 
         {isEdit ? (
           <div className="grid gap-3 sm:grid-cols-2">

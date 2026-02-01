@@ -9,23 +9,33 @@ import SubCard from "@/app/_components/SubCard";
 import InputComponent from "@/app/_components/InputComponent";
 import Select from "@/app/_components/Select";
 
-const currencyOptions = [
-  { id: "11111111-1111-1111-1111-111111111111", label: "Gold" },
-  { id: "22222222-2222-2222-2222-222222222222", label: "Silver" },
-  { id: "33333333-3333-3333-3333-333333333333", label: "Copper" },
-];
-
 /**
  * Reward prep wizard step 2.
- * @param {{ form: any }} props
+ * @param {{ form: any, currencies?: Array<{id:string,name?:string,code?:string}>, baseCurrencyId?: string|null }} props
  * @returns {JSX.Element}
  */
-export default function RewardPrepStepHoldings({ form }) {
+export default function RewardPrepStepHoldings({ form, vault }) {
   const {
     control,
     register,
     formState: { errors },
   } = form;
+
+  console.log(vault);
+  const currencies = vault?.currencyList;
+  const commonCurrencyId = vault?.common_currency_id;
+
+  const currencyOptions = Array.isArray(currencies)
+    ? currencies.sort((a, b) => a.rate - b.rate)
+    : [];
+  const commonId = commonCurrencyId != null ? String(commonCurrencyId) : "";
+  const defaultCurrencyId =
+    commonId &&
+    currencyOptions.some((currency) => String(currency.id) === commonId)
+      ? commonId
+      : currencyOptions.length > 0
+        ? String(currencyOptions[0].id)
+        : "";
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -36,7 +46,7 @@ export default function RewardPrepStepHoldings({ form }) {
     <div className="space-y-4">
       {fields.length === 0 ? (
         <SubCard>
-          <p className="text-sm text-muted-fg">
+          <p className="text-sm">
             No currency rows yet. Add a row to stage coin for this reward.
           </p>
         </SubCard>
@@ -59,17 +69,17 @@ export default function RewardPrepStepHoldings({ form }) {
                     key={option.id}
                     value={option.id}
                   >
-                    {option.label}
+                    {option.name || option.code || "Currency"}
                   </option>
                 ))}
               </Select>
 
               <InputComponent
-                label="Amount"
+                label="Value"
                 type="number"
                 min={0}
-                error={errors?.holdings?.[index]?.amount?.message}
-                {...register(`holdings.${index}.amount`, {
+                error={errors?.holdings?.[index]?.value?.message}
+                {...register(`holdings.${index}.value`, {
                   valueAsNumber: true,
                 })}
               />
@@ -95,10 +105,11 @@ export default function RewardPrepStepHoldings({ form }) {
         size="sm"
         onClick={() =>
           append({
-            currency_id: currencyOptions[0].id,
-            amount: 0,
+            currency_id: defaultCurrencyId,
+            value: 0,
           })
         }
+        disabled={!defaultCurrencyId}
       >
         Add currency
       </Button>

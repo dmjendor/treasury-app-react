@@ -170,9 +170,9 @@
   --section-border: var(--accent-600);
 
   --card: var(--primary-300);
-  --card-fg: var(--primary-800);
+  --card-fg: var(--primary-900);
   --subcard: var(--accent-500);
-  --subcard-fg: var(--accent-800);
+  --subcard-fg: var(--accent-900);
   --subcard-border: var(--accent-600);
 
   /* Inputs on surface */

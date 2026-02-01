@@ -70,6 +70,52 @@ export async function createValuableDb(valuableObj) {
 }
 
 /**
+ * Create multiple valuables.
+ * @param {Array<object>} valuableList
+ * @returns {Promise<Array<object>>}
+ */
+export async function createValuablesDb(valuableList) {
+  const supabase = await getSupabase();
+  const rows = Array.isArray(valuableList) ? valuableList : [];
+
+  if (rows.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("valuables")
+    .insert(rows)
+    .select();
+
+  if (error) {
+    console.error("createValuablesDb failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
+ * Create multiple prep valuables.
+ * @param {Array<object>} valuableList
+ * @returns {Promise<Array<object>>}
+ */
+export async function createPrepValuablesDb(valuableList) {
+  const supabase = await getSupabase();
+  const rows = Array.isArray(valuableList) ? valuableList : [];
+
+  if (rows.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("prepvaluables")
+    .insert(rows)
+    .select();
+
+  if (error) {
+    console.error("createPrepValuablesDb failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
  * Fetch default valuables for a vault.
  * @param {string} vaultId
  * @returns {Promise<Array<object>>}

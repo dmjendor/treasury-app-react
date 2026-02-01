@@ -1,7 +1,10 @@
 "use server";
 
+import crypto from "crypto";
 import {
+  createPrepValuablesDb,
   createValuableDb,
+  createValuablesDb,
   getDefaultValuables,
   getValuableForVaultById,
   transferValuableToVault,
@@ -14,6 +17,17 @@ import { getContainersForVault } from "@/app/_lib/data/containers.data";
 import { getPermissionByVaultAndUserId } from "@/app/_lib/data/permissions.data";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import { revalidatePath } from "next/cache";
+import {
+  generateValuableName,
+  getValuableCategoryKeys,
+} from "@/app/_lib/generators/valuableNames";
+
+function randomIntInclusive(min, max) {
+  const lo = Math.min(min, max);
+  const hi = Math.max(min, max);
+  if (lo === hi) return lo;
+  return crypto.randomInt(lo, hi + 1);
+}
 
 export async function createValuableAction(payload) {
   const created = await createValuableDb(payload);
@@ -28,6 +42,99 @@ export async function getDefaultValuablesAction({ vaultId }) {
 
   const rows = await getDefaultValuables(vaultId);
   return { ok: true, error: null, data: Array.isArray(rows) ? rows : [] };
+}
+
+/**
+ * - Get generator category keys.
+ * @returns {Promise<{ ok: boolean, error: string|null, data: string[] }>}
+ */
+export async function getValuableGeneratorCategoriesAction() {
+  try {
+    const keys = getValuableCategoryKeys();
+    return { ok: true, error: null, data: Array.isArray(keys) ? keys : [] };
+  } catch (error) {
+    console.error("getValuableGeneratorCategoriesAction failed", error);
+    return {
+      ok: false,
+      error: "Unable to load valuable categories.",
+      data: [],
+    };
+  }
+}
+
+/**
+ * - Generate valuables from a category and value range.
+ * @param {{ vault_id: string, container_id: string, category_key: string, low_value: number, high_value: number, quantity: number, target?: "valuables" | "prepvaluables" }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: Array<any> }>}
+ */
+export async function generateValuablesAction(input) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { ok: false, error: "You must be logged in.", data: [] };
+    }
+
+    const vaultId = input?.vault_id;
+    const containerId = input?.container_id;
+    const categoryKey = input?.category_key;
+    const lowRaw = Number(input?.low_value);
+    const highRaw = Number(input?.high_value);
+    const qtyRaw = Number(input?.quantity);
+    const target = input?.target === "prepvaluables" ? "prepvaluables" : "valuables";
+
+    if (!vaultId) return { ok: false, error: "Missing vault id.", data: [] };
+    if (!containerId)
+      return { ok: false, error: "Missing container id.", data: [] };
+    if (!categoryKey)
+      return { ok: false, error: "Missing category.", data: [] };
+    if (!Number.isFinite(lowRaw) || !Number.isFinite(highRaw)) {
+      return { ok: false, error: "Value range is required.", data: [] };
+    }
+
+    const low = Math.max(0, Math.trunc(lowRaw));
+    const high = Math.max(0, Math.trunc(highRaw));
+    const quantity = Number.isFinite(qtyRaw) ? Math.max(1, Math.trunc(qtyRaw)) : 1;
+
+    const rows = [];
+    for (let i = 0; i < quantity; i += 1) {
+      const generated = generateValuableName({ categoryKey });
+      const safeName =
+        typeof generated?.name === "string" && generated.name.trim()
+          ? generated.name.trim()
+          : "Curious trinket";
+      const safeDescription =
+        typeof generated?.description === "string" && generated.description.trim()
+          ? generated.description.trim()
+          : null;
+
+      rows.push({
+        vault_id: vaultId,
+        container_id: containerId,
+        name: safeName,
+        description: safeDescription,
+        value: randomIntInclusive(low, high),
+        quantity: 1,
+      });
+    }
+
+    const created =
+      target === "prepvaluables"
+        ? await createPrepValuablesDb(rows)
+        : await createValuablesDb(rows);
+
+    if (!Array.isArray(created) || created.length === 0) {
+      return { ok: false, error: "Failed to generate valuables.", data: [] };
+    }
+
+    return { ok: true, error: null, data: created };
+  } catch (error) {
+    console.error("generateValuablesAction failed", error);
+    return {
+      ok: false,
+      error: error?.message || "Failed to generate valuables.",
+      data: [],
+    };
+  }
 }
 
 /**
