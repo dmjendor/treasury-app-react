@@ -3,7 +3,7 @@
  */
 "use client";
 
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "@/app/_components/Button";
 import SubCard from "@/app/_components/SubCard";
 import InputComponent from "@/app/_components/InputComponent";
@@ -21,9 +21,10 @@ export default function RewardPrepStepHoldings({ form, vault }) {
     formState: { errors },
   } = form;
 
-  console.log(vault);
   const currencies = vault?.currencyList;
   const commonCurrencyId = vault?.common_currency_id;
+  const baseCurrencyId = vault?.base_currency_id;
+  const valueUnit = useWatch({ control, name: "value_unit" }) || "common";
 
   const currencyOptions = Array.isArray(currencies)
     ? currencies.sort((a, b) => a.rate - b.rate)
@@ -36,6 +37,17 @@ export default function RewardPrepStepHoldings({ form, vault }) {
       : currencyOptions.length > 0
         ? String(currencyOptions[0].id)
         : "";
+
+  const baseCurrency =
+    currencyOptions.find((c) => String(c.id) === String(baseCurrencyId)) ||
+    null;
+  const commonCurrency =
+    currencyOptions.find((c) => String(c.id) === String(commonId)) || null;
+
+  const valueUnitLabel =
+    valueUnit === "base"
+      ? baseCurrency?.name || "Base"
+      : commonCurrency?.name || "Common";
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -75,7 +87,7 @@ export default function RewardPrepStepHoldings({ form, vault }) {
               </Select>
 
               <InputComponent
-                label="Value"
+                label={`Value (${valueUnitLabel})`}
                 type="number"
                 min={0}
                 error={errors?.holdings?.[index]?.value?.message}

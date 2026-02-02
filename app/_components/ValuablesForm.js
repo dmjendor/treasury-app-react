@@ -10,6 +10,7 @@ import {
   generateValuablesAction,
   getDefaultValuablesAction,
 } from "@/app/_lib/actions/valuables";
+import { toCamelCase } from "@/app/_lib/actions/_utils";
 
 function asNumber(value) {
   const n = Number(value);
@@ -218,47 +219,50 @@ export default function ValuablesForm({
     setValueUnit(unit);
   }
 
-  const { categories, ranges, selectedRange, selectedCategory } = useMemo(() => {
-    const rows = Array.isArray(defaultValuables) ? defaultValuables : [];
-    const categoryList = rows
-      .filter((row) => row.parent_id == null)
-      .map((row) => ({
-        id: String(row.id),
-        name: row.name || "Category",
-        raw: row,
-      }))
-      .sort((a, b) =>
-        String(a.name).localeCompare(String(b.name), undefined, {
-          sensitivity: "base",
-        }),
-      );
+  const { categories, ranges, selectedRange, selectedCategory } =
+    useMemo(() => {
+      const rows = Array.isArray(defaultValuables) ? defaultValuables : [];
+      const categoryList = rows
+        .filter((row) => row.parent_id == null)
+        .map((row) => ({
+          id: String(row.id),
+          name: row.name || "Category",
+          raw: row,
+        }))
+        .sort((a, b) =>
+          String(a.name).localeCompare(String(b.name), undefined, {
+            sensitivity: "base",
+          }),
+        );
 
-    const rangeList = rows
-      .filter((row) => categoryId && String(row.parent_id) === String(categoryId))
-      .map((row) => ({
-        id: String(row.id),
-        low: Number(row.low_value) || 0,
-        high: Number(row.high_value) || 0,
-        raw: row,
-      }))
-      .sort((a, b) => a.low - b.low);
+      const rangeList = rows
+        .filter(
+          (row) => categoryId && String(row.parent_id) === String(categoryId),
+        )
+        .map((row) => ({
+          id: String(row.id),
+          low: Number(row.low_value) || 0,
+          high: Number(row.high_value) || 0,
+          raw: row,
+        }))
+        .sort((a, b) => a.low - b.low);
 
-    const selected =
-      rangeId && rangeList.length > 0
-        ? rangeList.find((row) => row.id === rangeId) || null
-        : null;
-    const category =
-      categoryId && categoryList.length > 0
-        ? categoryList.find((row) => row.id === categoryId) || null
-        : null;
+      const selected =
+        rangeId && rangeList.length > 0
+          ? rangeList.find((row) => row.id === rangeId) || null
+          : null;
+      const category =
+        categoryId && categoryList.length > 0
+          ? categoryList.find((row) => row.id === categoryId) || null
+          : null;
 
-    return {
-      categories: categoryList,
-      ranges: rangeList,
-      selectedRange: selected,
-      selectedCategory: category,
-    };
-  }, [defaultValuables, categoryId, rangeId]);
+      return {
+        categories: categoryList,
+        ranges: rangeList,
+        selectedRange: selected,
+        selectedCategory: category,
+      };
+    }, [defaultValuables, categoryId, rangeId]);
 
   const commonCurrencyCode = useMemo(() => {
     return (
@@ -269,21 +273,27 @@ export default function ValuablesForm({
     );
   }, [commonCurrency]);
 
-  function resolveCategoryKey(row) {
-    if (!row) return "";
-    if (row.category_key) return String(row.category_key);
-    if (row.key) return String(row.key);
-    if (row.slug) return String(row.slug);
-    return String(row.name || "")
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
-  }
+  const baseCurrencyCode = useMemo(() => {
+    return (
+      baseCurrency?.code || baseCurrency?.symbol || baseCurrency?.name || "Base"
+    );
+  }, [baseCurrency]);
+
+  const valueUnitCode =
+    valueUnit === "base" ? baseCurrencyCode : commonCurrencyCode;
 
   function validateNonNegativeNumber(raw, label) {
     const n = asNumber(raw);
     if (!Number.isFinite(n) || n < 0) return `${label} must be 0 or greater.`;
     return "";
+  }
+
+  function formatRangeValue(valueCommon) {
+    const n = Number(valueCommon);
+    if (!Number.isFinite(n)) return "";
+    const baseValue = n * (commonRate || 1);
+    const displayValue = valueUnit === "base" ? baseValue : n;
+    return formatNumberString(displayValue);
   }
 
   async function handleGenerate() {
@@ -295,17 +305,22 @@ export default function ValuablesForm({
     if (!selectedRange) return setGeneratorError("Choose a value range.");
 
     const qty = Math.max(1, Math.trunc(asNumber(generateCount) || 1));
+    const rate = Number(commonRate) || 1;
+    const lowValue = Math.round(selectedRange.low * rate);
+    const highValue = Math.round(selectedRange.high * rate);
 
     setGeneratorBusy(true);
+    const valuableObj = {
+      vault_id: vaultId,
+      container_id: containerId,
+      category_key: toCamelCase(selectedCategory.raw),
+      low_value: lowValue,
+      high_value: highValue,
+      quantity: qty,
+    };
+
     try {
-      const res = await generateValuablesAction({
-        vault_id: vaultId,
-        container_id: containerId,
-        category_key: resolveCategoryKey(selectedCategory.raw),
-        low_value: Math.round(selectedRange.low),
-        high_value: Math.round(selectedRange.high),
-        quantity: qty,
-      });
+      const res = await generateValuablesAction(valuableObj);
 
       if (!res?.ok) {
         throw new Error(res?.error || "Failed to generate valuables.");
@@ -451,26 +466,26 @@ export default function ValuablesForm({
               ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
-              <Select
-                id="gen-category"
-                label="Category"
-                hint="Choose a type of valuable."
-                value={categoryId}
-                onChange={(e) => {
-                  setCategoryId(e.target.value);
-                  setRangeId("");
-                }}
-              >
-                <option value="">Choose...</option>
-                {categories.map((category) => (
-                  <option
-                    key={category.id}
-                    value={category.id}
-                  >
-                    {category.name}
-                  </option>
-                ))}
-              </Select>
+                <Select
+                  id="gen-category"
+                  label="Category"
+                  hint="Choose a type of valuable."
+                  value={categoryId}
+                  onChange={(e) => {
+                    setCategoryId(e.target.value);
+                    setRangeId("");
+                  }}
+                >
+                  <option value="">Choose...</option>
+                  {categories.map((category) => (
+                    <option
+                      key={category.id}
+                      value={category.id}
+                    >
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
 
                 <Select
                   id="gen-range"
@@ -490,7 +505,8 @@ export default function ValuablesForm({
                       key={range.id}
                       value={range.id}
                     >
-                      ({range.low} - {range.high}) {commonCurrencyCode}
+                      ({formatRangeValue(range.low)} -{" "}
+                      {formatRangeValue(range.high)}) {valueUnitCode}
                     </option>
                   ))}
                 </Select>

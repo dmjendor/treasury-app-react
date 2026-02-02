@@ -62,3 +62,14 @@ export async function requireUserId(authFn) {
 
   return userId;
 }
+
+export async function toCamelCase(str) {
+  return str
+    .trim()
+    .split(/\s+/)
+    .map((word, i) => {
+      const w = word.toLowerCase();
+      return i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1);
+    })
+    .join("");
+}

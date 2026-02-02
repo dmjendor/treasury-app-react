@@ -19,6 +19,8 @@ const rewardDetailsSchema = z.object({
     .max(500, "Keep the description under 500 characters")
     .optional()
     .default(""),
+
+  value_unit: z.enum(["common", "base"]).default("common"),
 });
 
 /* --------------------------
@@ -149,7 +151,7 @@ export const rewardPrepFinalizeSchema = rewardPrepDraftSchema.superRefine(
    -------------------------- */
 
 export const rewardPrepStepFieldNames = {
-  1: ["name", "description"],
+  1: ["name", "description", "value_unit"],
   2: ["holdings"],
   3: ["treasures"],
   4: ["valuables"],

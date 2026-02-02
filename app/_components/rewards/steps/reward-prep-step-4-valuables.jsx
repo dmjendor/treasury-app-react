@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "@/app/_components/Button";
 import SubCard from "@/app/_components/SubCard";
 import InputComponent from "@/app/_components/InputComponent";
@@ -21,22 +21,31 @@ import {
  * @returns {JSX.Element}
  */
 export default function RewardPrepStepValuables({ form, vault }) {
-  const {
-    control,
-  } = form;
+  const { control } = form;
 
   const router = useRouter();
   const { fields, append, remove, update } = useFieldArray({
     control,
     name: "valuables",
+    keyName: "fieldId",
   });
 
-  const rows = useMemo(() => (Array.isArray(fields) ? fields : []), [fields]);
+  const watchedRows = useWatch({ control, name: "valuables" });
+  const valueUnit = useWatch({ control, name: "value_unit" }) || "common";
+  const rows = useMemo(() => {
+    const list = Array.isArray(watchedRows) ? watchedRows : [];
+    return (Array.isArray(fields) ? fields : []).map((field, index) => ({
+      ...field,
+      ...(list[index] || {}),
+    }));
+  }, [fields, watchedRows]);
 
   const [formError, setFormError] = useState("");
   const [editingIndex, setEditingIndex] = useState(null);
   const [draft, setDraft] = useState({
+    container_id: "",
     name: "",
+    description: "",
     quantity: "1",
     value: "",
   });
@@ -73,47 +82,80 @@ export default function RewardPrepStepValuables({ form, vault }) {
     };
   }, [vault?.id]);
 
-  const { categories, ranges, selectedRange, selectedCategory } = useMemo(() => {
-    const rows = Array.isArray(defaultValuables) ? defaultValuables : [];
-    const categoryList = rows
-      .filter((row) => row.parent_id == null)
-      .map((row) => ({
-        id: String(row.id),
-        name: row.name || "Category",
-        raw: row,
-      }))
-      .sort((a, b) =>
-        String(a.name).localeCompare(String(b.name), undefined, {
-          sensitivity: "base",
-        }),
-      );
+  const { categories, ranges, selectedRange, selectedCategory } =
+    useMemo(() => {
+      const rows = Array.isArray(defaultValuables) ? defaultValuables : [];
+      const categoryList = rows
+        .filter((row) => row.parent_id == null)
+        .map((row) => ({
+          id: String(row.id),
+          name: row.name || "Category",
+          raw: row,
+        }))
+        .sort((a, b) =>
+          String(a.name).localeCompare(String(b.name), undefined, {
+            sensitivity: "base",
+          }),
+        );
 
-    const rangeList = rows
-      .filter((row) => categoryId && String(row.parent_id) === String(categoryId))
-      .map((row) => ({
-        id: String(row.id),
-        low: Number(row.low_value) || 0,
-        high: Number(row.high_value) || 0,
-        raw: row,
-      }))
-      .sort((a, b) => a.low - b.low);
+      const rangeList = rows
+        .filter(
+          (row) => categoryId && String(row.parent_id) === String(categoryId),
+        )
+        .map((row) => ({
+          id: String(row.id),
+          low: Number(row.low_value) || 0,
+          high: Number(row.high_value) || 0,
+          raw: row,
+        }))
+        .sort((a, b) => a.low - b.low);
 
-    const selected =
-      rangeId && rangeList.length > 0
-        ? rangeList.find((row) => row.id === rangeId) || null
-        : null;
-    const category =
-      categoryId && categoryList.length > 0
-        ? categoryList.find((row) => row.id === categoryId) || null
-        : null;
+      const selected =
+        rangeId && rangeList.length > 0
+          ? rangeList.find((row) => row.id === rangeId) || null
+          : null;
+      const category =
+        categoryId && categoryList.length > 0
+          ? categoryList.find((row) => row.id === categoryId) || null
+          : null;
 
-    return {
-      categories: categoryList,
-      ranges: rangeList,
-      selectedRange: selected,
-      selectedCategory: category,
-    };
-  }, [defaultValuables, categoryId, rangeId]);
+      return {
+        categories: categoryList,
+        ranges: rangeList,
+        selectedRange: selected,
+        selectedCategory: category,
+      };
+    }, [defaultValuables, categoryId, rangeId]);
+
+  const commonCurrencyName = useMemo(() => {
+    const list = Array.isArray(vault?.currencyList) ? vault.currencyList : [];
+    const common =
+      list.find(
+        (currency) =>
+          String(currency.id) === String(vault?.common_currency_id ?? ""),
+      ) || null;
+    return common?.name || "Common";
+  }, [vault]);
+
+  const commonCurrencyRate = useMemo(() => {
+    const list = Array.isArray(vault?.currencyList) ? vault.currencyList : [];
+    const common =
+      list.find(
+        (currency) =>
+          String(currency.id) === String(vault?.common_currency_id ?? ""),
+      ) || null;
+    return Number(common?.rate) || 1;
+  }, [vault]);
+
+  const baseCurrencyName = useMemo(() => {
+    const list = Array.isArray(vault?.currencyList) ? vault.currencyList : [];
+    const base =
+      list.find(
+        (currency) =>
+          String(currency.id) === String(vault?.base_currency_id ?? ""),
+      ) || null;
+    return base?.name || "Base";
+  }, [vault]);
 
   const commonCurrencyCode = useMemo(() => {
     const list = Array.isArray(vault?.currencyList) ? vault.currencyList : [];
@@ -122,10 +164,54 @@ export default function RewardPrepStepValuables({ form, vault }) {
         (currency) =>
           String(currency.id) === String(vault?.common_currency_id ?? ""),
       ) || null;
-    return (
-      common?.code || common?.symbol || common?.name || "Common"
-    );
+    return common?.code || common?.symbol || common?.name || "Common";
   }, [vault]);
+
+  const baseCurrencyCode = useMemo(() => {
+    const list = Array.isArray(vault?.currencyList) ? vault.currencyList : [];
+    const base =
+      list.find(
+        (currency) =>
+          String(currency.id) === String(vault?.base_currency_id ?? ""),
+      ) || null;
+    return base?.code || base?.symbol || base?.name || "Base";
+  }, [vault]);
+
+  const valueUnitLabel =
+    valueUnit === "base" ? baseCurrencyName : commonCurrencyName;
+
+  const valueUnitCode =
+    valueUnit === "base" ? baseCurrencyCode : commonCurrencyCode;
+
+  function formatNumberString(n) {
+    if (!Number.isFinite(n)) return "";
+    const rounded = Math.round((n + Number.EPSILON) * 100000) / 100000;
+    return String(rounded);
+  }
+
+  function formatValueForUnit(valueBase, unit) {
+    if (!Number.isFinite(valueBase)) return "";
+    if (unit === "common") {
+      return commonCurrencyRate
+        ? formatNumberString(valueBase / commonCurrencyRate)
+        : "";
+    }
+    return formatNumberString(valueBase);
+  }
+
+  function formatMoney(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "";
+    return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  function formatRangeValue(valueCommon) {
+    const n = Number(valueCommon);
+    if (!Number.isFinite(n)) return "";
+    const baseValue = n * (commonCurrencyRate || 1);
+    const displayValue = valueUnit === "base" ? baseValue : n;
+    return formatMoney(displayValue);
+  }
 
   const containerOptions = useMemo(() => {
     const list = Array.isArray(vault?.containerList) ? vault.containerList : [];
@@ -134,6 +220,14 @@ export default function RewardPrepStepValuables({ form, vault }) {
       label: c.name,
     }));
   }, [vault]);
+
+  const containerLabelById = useMemo(() => {
+    const map = new Map();
+    containerOptions.forEach((option) => {
+      map.set(String(option.value), option.label);
+    });
+    return map;
+  }, [containerOptions]);
 
   function resolveCategoryKey(row) {
     if (!row) return "";
@@ -148,7 +242,9 @@ export default function RewardPrepStepValuables({ form, vault }) {
 
   function resetDraft(next = {}) {
     setDraft({
+      container_id: "",
       name: "",
+      description: "",
       quantity: "1",
       value: "",
       ...next,
@@ -160,30 +256,45 @@ export default function RewardPrepStepValuables({ form, vault }) {
     if (!row) return;
     setFormError("");
     setEditingIndex(index);
+    setShowManualForm(true);
+    const baseValue = Number(row.value) || 0;
     resetDraft({
+      container_id: row.container_id ?? "",
       name: row.name ?? "",
+      description: row.description ?? "",
       quantity:
         row.quantity == null || Number.isNaN(Number(row.quantity))
           ? "1"
           : String(row.quantity),
-      value:
-        row.value == null || Number.isNaN(Number(row.value))
-          ? ""
-          : String(row.value),
+      value: formatValueForUnit(baseValue, valueUnit),
     });
   }
 
   function closeEdit() {
+    setShowManualForm(false);
     setEditingIndex(null);
     setFormError("");
     resetDraft();
   }
 
+  function handleRemove(index) {
+    remove(index);
+
+    if (editingIndex == null) return;
+    if (editingIndex === index) {
+      closeEdit();
+      return;
+    }
+    if (editingIndex > index) {
+      setEditingIndex((prev) => (prev == null ? prev : prev - 1));
+    }
+  }
+
   function validateDraft(next) {
+    if (!next.container_id) return "Container is required.";
     if (!next.name.trim()) return "Valuable name is required.";
     const value = Number(next.value);
-    if (!Number.isFinite(value) || value < 0)
-      return "Value must be 0 or more.";
+    if (!Number.isFinite(value) || value < 0) return "Value must be 0 or more.";
     const quantity = Number(next.quantity);
     if (!Number.isFinite(quantity) || quantity < 1)
       return "Quantity must be at least 1.";
@@ -199,10 +310,19 @@ export default function RewardPrepStepValuables({ form, vault }) {
       return;
     }
 
+    const entryValue = Number(draft.value);
+    const valueBase =
+      valueUnit === "common"
+        ? entryValue * commonCurrencyRate
+        : entryValue;
+    const roundedValueBase = Math.round(valueBase);
+
     const payload = {
+      container_id: draft.container_id,
       name: draft.name.trim(),
+      description: draft.description.trim(),
       quantity: Number(draft.quantity) || 1,
-      value: Number(draft.value) || 0,
+      value: Number(roundedValueBase) || 0,
     };
 
     if (editingIndex != null) {
@@ -228,12 +348,15 @@ export default function RewardPrepStepValuables({ form, vault }) {
 
     setGeneratorBusy(true);
     try {
+      const rate = Number(commonCurrencyRate) || 1;
+      const lowValue = Math.round(selectedRange.low * rate);
+      const highValue = Math.round(selectedRange.high * rate);
       const res = await generateValuablesAction({
         vault_id: String(vault.id),
         container_id: generatorContainerId,
         category_key: resolveCategoryKey(selectedCategory.raw),
-        low_value: Math.round(selectedRange.low),
-        high_value: Math.round(selectedRange.high),
+        low_value: lowValue,
+        high_value: highValue,
         quantity: qty,
         target: "prepvaluables",
       });
@@ -243,10 +366,13 @@ export default function RewardPrepStepValuables({ form, vault }) {
       }
 
       const created = Array.isArray(res?.data) ? res.data : [];
+
       if (created.length > 0) {
         append(
           created.map((row) => ({
+            container_id: row.container_id ?? "",
             name: row.name ?? "Valuable",
+            description: row.description ?? "",
             quantity: row.quantity ?? 1,
             value: row.value ?? 0,
           })),
@@ -269,10 +395,10 @@ export default function RewardPrepStepValuables({ form, vault }) {
             <div className="text-sm font-semibold text-fg">
               Generated valuables
             </div>
-          <div className="text-xs text-muted-fg">
-            Pick a category and value range to generate valuables.
+            <div className="text-xs text-muted-fg">
+              Pick a category and value range to generate valuables.
+            </div>
           </div>
-        </div>
 
           <Button
             variant="accent"
@@ -284,61 +410,59 @@ export default function RewardPrepStepValuables({ form, vault }) {
           </Button>
         </div>
 
-          {showGenerator ? (
-            <div className="mt-3 space-y-3">
-              {generatorError ? (
-                <div className="rounded-xl border border-danger-600 bg-danger-100 p-3 text-sm text-danger-700">
-                  {generatorError}
-                </div>
-              ) : null}
+        {showGenerator ? (
+          <div className="mt-3 space-y-3">
+            {generatorError ? (
+              <div className="rounded-xl border border-danger-600 bg-danger-100 p-3 text-sm text-danger-700">
+                {generatorError}
+              </div>
+            ) : null}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Select
-                  id="prep-gen-container"
-                  label="Container"
-                  hint="Where generated valuables should be stored."
-                  value={generatorContainerId}
-                  onChange={(e) => setGeneratorContainerId(e.target.value)}
-                >
-                  <option value="">Choose...</option>
-                  {containerOptions.map((option) => (
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </option>
-                  ))}
-                </Select>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                id="prep-gen-container"
+                label="Container"
+                hint="Where generated valuables should be stored."
+                value={generatorContainerId}
+                onChange={(e) => setGeneratorContainerId(e.target.value)}
+              >
+                <option value="">Choose...</option>
+                {containerOptions.map((option) => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
 
-                <Select
-                  id="prep-gen-category"
-                  label="Category"
-                  hint="Choose a type of valuable."
-                  value={categoryId}
-                  onChange={(e) => {
-                    setCategoryId(e.target.value);
-                    setRangeId("");
-                  }}
-                >
-                  <option value="">Choose...</option>
-                  {categories.map((category) => (
-                    <option
-                      key={category.id}
-                      value={category.id}
-                    >
-                      {category.name}
-                    </option>
-                  ))}
-                </Select>
+              <Select
+                id="prep-gen-category"
+                label="Category"
+                hint="Choose a type of valuable."
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  setRangeId("");
+                }}
+              >
+                <option value="">Choose...</option>
+                {categories.map((category) => (
+                  <option
+                    key={category.id}
+                    value={category.id}
+                  >
+                    {category.name}
+                  </option>
+                ))}
+              </Select>
 
-                <Select
-                  id="prep-gen-range"
-                  label="Range"
-                  hint={
-                    categoryId
-                    ? "Select a value band."
-                    : "Pick a category first."
+              <Select
+                id="prep-gen-range"
+                label="Range"
+                hint={
+                  categoryId ? "Select a value band." : "Pick a category first."
                 }
                 value={rangeId}
                 onChange={(e) => setRangeId(e.target.value)}
@@ -350,14 +474,15 @@ export default function RewardPrepStepValuables({ form, vault }) {
                     key={range.id}
                     value={range.id}
                   >
-                    ({range.low} - {range.high}) {commonCurrencyCode}
+                    ({formatRangeValue(range.low)} -{" "}
+                    {formatRangeValue(range.high)}) {valueUnitCode}
                   </option>
                 ))}
-                </Select>
-              </div>
+              </Select>
+            </div>
 
-              <InputComponent
-                id="prep-gen-quantity"
+            <InputComponent
+              id="prep-gen-quantity"
               label="How many"
               type="number"
               min={1}
@@ -375,10 +500,10 @@ export default function RewardPrepStepValuables({ form, vault }) {
               >
                 {generatorBusy ? "Generating..." : "Generate valuables"}
               </Button>
-              </div>
             </div>
-          ) : null}
-        </section>
+          </div>
+        ) : null}
+      </section>
 
       {showManualForm ? (
         <SubCard className="space-y-3">
@@ -392,13 +517,43 @@ export default function RewardPrepStepValuables({ form, vault }) {
             </div>
           ) : null}
 
-          <div className="grid gap-3 md:grid-cols-[2fr,1fr,1fr]">
+          <div className="grid gap-3 md:grid-cols-[2fr,2fr,1fr,1fr]">
+            <Select
+              label="Container"
+              hint="Where this valuable is stored."
+              value={draft.container_id}
+              onChange={(e) =>
+                setDraft((prev) => ({
+                  ...prev,
+                  container_id: e.target.value,
+                }))
+              }
+            >
+              <option value="">Choose a container...</option>
+              {containerOptions.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+
             <InputComponent
               label="Name"
               placeholder="Jeweled goblet"
               value={draft.name}
               onChange={(e) =>
                 setDraft((prev) => ({ ...prev, name: e.target.value }))
+              }
+            />
+            <InputComponent
+              label="Description"
+              placeholder="Smelling faintly of a musky vintage"
+              value={draft.description}
+              onChange={(e) =>
+                setDraft((prev) => ({ ...prev, description: e.target.value }))
               }
             />
 
@@ -413,9 +568,10 @@ export default function RewardPrepStepValuables({ form, vault }) {
             />
 
             <InputComponent
-              label="Value"
+              label={`Value (${valueUnitLabel})`}
               type="number"
               min={0}
+              hint={`Enter value in ${valueUnitLabel}.`}
               value={draft.value}
               onChange={(e) =>
                 setDraft((prev) => ({ ...prev, value: e.target.value }))
@@ -465,7 +621,9 @@ export default function RewardPrepStepValuables({ form, vault }) {
           <table className="w-full text-sm">
             <thead className="bg-accent-500 border-b border-primary-900">
               <tr className="text-left text-fg">
+                <th className="px-4 py-3">Container</th>
                 <th className="px-4 py-3">Name</th>
+                <th className="px-4 py-3">Description</th>
                 <th className="px-4 py-3">Value</th>
                 <th className="px-4 py-3">Qty</th>
                 <th className="px-4 py-3 w-40">Actions</th>
@@ -477,7 +635,7 @@ export default function RewardPrepStepValuables({ form, vault }) {
                 <tr>
                   <td
                     className="px-4 py-6 text-muted-fg bg-card"
-                    colSpan={4}
+                    colSpan={6}
                   >
                     No valuable in this reward yet.
                   </td>
@@ -485,11 +643,23 @@ export default function RewardPrepStepValuables({ form, vault }) {
               ) : (
                 rows.map((row, index) => (
                   <tr
-                    key={row.id}
+                    key={row.fieldId}
                     className="border-b border-border last:border-b-0 hover:bg-surface hover:text-fg transition-colors bg-card text-muted-fg"
                   >
+                    <td className="px-4 py-3">
+                      {containerLabelById.get(String(row.container_id)) ||
+                        "Unassigned"}
+                    </td>
                     <td className="px-4 py-3 font-medium">{row.name}</td>
-                    <td className="px-4 py-3">{row.value ?? 0}</td>
+                    <td className="px-4 py-3">{row.description ?? ""}</td>
+                    <td className="px-4 py-3">
+                      {`${formatMoney(
+                        valueUnit === "common"
+                          ? (Number(row.value) || 0) /
+                              (commonCurrencyRate || 1)
+                          : Number(row.value) || 0,
+                      )} ${valueUnitCode}`}
+                    </td>
                     <td className="px-4 py-3">{row.quantity ?? 0}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
@@ -505,7 +675,7 @@ export default function RewardPrepStepValuables({ form, vault }) {
                           type="button"
                           variant="danger"
                           size="sm"
-                          onClick={() => remove(index)}
+                          onClick={() => handleRemove(index)}
                         >
                           Remove
                         </Button>

@@ -17,6 +17,7 @@ import {
   rewardPrepFinalizeSchema,
   rewardPrepStepFieldNames,
 } from "@/app/_lib/validation/reward-prep.schema";
+import { submitRewardPrepAction } from "@/app/_lib/actions/reward-prep";
 import RewardPrepStepDetails from "@/app/_components/rewards/steps/reward-prep-step-1-details";
 import RewardPrepStepHoldings from "@/app/_components/rewards/steps/reward-prep-step-2-holdings";
 import RewardPrepStepTreasures from "@/app/_components/rewards/steps/reward-prep-step-3-treasures";
@@ -27,21 +28,11 @@ import { TimelockedButton } from "@/app/_components/TimeLockedButton";
 const defaultValues = {
   name: "",
   description: "",
+  value_unit: "common",
   holdings: [],
   treasures: [],
   valuables: [],
 };
-
-async function fakeSubmitRewardPrep(values) {
-  return {
-    ok: true,
-    error: null,
-    data: {
-      id: "reward-prep-placeholder",
-      payload: values,
-    },
-  };
-}
 
 /**
  * Render the reward prep wizard.
@@ -120,7 +111,15 @@ export default function RewardPrepWizard() {
       setSubmitStatus("error");
       return;
     }
-    const result = await fakeSubmitRewardPrep(values);
+    const result = await submitRewardPrepAction({
+      vaultId: vault?.id,
+      name: values.name,
+      description: values.description,
+      value_unit: values.value_unit,
+      holdings: values.holdings,
+      treasures: values.treasures,
+      valuables: values.valuables,
+    });
     if (!result?.ok) {
       setSubmitError(result?.error || "Reward could not be saved.");
       setSubmitStatus("error");

@@ -2,7 +2,6 @@
 
 import crypto from "crypto";
 import {
-  createPrepValuablesDb,
   createValuableDb,
   createValuablesDb,
   getDefaultValuables,
@@ -21,6 +20,7 @@ import {
   generateValuableName,
   getValuableCategoryKeys,
 } from "@/app/_lib/generators/valuableNames";
+import { toCamelCase } from "@/app/_lib/actions/_utils";
 
 function randomIntInclusive(min, max) {
   const lo = Math.min(min, max);
@@ -80,8 +80,8 @@ export async function generateValuablesAction(input) {
     const lowRaw = Number(input?.low_value);
     const highRaw = Number(input?.high_value);
     const qtyRaw = Number(input?.quantity);
-    const target = input?.target === "prepvaluables" ? "prepvaluables" : "valuables";
-
+    const target =
+      input?.target === "prepvaluables" ? "prepvaluables" : "valuables";
     if (!vaultId) return { ok: false, error: "Missing vault id.", data: [] };
     if (!containerId)
       return { ok: false, error: "Missing container id.", data: [] };
@@ -90,20 +90,24 @@ export async function generateValuablesAction(input) {
     if (!Number.isFinite(lowRaw) || !Number.isFinite(highRaw)) {
       return { ok: false, error: "Value range is required.", data: [] };
     }
-
     const low = Math.max(0, Math.trunc(lowRaw));
     const high = Math.max(0, Math.trunc(highRaw));
-    const quantity = Number.isFinite(qtyRaw) ? Math.max(1, Math.trunc(qtyRaw)) : 1;
+    const quantity = Number.isFinite(qtyRaw)
+      ? Math.max(1, Math.trunc(qtyRaw))
+      : 1;
 
     const rows = [];
     for (let i = 0; i < quantity; i += 1) {
-      const generated = generateValuableName({ categoryKey });
+      const category = await toCamelCase(categoryKey);
+      const finalValue = randomIntInclusive(low, high);
+      const generated = generateValuableName({ category, value: finalValue });
       const safeName =
         typeof generated?.name === "string" && generated.name.trim()
           ? generated.name.trim()
           : "Curious trinket";
       const safeDescription =
-        typeof generated?.description === "string" && generated.description.trim()
+        typeof generated?.description === "string" &&
+        generated.description.trim()
           ? generated.description.trim()
           : null;
 
@@ -112,15 +116,16 @@ export async function generateValuablesAction(input) {
         container_id: containerId,
         name: safeName,
         description: safeDescription,
-        value: randomIntInclusive(low, high),
+        value: finalValue,
         quantity: 1,
       });
     }
 
-    const created =
-      target === "prepvaluables"
-        ? await createPrepValuablesDb(rows)
-        : await createValuablesDb(rows);
+    if (target === "prepvaluables") {
+      return { ok: true, error: null, data: rows };
+    }
+
+    const created = await createValuablesDb(rows);
 
     if (!Array.isArray(created) || created.length === 0) {
       return { ok: false, error: "Failed to generate valuables.", data: [] };
@@ -316,7 +321,8 @@ export async function transferValuableToVaultAction({
     }
 
     const { before, after } = transferResult.data || {};
-    const displayName = valuableName || before?.name || after?.name || "Valuable";
+    const displayName =
+      valuableName || before?.name || after?.name || "Valuable";
     const fromContainer =
       fromVault?.containerList?.find(
         (c) => String(c.id) === String(before?.container_id),

@@ -1,4 +1,5 @@
 import IconComponent from "@/app/_components/IconComponent";
+import Pill from "@/app/_components/Pill";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
 import GemsIcon from "@/app/_components/icons/GemsIcon";
@@ -46,14 +47,28 @@ function VaultCard({ vault }) {
             </h3>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              <Pill
-                icon={HiOutlineBookOpen}
-                text={system?.name || "Game System"}
-              />
-              <Pill
-                icon={HiOutlineSwatch}
-                text={theme?.name || "Theme"}
-              />
+              <Pill variant="accent">
+                <span className="text-accent-50">
+                  <IconComponent
+                    icon={HiOutlineBookOpen}
+                    variant="accent"
+                  />
+                </span>
+                <span className="truncate text-accent-50">
+                  {system?.name || "Game System"}
+                </span>
+              </Pill>
+              <Pill variant="accent">
+                <span className="text-accent-50">
+                  <IconComponent
+                    icon={HiOutlineSwatch}
+                    variant="accent"
+                  />
+                </span>
+                <span className="truncate text-accent-50">
+                  {theme?.name || "Theme"}
+                </span>
+              </Pill>
             </div>
           </div>
 
@@ -130,16 +145,3 @@ function Stat({ icon, label, value }) {
   );
 }
 
-function Pill({ icon, text }) {
-  return (
-    <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-accent-700 bg-accent-600 px-3 py-1 text-xs ring-1 ring-inset ring-accent-700 transition-colors text-accent-50">
-      <span className="text-accent-50">
-        <IconComponent
-          icon={icon}
-          variant="accent"
-        />
-      </span>
-      <span className="truncate text-accent-50">{text || "Unknown"}</span>
-    </div>
-  );
-}

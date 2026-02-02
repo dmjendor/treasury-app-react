@@ -4,7 +4,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "@/app/_components/Button";
 import DefaultTreasurePicker from "@/app/_components/DefaultTreasurePicker";
 import Select from "@/app/_components/Select";
@@ -37,12 +37,14 @@ export default function RewardPrepStepTreasures({ form, vault }) {
     name: "treasures",
   });
 
+  const valueUnit = useWatch({ control, name: "value_unit" }) || "common";
   const [isAdding, setIsAdding] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [formError, setFormError] = useState("");
   const [defaultsError, setDefaultsError] = useState("");
   const [showDefaults, setShowDefaults] = useState(false);
   const [defaultTreasures, setDefaultTreasures] = useState([]);
+  const [isEditingValue, setIsEditingValue] = useState(false);
   const [draft, setDraft] = useState({
     container_id: "",
     name: "",
@@ -81,15 +83,18 @@ export default function RewardPrepStepTreasures({ form, vault }) {
     );
   }, [currencyList, commonCurrencyId]);
 
-  const baseLabel =
+  const baseLabel = baseCurrency?.name || "Base";
+  const commonLabel = commonCurrency?.name || "Common";
+  const baseCode =
     baseCurrency?.code || baseCurrency?.symbol || baseCurrency?.name || "Base";
-  const commonLabel =
+  const commonCode =
     commonCurrency?.code ||
     commonCurrency?.symbol ||
     commonCurrency?.name ||
     "Common";
 
   const commonRate = Number(commonCurrency?.rate) || 1;
+  const valueUnitLabel = valueUnit === "base" ? baseLabel : commonLabel;
 
   const containerOptions = useMemo(() => {
     const list = Array.isArray(vault?.containerList) ? vault.containerList : [];
@@ -128,7 +133,7 @@ export default function RewardPrepStepTreasures({ form, vault }) {
       genericname: "",
       description: "",
       valueBase: 0,
-      valueUnit: "common",
+      valueUnit,
       displayValue: "",
       quantity: "1",
       identified: false,
@@ -136,6 +141,14 @@ export default function RewardPrepStepTreasures({ form, vault }) {
       archived: false,
       ...next,
     });
+  }
+
+  function formatValueForUnit(valueBase, unit) {
+    if (!Number.isFinite(valueBase)) return "";
+    if (unit === "common") {
+      return commonRate ? formatNumberString(valueBase / commonRate) : "";
+    }
+    return formatNumberString(valueBase);
   }
 
   function startAdd() {
@@ -152,13 +165,8 @@ export default function RewardPrepStepTreasures({ form, vault }) {
     setEditingIndex(index);
 
     const base = Number(row.value) || 0;
-    const nextValueUnit = "common";
-    const displayValue =
-      nextValueUnit === "common"
-        ? commonRate
-          ? formatNumberString(base / commonRate)
-          : ""
-        : formatNumberString(base);
+    const nextValueUnit = valueUnit;
+    const displayValue = formatValueForUnit(base, nextValueUnit);
 
     resetDraft({
       container_id: row.container_id ?? "",
@@ -232,7 +240,7 @@ export default function RewardPrepStepTreasures({ form, vault }) {
       const n = asNumber(nextStr);
       let valueBase = 0;
       if (Number.isFinite(n)) {
-        valueBase = prev.valueUnit === "common" ? n * commonRate : n;
+        valueBase = valueUnit === "common" ? n * commonRate : n;
       }
       return {
         ...prev,
@@ -242,38 +250,13 @@ export default function RewardPrepStepTreasures({ form, vault }) {
     });
   }
 
-  function handleValueUnitChange(nextUnit) {
-    if (nextUnit === draft.valueUnit) return;
-
-    if (nextUnit === "common") {
-      setDraft((prev) => ({
-        ...prev,
-        valueUnit: nextUnit,
-        displayValue: commonRate
-          ? formatNumberString(prev.valueBase / commonRate)
-          : "",
-      }));
-    } else {
-      setDraft((prev) => ({
-        ...prev,
-        valueUnit: nextUnit,
-        displayValue: formatNumberString(prev.valueBase),
-      }));
-    }
-  }
-
   function applyDefaultTreasure(t) {
     const base = Number(t?.value) || 0;
     setDraft((prev) => ({
       ...prev,
       name: t?.name ?? "",
       valueBase: base,
-      displayValue:
-        prev.valueUnit === "common"
-          ? commonRate
-            ? formatNumberString(base / commonRate)
-            : ""
-          : formatNumberString(base),
+      displayValue: formatValueForUnit(base, valueUnit),
     }));
   }
 
@@ -283,43 +266,8 @@ export default function RewardPrepStepTreasures({ form, vault }) {
     return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
   }
 
-  const valueUnitControl = (
-    <div className="flex items-center gap-3">
-      <label className="inline-flex items-center gap-2 text-sm text-muted-fg">
-        <input
-          type="radio"
-          name="valueUnit"
-          value="common"
-          checked={draft.valueUnit === "common"}
-          onChange={() => handleValueUnitChange("common")}
-          className="h-4 w-4 accent-accent"
-        />
-        {commonLabel}
-      </label>
-      <label className="inline-flex items-center gap-2 text-sm text-muted-fg">
-        <input
-          type="radio"
-          name="valueUnit"
-          value="base"
-          checked={draft.valueUnit === "base"}
-          onChange={() => handleValueUnitChange("base")}
-          className="h-4 w-4 accent-accent"
-        />
-        {baseLabel}
-      </label>
-    </div>
-  );
-
   return (
     <div className="space-y-4">
-      {rows.length === 0 ? (
-        <SubCard>
-          <p className="text-sm">
-            No treasure rows yet. Add items to include with this reward.
-          </p>
-        </SubCard>
-      ) : null}
-
       <div className="rounded-2xl border border-primary-700 overflow-hidden bg-primary-700 text-primary-50">
         <div className="px-4 py-3 flex items-center justify-between border-b border-primary-900">
           <div className="text-sm opacity-90">
@@ -374,6 +322,10 @@ export default function RewardPrepStepTreasures({ form, vault }) {
                   <div className="mt-3 max-h-64 overflow-auto rounded-xl border border-border bg-surface p-2">
                     <DefaultTreasurePicker
                       items={defaultTreasures}
+                      valueUnit={valueUnit}
+                      commonRate={commonRate}
+                      commonCode={commonCode}
+                      baseCode={baseCode}
                       onPick={(picked) => {
                         applyDefaultTreasure(picked);
                         setShowDefaults(false);
@@ -438,11 +390,25 @@ export default function RewardPrepStepTreasures({ form, vault }) {
 
                 <InputComponent
                   id="displayValue"
-                  label="Book value"
-                  labelRight={valueUnitControl}
-                  hint={`Enter value in ${commonLabel} or ${baseLabel}.`}
-                  value={draft.displayValue}
+                  label={`Book value (${valueUnitLabel})`}
+                  hint={`Enter value in ${valueUnitLabel}.`}
+                  value={
+                    isEditingValue
+                      ? draft.displayValue
+                      : formatValueForUnit(draft.valueBase, valueUnit)
+                  }
                   onChange={(e) => handleDisplayValueChange(e.target.value)}
+                  onFocus={() => setIsEditingValue(true)}
+                  onBlur={() => {
+                    setIsEditingValue(false);
+                    setDraft((prev) => ({
+                      ...prev,
+                      displayValue: formatValueForUnit(
+                        prev.valueBase,
+                        valueUnit,
+                      ),
+                    }));
+                  }}
                 />
               </div>
 
@@ -561,7 +527,13 @@ export default function RewardPrepStepTreasures({ form, vault }) {
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">{fmtMoney(row.value)}</td>
+                    <td className="px-4 py-3">
+                      {`${fmtMoney(
+                        valueUnit === "common"
+                          ? (Number(row.value) || 0) / (commonRate || 1)
+                          : Number(row.value) || 0,
+                      )} ${valueUnit === "common" ? commonCode : baseCode}`}
+                    </td>
                     <td className="px-4 py-3">{row.quantity ?? 0}</td>
                     <td className="px-4 py-3">{row.magical ? "Yes" : ""}</td>
                     <td className="px-4 py-3">

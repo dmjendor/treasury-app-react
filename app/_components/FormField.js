@@ -37,7 +37,7 @@ export default function FormField({
           htmlFor={id}
           className="
             grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl
-            border border-border
+            border border-border bg-input text-input-fg
 
             px-4 py-3
 

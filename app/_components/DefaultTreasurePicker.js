@@ -3,8 +3,16 @@
 import React, { useMemo, useState } from "react";
 import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
+import SubCard from "@/app/_components/SubCard";
 
-export default function DefaultTreasurePicker({ items, onPick }) {
+export default function DefaultTreasurePicker({
+  items,
+  onPick,
+  valueUnit = "common",
+  commonRate = 1,
+  commonCode = "Common",
+  baseCode = "Base",
+}) {
   const rows = useMemo(() => (Array.isArray(items) ? items : []), [items]);
 
   const [categoryId, setCategoryId] = useState("");
@@ -43,6 +51,23 @@ export default function DefaultTreasurePicker({ items, onPick }) {
     setCategoryId("");
     setItemId("");
   }
+
+  function formatValue(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "0";
+    return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+
+  const previewValue = useMemo(() => {
+    if (!selectedItem) return null;
+    const baseValue = Number(selectedItem.value) || 0;
+    if (valueUnit === "common") {
+      const rate = Number(commonRate) || 1;
+      const commonValue = rate ? baseValue / rate : baseValue;
+      return `${formatValue(commonValue)} ${commonCode}`;
+    }
+    return `${formatValue(baseValue)} ${baseCode}`;
+  }, [selectedItem, valueUnit, commonRate, commonCode, baseCode]);
 
   return (
     <div className="space-y-3">
@@ -93,12 +118,10 @@ export default function DefaultTreasurePicker({ items, onPick }) {
       </div>
 
       {selectedItem ? (
-        <div className="rounded-xl border border-border bg-card p-3 text-sm">
-          <div className="text-muted-fg text-lg font-bold">Preview</div>
-          <div className="mt-1 font-semibold text-fg">{selectedItem.name}</div>
-          <div className="mt-1 text-muted-fg">
-            Value: {selectedItem.value ?? 0}
-          </div>
+        <SubCard className="text-sm">
+          <div className="text-lg font-bold">Preview</div>
+          <div className="mt-1 font-semibold">{selectedItem.name}</div>
+          <div className="mt-1">Value: {previewValue}</div>
 
           <div className="mt-3">
             <Button
@@ -109,7 +132,7 @@ export default function DefaultTreasurePicker({ items, onPick }) {
               Use this item
             </Button>
           </div>
-        </div>
+        </SubCard>
       ) : null}
     </div>
   );
