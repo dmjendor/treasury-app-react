@@ -453,7 +453,7 @@ export default function VaultSettingsClient() {
         <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
             <span className="h-2 w-2 rounded-full bg-success-500" />
-            Markups (coming soon)
+            Markups
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -462,16 +462,17 @@ export default function VaultSettingsClient() {
               type="text"
               disabled
               label="Valuable buy markup"
-              hint="Example: 1.10 for +10%"
+              hint="Coming soon."
               value={voBuyMarkup}
               onChange={(e) => setVoBuyMarkup(e.target.value)}
             />
             <InputComponent
               id="vo_sell_markup"
-              disabled
-              type="text"
-              label="Valuable sell markup"
-              hint="Example: 0.90 for -10%"
+              type="number"
+              step="1"
+              min="0"
+              label="Valuable sell markdown (%)"
+              hint="Percent off market value. Example: 10 = 10% less."
               value={voSellMarkup}
               onChange={(e) => setVoSellMarkup(e.target.value)}
             />
@@ -480,14 +481,17 @@ export default function VaultSettingsClient() {
               disabled
               type="text"
               label="Item buy markup"
+              hint="Coming soon."
               value={itemBuyMarkup}
               onChange={(e) => setItemBuyMarkup(e.target.value)}
             />
             <InputComponent
               id="item_sell_markup"
-              disabled
-              type="text"
-              label="Item sell markup"
+              type="number"
+              step="1"
+              min="0"
+              label="Item sell markdown (%)"
+              hint="Percent off market value. Example: 15 = 15% less."
               value={itemSellMarkup}
               onChange={(e) => setItemSellMarkup(e.target.value)}
             />
@@ -516,7 +520,7 @@ export default function VaultSettingsClient() {
             </LinkButton>
             <LinkButton
               href={`/account/vaults/${vault.id}/transfer`}
-              variant="outline"
+              variant="accent"
             >
               Transfer ownership
             </LinkButton>

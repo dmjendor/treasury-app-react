@@ -159,11 +159,12 @@ export default function VaultForm({
             />
           </Field>
 
-          <Field label="Valuable sell markup (percent)">
+          <Field label="Valuable sell markdown (%)">
             <input
               name="vo_sell_markup"
               type="number"
-              step="0.01"
+              step="1"
+              min="0"
               defaultValue={defaults.vo_sell_markup}
               className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             />
@@ -179,11 +180,12 @@ export default function VaultForm({
             />
           </Field>
 
-          <Field label="Item sell markup (percent)">
+          <Field label="Item sell markdown (%)">
             <input
               name="item_sell_markup"
               type="number"
-              step="0.01"
+              step="1"
+              min="0"
               defaultValue={defaults.item_sell_markup}
               className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm text-input-fg"
             />

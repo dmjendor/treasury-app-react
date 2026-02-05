@@ -302,10 +302,20 @@ export async function sellTreasureForVaultById({ vaultId, treasureId }) {
     return { ok: false, error: "Common currency has no rate.", data: null };
   }
 
+  function toPercent(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return 0;
+    if (num > 1) return num;
+    if (num < 0) return 0;
+    return num * 100;
+  }
+
   const baseValue = Number(before?.value) || 0;
   const qtyRaw = Number(before?.quantity);
   const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
-  const saleBaseValue = baseValue * quantity;
+  const percentOff = toPercent(vault?.item_sell_markup);
+  const saleMultiplier = Math.max(0, 1 - percentOff / 100);
+  const saleBaseValue = baseValue * quantity * saleMultiplier;
   const saleCommonValue = saleBaseValue / commonRate;
 
   const { data: after, error: updateError } = await supabase
