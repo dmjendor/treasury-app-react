@@ -9,6 +9,7 @@ import { getThemes } from "@/app/_lib/data/themes.data";
 import { getSystems } from "@/app/_lib/data/systems.data";
 import { getCurrenciesForVault } from "@/app/_lib/data/currencies.data";
 import { getContainersForVault } from "@/app/_lib/data/containers.data";
+import { promoteToOwnerPermission } from "@/app/_lib/data/permissions.data";
 
 function normalizeVault(vault) {
   return {
@@ -41,6 +42,7 @@ export async function getVaultById(id) {
     .single();
 
   if (error) {
+    if (error?.code === "PGRST116") return null;
     console.error("getVaultById failed", error);
     return null;
   }
@@ -115,6 +117,155 @@ export async function assertVaultOwner(vaultId, userId) {
     return false;
   }
   return true;
+}
+
+/**
+ * - Get a vault name for an owner.
+ * - @param {string} vaultId
+ * - @param {string} userId
+ * - @returns {Promise<string|null>}
+ */
+export async function getVaultNameForOwner(vaultId, userId) {
+  if (!vaultId || !userId) {
+    console.error("getVaultNameForOwner failed: missing vaultId or userId");
+    return null;
+  }
+
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("vaults")
+    .select("id,name")
+    .eq("id", vaultId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    console.error("getVaultNameForOwner failed", error);
+    return null;
+  }
+
+  return data?.name ?? null;
+}
+
+/**
+ * - Delete a vault and all related data.
+ * - @param {string} vaultId
+ * - @returns {Promise<{ ok: boolean, error: string | null }>}
+ */
+export async function deleteVaultCascadeDb(vaultId) {
+  if (!vaultId) {
+    console.error("deleteVaultCascadeDb failed: missing vault id");
+    return { ok: false, error: "Missing vault id." };
+  }
+
+  const supabase = await getSupabase();
+
+  const { error: clearCurrencyError } = await supabase
+    .from("vaults")
+    .update({ base_currency_id: null, common_currency_id: null })
+    .eq("id", vaultId);
+
+  if (clearCurrencyError) {
+    console.error("deleteVaultCascadeDb base/common clear failed", clearCurrencyError);
+    return { ok: false, error: "Vault could not be prepared for deletion." };
+  }
+
+  const deleteSteps = [
+    "prepholdings",
+    "preptreasures",
+    "prepvaluables",
+    "rewardprep",
+    "holdings",
+    "treasures",
+    "valuables",
+    "logs",
+    "permissions",
+    "vault_member_preferences",
+    "containers",
+    "currencies",
+  ];
+
+  for (const table of deleteSteps) {
+    const { error } = await supabase.from(table).delete().eq("vault_id", vaultId);
+    if (error) {
+      console.error("deleteVaultCascadeDb failed", { table, error });
+      return { ok: false, error: "Vault data could not be deleted." };
+    }
+  }
+
+  const { error: vaultError } = await supabase
+    .from("vaults")
+    .delete()
+    .eq("id", vaultId);
+
+  if (vaultError) {
+    console.error("deleteVaultCascadeDb failed to delete vault", vaultError);
+    return { ok: false, error: "Vault could not be deleted." };
+  }
+
+  return { ok: true, error: null };
+}
+
+/**
+ * - Transfer a vault to a new owner.
+ * - @param {{ vaultId: string, fromUserId: string, toUserId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string | null }>}
+ */
+export async function transferVaultOwnershipDb({
+  vaultId,
+  fromUserId,
+  toUserId,
+}) {
+  if (!vaultId || !fromUserId || !toUserId) {
+    return { ok: false, error: "Missing transfer inputs." };
+  }
+
+  const supabase = await getSupabase();
+
+  const { data: vaultRow, error: vaultError } = await supabase
+    .from("vaults")
+    .select("id,user_id,name")
+    .eq("id", vaultId)
+    .eq("user_id", fromUserId)
+    .single();
+
+  if (vaultError || !vaultRow) {
+    if (vaultError) console.error("transferVaultOwnershipDb load failed", vaultError);
+    return { ok: false, error: "Vault could not be loaded." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("vaults")
+    .update({ user_id: toUserId })
+    .eq("id", vaultId)
+    .eq("user_id", fromUserId);
+
+  if (updateError) {
+    console.error("transferVaultOwnershipDb update failed", updateError);
+    return { ok: false, error: "Vault ownership could not be updated." };
+  }
+
+  const { error: rewardError } = await supabase
+    .from("rewardprep")
+    .update({ user_id: toUserId })
+    .eq("vault_id", vaultId);
+
+  if (rewardError) {
+    console.error("transferVaultOwnershipDb rewardprep update failed", rewardError);
+    return { ok: false, error: "Reward prep could not be transferred." };
+  }
+
+  const ownerPermRes = await promoteToOwnerPermission({
+    vaultId,
+    userId: toUserId,
+    actorUserId: fromUserId,
+  });
+
+  if (!ownerPermRes.ok) {
+    console.error("transferVaultOwnershipDb permission update failed", ownerPermRes.error);
+  }
+
+  return { ok: true, error: null };
 }
 
 /**

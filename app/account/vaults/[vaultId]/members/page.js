@@ -13,14 +13,15 @@ export default async function Page({ params }) {
   const { data, error } = await getPermissionsForVaultAction({ vaultId });
   const rows = Array.isArray(data) ? data : [];
   const members = rows.map((r) => {
-    const profileName = r?.profiles?.full_name || r?.profiles?.name || "";
-    const email = r?.email || "";
     const isInvite = !r?.user_id;
+    const displayName =
+      r?.member_display_name || r?.users?.name || "";
+    const email = r?.user_id ? r?.users?.email || "" : r?.email || "";
 
     return {
       id: r.id,
       userId: r.user_id ? String(r.user_id) : null,
-      name: isInvite ? "Invited" : profileName || "Member",
+      name: isInvite ? "Invited" : displayName || "Member",
       email: email,
       status: isInvite ? "invited" : "active",
       invitedAt: r.invited_at,
@@ -32,7 +33,7 @@ export default async function Page({ params }) {
     <MembersClient
       vaultId={String(vaultId)}
       members={members}
-      loadError={error?.message || ""}
+      loadError={error || ""}
     />
   );
 }

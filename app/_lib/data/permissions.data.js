@@ -22,7 +22,22 @@ export async function getAllUsersForVault(vaultId) {
 
   const { data, error } = await supabase
     .from("permissions")
-    .select("*")
+    .select(
+      `
+        id,
+        vault_id,
+        user_id,
+        email,
+        can_view,
+        invited_at,
+        accepted_at,
+        users:user_id (
+          id,
+          name,
+          email
+        )
+      `,
+    )
     .eq("vault_id", vaultId)
     .order("accepted_at", { ascending: false, nullsFirst: true })
     .order("invited_at", { ascending: false });
@@ -31,7 +46,35 @@ export async function getAllUsersForVault(vaultId) {
     console.error("getAllUsersForVault failed", error);
     return [];
   }
-  return data ?? [];
+
+  const rows = data ?? [];
+  const userIds = rows
+    .map((row) => row?.user_id)
+    .filter((id) => id != null);
+
+  if (userIds.length === 0) return rows;
+
+  const { data: preferences, error: prefError } = await supabase
+    .from("vault_member_preferences")
+    .select("user_id, display_name")
+    .eq("vault_id", vaultId)
+    .in("user_id", userIds);
+
+  if (prefError) {
+    console.error("getAllUsersForVault prefs failed", prefError);
+    return rows;
+  }
+
+  const prefMap = new Map(
+    (preferences || []).map((row) => [String(row.user_id), row.display_name]),
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    member_display_name: row?.user_id
+      ? prefMap.get(String(row.user_id)) || null
+      : null,
+  }));
 }
 
 function normalizeEmail(email) {
@@ -588,6 +631,95 @@ export async function createOwnerPermission({ vaultId, userId }) {
     console.error("createOwnerPermission failed", error);
     return { ok: false, error: "Owner permissions could not be created.", data: null };
   }
+  return { ok: true, error: "", data };
+}
+
+/**
+ * - Promote a member to owner permissions.
+ * @param {{ vaultId: string, userId: string, actorUserId: string }} params
+ * @returns {Promise<{ ok: boolean, error: string, data: any }>}
+ */
+export async function promoteToOwnerPermission({
+  vaultId,
+  userId,
+  actorUserId,
+}) {
+  if (!vaultId || !userId || !actorUserId) {
+    return {
+      ok: false,
+      error: "vaultId, userId, and actorUserId are required.",
+      data: null,
+    };
+  }
+
+  const supabase = await getSupabase();
+  const acceptedAt = new Date().toISOString();
+  const ownerPayload = {
+    vault_id: vaultId,
+    user_id: userId,
+    email: null,
+    can_view: true,
+    transfer_coin_in: true,
+    transfer_coin_out: true,
+    transfer_treasures_in: true,
+    transfer_treasures_out: true,
+    transfer_valuables_in: true,
+    transfer_valuables_out: true,
+    sell_treasures: true,
+    sell_valuables: true,
+    created_by: actorUserId,
+    invited_at: acceptedAt,
+    accepted_at: acceptedAt,
+  };
+
+  const { data: existing, error: existingError } = await supabase
+    .from("permissions")
+    .select("id, invited_at, accepted_at")
+    .eq("vault_id", vaultId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existingError) {
+    console.error("promoteToOwnerPermission lookup failed", existingError);
+    return { ok: false, error: "Owner permissions could not be updated.", data: null };
+  }
+
+  if (existing?.id) {
+    const updates = {
+      ...ownerPayload,
+      invited_at: existing.invited_at || acceptedAt,
+      accepted_at: existing.accepted_at || acceptedAt,
+    };
+    const { data, error } = await supabase
+      .from("permissions")
+      .update(updates)
+      .eq("id", existing.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("promoteToOwnerPermission update failed", error);
+      return {
+        ok: false,
+        error: "Owner permissions could not be updated.",
+        data: null,
+      };
+    }
+
+    return { ok: true, error: "", data };
+  }
+
+  const { data, error } = await supabase
+    .from("permissions")
+    .insert(ownerPayload)
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("promoteToOwnerPermission insert failed", error);
+    return { ok: false, error: "Owner permissions could not be created.", data: null };
+  }
+
   return { ok: true, error: "", data };
 }
 

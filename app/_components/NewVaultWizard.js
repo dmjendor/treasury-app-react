@@ -35,6 +35,7 @@ export default function NewVaultWizard({
   systems = [],
   themes = [],
   showTitle = true,
+  onCreated,
 }) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
@@ -428,6 +429,11 @@ export default function NewVaultWizard({
           setSubmitting(false);
           return;
         }
+      }
+
+      if (typeof onCreated === "function") {
+        onCreated(vaultId);
+        return;
       }
 
       router.replace(`/account/vaults/${vaultId}`);

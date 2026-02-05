@@ -10,10 +10,17 @@ import { auth } from "@/app/_lib/auth";
 import { formDataToObject, requireUserId, toBool } from "@/app/_lib/actions/_utils";
 import {
   createVault,
+  deleteVaultCascadeDb,
   getMemberVaultsForUser,
+  getVaultNameForOwner,
+  transferVaultOwnershipDb,
+  assertVaultOwner,
   updateVaultSettingsDb,
 } from "@/app/_lib/data/vaults.data";
-import { createOwnerPermission } from "@/app/_lib/data/permissions.data";
+import {
+  createOwnerPermission,
+  getVaultMembersWithPermissions,
+} from "@/app/_lib/data/permissions.data";
 
 /**
  * Create a vault.
@@ -131,4 +138,169 @@ export async function getMemberVaultNavItemsAction(userId) {
   }));
 
   return { data: items, error: null };
+}
+
+/**
+ * Fetch transfer candidates for a vault (owner only).
+ * @param {{ vaultId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}
+ */
+export async function getVaultTransferCandidatesAction(input) {
+  try {
+    const session = await auth();
+    if (!session?.user?.userId)
+      return { ok: false, error: "You must be logged in.", data: null };
+
+    const vaultId = input?.vaultId ? String(input.vaultId) : "";
+    if (!vaultId) {
+      return { ok: false, error: "Missing vault id.", data: null };
+    }
+
+    const isOwner = await assertVaultOwner(vaultId, session.user.userId);
+    if (!isOwner) {
+      return { ok: false, error: "Vault access denied.", data: null };
+    }
+
+    const { data, error } = await getVaultMembersWithPermissions(
+      vaultId,
+      session.user.userId,
+    );
+
+    if (error) {
+      return { ok: false, error, data: null };
+    }
+
+    const members = (data || []).map((row) => ({
+      permissionId: row.id,
+      userId: row.user_id,
+      name: row?.users?.name || "",
+      email: row?.users?.email || "",
+    }));
+
+    return { ok: true, error: null, data: members };
+  } catch (error) {
+    console.error("getVaultTransferCandidatesAction failed", error);
+    return {
+      ok: false,
+      error: "Transfer candidates could not be loaded.",
+      data: null,
+    };
+  }
+}
+
+/**
+ * Transfer a vault to another user.
+ * @param {{ vaultId: string, newOwnerId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}
+ */
+export async function transferVaultOwnershipAction(input) {
+  try {
+    const session = await auth();
+    if (!session?.user?.userId)
+      return { ok: false, error: "You must be logged in.", data: null };
+
+    const vaultId = input?.vaultId ? String(input.vaultId) : "";
+    const newOwnerId = input?.newOwnerId ? String(input.newOwnerId) : "";
+
+    if (!vaultId || !newOwnerId) {
+      return { ok: false, error: "Missing transfer inputs.", data: null };
+    }
+
+    const isOwner = await assertVaultOwner(vaultId, session.user.userId);
+    if (!isOwner) {
+      return { ok: false, error: "Vault access denied.", data: null };
+    }
+
+    if (String(newOwnerId) === String(session.user.userId)) {
+      return { ok: false, error: "Select a new owner.", data: null };
+    }
+
+    const { data: members, error: membersError } =
+      await getVaultMembersWithPermissions(vaultId, session.user.userId);
+
+    if (membersError) {
+      return { ok: false, error: membersError, data: null };
+    }
+
+    const allowed = (members || []).some(
+      (row) => String(row.user_id) === String(newOwnerId),
+    );
+
+    if (!allowed) {
+      return { ok: false, error: "Selected user cannot receive this vault.", data: null };
+    }
+
+    const transferRes = await transferVaultOwnershipDb({
+      vaultId,
+      fromUserId: session.user.userId,
+      toUserId: newOwnerId,
+    });
+
+    if (!transferRes.ok) {
+      return {
+        ok: false,
+        error: transferRes.error || "Vault could not be transferred.",
+        data: null,
+      };
+    }
+
+    revalidatePath("/account/vaults");
+
+    return { ok: true, error: null, data: { id: vaultId } };
+  } catch (error) {
+    console.error("transferVaultOwnershipAction failed", error);
+    return { ok: false, error: "Vault could not be transferred.", data: null };
+  }
+}
+
+/**
+ * Delete a vault and all related data.
+ * @param {{ vaultId: string, confirmName: string }} input
+ * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}
+ */
+export async function deleteVaultAction(input) {
+  try {
+    const session = await auth();
+    if (!session?.user?.userId)
+      return { ok: false, error: "You must be logged in.", data: null };
+
+    const vaultId = input?.vaultId ? String(input.vaultId) : "";
+    const confirmName = input?.confirmName ? String(input.confirmName) : "";
+
+    if (!vaultId) {
+      return { ok: false, error: "Missing vault id.", data: null };
+    }
+
+    const vaultName = await getVaultNameForOwner(
+      vaultId,
+      session.user.userId,
+    );
+    if (!vaultName) {
+      return { ok: false, error: "Vault not found.", data: null };
+    }
+
+    if (vaultName.trim() !== confirmName.trim()) {
+      return {
+        ok: false,
+        error: "Vault name does not match.",
+        data: null,
+      };
+    }
+
+    const deleteRes = await deleteVaultCascadeDb(vaultId);
+    if (!deleteRes.ok) {
+      return {
+        ok: false,
+        error: deleteRes.error || "Vault could not be deleted.",
+        data: null,
+      };
+    }
+
+    revalidatePath("/account/vaults");
+
+    return { ok: true, error: null, data: { id: vaultId } };
+  } catch (error) {
+    console.error("deleteVaultAction failed", error);
+    return { ok: false, error: "Vault could not be deleted.", data: null };
+  }
 }

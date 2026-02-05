@@ -17,13 +17,21 @@ export default function Page() {
     router.refresh();
   }
 
+  function handleCreated() {
+    router.back();
+    router.refresh();
+  }
+
   return (
     <Modal
       title="Create vault"
       onClose={handleClose}
     >
       <div className="p-4">
-        <NewVaultWizard showTitle={false} />
+        <NewVaultWizard
+          showTitle={false}
+          onCreated={handleCreated}
+        />
       </div>
     </Modal>
   );

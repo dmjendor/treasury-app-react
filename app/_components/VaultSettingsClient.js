@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useVault } from "@/app/_context/VaultProvider";
+import ErrorMessage from "@/app/_components/ErrorMessage";
 import InputComponent from "@/app/_components/InputComponent";
 import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
@@ -248,11 +249,7 @@ export default function VaultSettingsClient() {
         onSubmit={onSave}
         className="space-y-6"
       >
-        {error ? (
-          <div className="rounded-xl border border-danger-600 bg-danger-100 p-3 text-sm text-danger-700">
-            {error}
-          </div>
-        ) : null}
+        {error ? <ErrorMessage error={error} /> : null}
 
         <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
@@ -497,6 +494,33 @@ export default function VaultSettingsClient() {
           </div>
 
           {/* merge_split moved to Workflow */}
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-fg">
+            <span className="h-2 w-2 rounded-full bg-danger-500" />
+            Management
+          </div>
+
+          <p className="text-sm text-muted-fg">
+            Delete this vault or transfer ownership. Deleting is permanent and
+            removes all vault data.
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            <LinkButton
+              href={`/account/vaults/${vault.id}/delete`}
+              variant="danger"
+            >
+              Delete vault
+            </LinkButton>
+            <LinkButton
+              href={`/account/vaults/${vault.id}/transfer`}
+              variant="outline"
+            >
+              Transfer ownership
+            </LinkButton>
+          </div>
         </section>
 
         <div className="flex flex-wrap gap-2 pt-2">
