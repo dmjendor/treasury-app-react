@@ -349,8 +349,14 @@ export default function RewardPrepStepValuables({ form, vault }) {
     setGeneratorBusy(true);
     try {
       const rate = Number(commonCurrencyRate) || 1;
-      const lowValue = Math.round(selectedRange.low * rate);
-      const highValue = Math.round(selectedRange.high * rate);
+      const lowValue =
+        valueUnit === "common"
+          ? Math.round(selectedRange.low)
+          : Math.round(selectedRange.low * rate);
+      const highValue =
+        valueUnit === "common"
+          ? Math.round(selectedRange.high)
+          : Math.round(selectedRange.high * rate);
       const res = await generateValuablesAction({
         vault_id: String(vault.id),
         container_id: generatorContainerId,
@@ -358,6 +364,8 @@ export default function RewardPrepStepValuables({ form, vault }) {
         low_value: lowValue,
         high_value: highValue,
         quantity: qty,
+        value_unit: valueUnit,
+        common_rate: rate,
         target: "prepvaluables",
       });
 

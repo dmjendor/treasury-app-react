@@ -1,11 +1,12 @@
-// app/account/vaults/[vaultId]/valuables/[valuableId]/delete/page.js
+// app/@modal/(.)account/vaults/[vaultId]/valuables/[valuableId]/delete/page.js
 "use client";
 
+import Modal from "@/app/_components/Modal";
 import DeleteValuable from "@/app/_components/DeleteValuable";
 import { useParams, useRouter } from "next/navigation";
 
 /**
- * Render the delete valuable page.
+ * Render the delete valuable modal.
  * @returns {JSX.Element}
  */
 export default function Page() {
@@ -16,22 +17,17 @@ export default function Page() {
   const valuableId = params?.valuableId ? String(params.valuableId) : "";
 
   function handleClose() {
-    if (!vaultId) {
-      router.back();
-      return;
-    }
-
-    router.replace(`/account/vaults/${encodeURIComponent(vaultId)}/valuables`);
+    router.back();
     router.refresh();
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl p-6">
+    <Modal title="Delete Valuable">
       <DeleteValuable
         vaultId={vaultId}
         valuableId={valuableId}
         onClose={handleClose}
       />
-    </div>
+    </Modal>
   );
 }

@@ -1,14 +1,19 @@
 // app/account/vaults/new/page.js
-import VaultForm from "@/app/_components/VaultForm";
-import { createVaultAction } from "@/app/_lib/actions";
+import NewVaultWizard from "@/app/_components/NewVaultWizard";
+import { getSystems } from "@/app/_lib/data/systems.data";
+import { getThemes } from "@/app/_lib/data/themes.data";
 
-export default function NewVaultPage() {
+/**
+ * Render the new vault wizard page.
+ * @returns {JSX.Element}
+ */
+export default async function NewVaultPage() {
+  const [systems, themes] = await Promise.all([getSystems(), getThemes()]);
   return (
-    <div className="max-w-3xl space-y-6">
-      <h2 className="text-xl font-semibold text-ink-900">Create vault</h2>
-      <VaultForm
-        action={createVaultAction}
-        submitLabel="Create vault"
+    <div className="max-w-4xl space-y-6">
+      <NewVaultWizard
+        systems={Array.isArray(systems) ? systems : []}
+        themes={Array.isArray(themes) ? themes : []}
       />
     </div>
   );

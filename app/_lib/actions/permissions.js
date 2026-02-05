@@ -178,6 +178,8 @@ function pickAllowedFields(patch) {
     transfer_treasures_out: patch.transfer_treasures_out,
     transfer_valuables_in: patch.transfer_valuables_in,
     transfer_valuables_out: patch.transfer_valuables_out,
+    sell_treasures: patch.sell_treasures,
+    sell_valuables: patch.sell_valuables,
   };
 }
 

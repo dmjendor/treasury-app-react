@@ -6,12 +6,16 @@ import {
   createValuablesDb,
   getDefaultValuables,
   getValuableForVaultById,
+  sellValuableForVaultById,
   transferValuableToVault,
   updateValuableForVaultById,
 } from "@/app/_lib/data/valuables.data";
 import { auth } from "@/app/_lib/auth";
 import { tryCreateVaultLog } from "@/app/_lib/data/logs.data";
-import { buildVaultLogInput } from "@/app/_lib/logging/createVaultLog";
+import {
+  buildVaultLogInput,
+  safeCreateVaultLog,
+} from "@/app/_lib/logging/createVaultLog";
 import { getContainersForVault } from "@/app/_lib/data/containers.data";
 import { getPermissionByVaultAndUserId } from "@/app/_lib/data/permissions.data";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
@@ -64,7 +68,7 @@ export async function getValuableGeneratorCategoriesAction() {
 
 /**
  * - Generate valuables from a category and value range.
- * @param {{ vault_id: string, container_id: string, category_key: string, low_value: number, high_value: number, quantity: number, target?: "valuables" | "prepvaluables" }} input
+ * @param {{ vault_id: string, container_id: string, category_key: string, low_value: number, high_value: number, quantity: number, value_unit?: "common" | "base", common_rate?: number, target?: "valuables" | "prepvaluables" }} input
  * @returns {Promise<{ ok: boolean, error: string|null, data: Array<any> }>}
  */
 export async function generateValuablesAction(input) {
@@ -80,6 +84,9 @@ export async function generateValuablesAction(input) {
     const lowRaw = Number(input?.low_value);
     const highRaw = Number(input?.high_value);
     const qtyRaw = Number(input?.quantity);
+    const valueUnit = input?.value_unit === "common" ? "common" : "base";
+    const commonRateRaw = Number(input?.common_rate);
+    const commonRate = Number.isFinite(commonRateRaw) ? commonRateRaw : 0;
     const target =
       input?.target === "prepvaluables" ? "prepvaluables" : "valuables";
     if (!vaultId) return { ok: false, error: "Missing vault id.", data: [] };
@@ -99,8 +106,15 @@ export async function generateValuablesAction(input) {
     const rows = [];
     for (let i = 0; i < quantity; i += 1) {
       const category = await toCamelCase(categoryKey);
-      const finalValue = randomIntInclusive(low, high);
-      const generated = generateValuableName({ category, value: finalValue });
+      const displayValue = randomIntInclusive(low, high);
+      const valueBase =
+        valueUnit === "common" && commonRate > 0
+          ? displayValue * commonRate
+          : displayValue;
+      const generated = generateValuableName({
+        category,
+        value: displayValue,
+      });
       const safeName =
         typeof generated?.name === "string" && generated.name.trim()
           ? generated.name.trim()
@@ -116,7 +130,7 @@ export async function generateValuablesAction(input) {
         container_id: containerId,
         name: safeName,
         description: safeDescription,
-        value: finalValue,
+        value: valueBase,
         quantity: 1,
       });
     }
@@ -386,6 +400,102 @@ export async function transferValuableToVaultAction({
     return {
       ok: false,
       error: error?.message || "Transfer valuable failed.",
+      data: null,
+    };
+  }
+}
+
+/**
+ * - Sell a valuable from a vault.
+ * @param {{ vaultId: string, valuableId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}
+ */
+export async function sellValuableAction({ vaultId, valuableId }) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { ok: false, error: "You must be logged in.", data: null };
+    }
+
+    if (!vaultId) return { ok: false, error: "Missing vault id.", data: null };
+    if (!valuableId)
+      return { ok: false, error: "Missing valuable id.", data: null };
+    const userId = session?.user?.userId || null;
+    const vault = await getVaultById(vaultId);
+    if (!vault) return { ok: false, error: "Vault not found.", data: null };
+
+    const isOwner = String(vault?.user_id) === String(userId);
+    if (!isOwner) {
+      const permRes = await getPermissionByVaultAndUserId(vaultId, userId);
+      const permission = Array.isArray(permRes?.data) ? permRes.data[0] : null;
+      if (!permission?.sell_valuables) {
+        return {
+          ok: false,
+          error: "You do not have permission to sell valuables.",
+          data: null,
+        };
+      }
+    }
+
+    const sellResult = await sellValuableForVaultById({
+      vaultId,
+      valuableId,
+    });
+
+    if (!sellResult?.ok) {
+      return {
+        ok: false,
+        error: sellResult.error || "Failed to sell valuable.",
+        data: null,
+      };
+    }
+
+    const { before, after, holdings, saleCommonValue, commonCurrency } =
+      sellResult.data || {};
+    const currencyLabel =
+      commonCurrency?.code ||
+      commonCurrency?.name ||
+      commonCurrency?.abbreviation ||
+      "Common";
+    const displayValue = Number.isFinite(Number(saleCommonValue))
+      ? Number(saleCommonValue).toLocaleString()
+      : String(saleCommonValue ?? "");
+    const valuableName = after?.name || before?.name || "Valuable";
+
+    const logInput = await buildVaultLogInput({
+      vaultId,
+      source: "valuables",
+      action: "sold",
+      entityType: "valuables",
+      entityId: valuableId,
+      before,
+      after,
+      labels: {
+        name: "Name",
+        value: "Value",
+        quantity: "Quantity",
+        archived: "Archived",
+      },
+      message: `${valuableName} sold for ${displayValue} ${currencyLabel}`,
+      meta: {
+        holdingsId: holdings?.id,
+        currencyId: commonCurrency?.id,
+        value: saleCommonValue,
+      },
+    });
+
+    await safeCreateVaultLog({ tryCreateVaultLog, input: logInput });
+
+    revalidatePath(`/account/vaults/${vaultId}/valuables`);
+    revalidatePath(`/account/vaults/${vaultId}`);
+    revalidatePath(`/public/vaults/${vaultId}`);
+
+    return { ok: true, error: null, data: after || null };
+  } catch (error) {
+    console.error("sellValuableAction failed", error);
+    return {
+      ok: false,
+      error: error?.message || "Failed to sell valuable.",
       data: null,
     };
   }

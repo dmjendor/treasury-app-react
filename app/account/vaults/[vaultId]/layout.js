@@ -1,6 +1,7 @@
 import { ThemeScope } from "@/app/_components/ThemeScope";
 import VaultHeader from "@/app/_components/VaultHeader";
 import { VaultProvider } from "@/app/_context/VaultProvider";
+import { ValueUnitProvider } from "@/app/_context/ValueUnitProvider";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
 import { notFound } from "next/navigation";
 
@@ -22,12 +23,14 @@ export default async function VaultLayout({ children, params }) {
       vault={vault}
       key={vault?.id ?? "no-vault"}
     >
-      <ThemeScope themeKey={themeKey}>
-        <div className="min-h-screen bg-bg text-fg space-y-6 p-2">
-          <VaultHeader />
-          {children}
-        </div>
-      </ThemeScope>
+      <ValueUnitProvider defaultUnit="common">
+        <ThemeScope themeKey={themeKey}>
+          <div className="min-h-screen bg-bg text-fg space-y-6 p-2">
+            <VaultHeader />
+            {children}
+          </div>
+        </ThemeScope>
+      </ValueUnitProvider>
     </VaultProvider>
   );
 }

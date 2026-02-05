@@ -10,6 +10,13 @@ import { LinkButton } from "@/app/_components/LinkButton";
 import IconComponent from "@/app/_components/IconComponent";
 import SubCard from "@/app/_components/SubCard";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
+import { listVaultLogs } from "@/app/_lib/data/logs.data";
+import {
+  getInvitesByVaultId,
+  getMembersByVaultId,
+} from "@/app/_lib/data/permissions.data";
+import { getUsersByIds } from "@/app/_lib/data/users.data";
+import { getVaultMemberPreferencesForVaultAndUsers } from "@/app/_lib/data/vaultMemberPreferences.data";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 import BattleGearIcon from "@/app/_components/icons/BattleGearIcon";
 import GemsIcon from "@/app/_components/icons/GemsIcon";
@@ -101,6 +108,92 @@ export default async function VaultOverviewPage({ params }) {
     valuables_count,
   } = vault;
 
+  const logsRes = await listVaultLogs({ vaultId, limit: 5 });
+  const logs = logsRes?.ok && Array.isArray(logsRes.data) ? logsRes.data : [];
+  const actorIds = Array.from(
+    new Set(
+      logs
+        .map((log) => log?.actor_user_id)
+        .filter((id) => id != null)
+        .map((id) => String(id)),
+    ),
+  );
+  const [users, preferences] = await Promise.all([
+    actorIds.length ? getUsersByIds(actorIds) : [],
+    actorIds.length
+      ? getVaultMemberPreferencesForVaultAndUsers({
+          vaultId,
+          userIds: actorIds,
+        })
+      : [],
+  ]);
+  const userMap = new Map(
+    (users || []).map((user) => [String(user.id), user]),
+  );
+  const prefMap = new Map(
+    (preferences || []).map((pref) => [String(pref.user_id), pref]),
+  );
+
+  function resolveActorName(log) {
+    const actorId = log?.actor_user_id ? String(log.actor_user_id) : "";
+    const pref = actorId ? prefMap.get(actorId) : null;
+    if (pref?.display_name) return pref.display_name;
+    const user = actorId ? userMap.get(actorId) : null;
+    if (user?.name) return user.name;
+    if (log?.actor_email) return log.actor_email;
+    return "Unknown";
+  }
+
+  function formatLogDate(value) {
+    const date = value ? new Date(value) : null;
+    if (!date || Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString();
+  }
+
+  const [membersRes, invitesRes] = await Promise.all([
+    getMembersByVaultId(vaultId),
+    getInvitesByVaultId(vaultId),
+  ]);
+  const members = Array.isArray(membersRes?.data) ? membersRes.data : [];
+  const invites = Array.isArray(invitesRes?.data) ? invitesRes.data : [];
+  const memberIds = Array.from(
+    new Set(
+      members
+        .map((row) => row?.user_id)
+        .filter((id) => id != null)
+        .map((id) => String(id)),
+    ),
+  );
+  const [memberUsers, memberPrefs] = await Promise.all([
+    memberIds.length ? getUsersByIds(memberIds) : [],
+    memberIds.length
+      ? getVaultMemberPreferencesForVaultAndUsers({
+          vaultId,
+          userIds: memberIds,
+        })
+      : [],
+  ]);
+  const memberUserMap = new Map(
+    (memberUsers || []).map((user) => [String(user.id), user]),
+  );
+  const memberPrefMap = new Map(
+    (memberPrefs || []).map((pref) => [String(pref.user_id), pref]),
+  );
+
+  const playerRows = [
+    ...members.map((row) => ({ ...row, status: "accepted" })),
+    ...invites.map((row) => ({ ...row, status: "pending" })),
+  ];
+
+  function resolvePlayerName(row) {
+    const userId = row?.user_id ? String(row.user_id) : "";
+    const pref = userId ? memberPrefMap.get(userId) : null;
+    if (pref?.display_name) return pref.display_name;
+    const user = userId ? memberUserMap.get(userId) : null;
+    if (user?.name) return user.name;
+    return row?.email || "Unknown";
+  }
+
   return (
     <div className="space-y-8 text-fg">
       {/* Top: quick stats */}
@@ -139,10 +232,23 @@ export default async function VaultOverviewPage({ params }) {
           icon={HiOutlineClock}
         >
           <div className="space-y-3">
-            <EmptyList
-              title="No activity yet"
-              hint="Once you start adding treasure, edits and changes will show up here."
-            />
+            {logs.length === 0 ? (
+              <EmptyList
+                title="No activity yet"
+                hint="Once you start adding treasure, edits and changes will show up here."
+              />
+            ) : (
+              logs.map((log) => (
+                <SubCard key={log.id} className="space-y-1 text-sm">
+                  <div className="font-semibold">
+                    {log?.message || "Activity"}
+                  </div>
+                  <div className="text-xs text-subcard-fg/80">
+                    {formatLogDate(log?.created_at)} · {resolveActorName(log)}
+                  </div>
+                </SubCard>
+              ))
+            )}
           </div>
         </Panel>
 
@@ -163,11 +269,36 @@ export default async function VaultOverviewPage({ params }) {
               value={theme?.name}
             />
 
-            <DetailCard
-              label="Permissions"
-              value="GM only (for now)"
-              hint="Later you can add players and set roles."
-            />
+            <SubCard>
+              <div className="text-xs text-subcard-fg/80">Players</div>
+              {playerRows.length === 0 ? (
+                <div className="mt-2 text-sm text-subcard-fg/80">
+                  No players yet.
+                </div>
+              ) : (
+                <ul className="mt-2 space-y-2 text-sm">
+                  {playerRows.map((row) => {
+                    const accepted = row.status === "accepted";
+                    return (
+                      <li
+                        key={row.id}
+                        className="flex items-center gap-2"
+                      >
+                        <span
+                          className={`inline-block h-2 w-2 rounded-full ${
+                            accepted ? "bg-success-500" : "bg-warning-500"
+                          }`}
+                          aria-hidden="true"
+                        />
+                        <span className="font-semibold">
+                          {resolvePlayerName(row)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </SubCard>
           </div>
         </Panel>
       </div>

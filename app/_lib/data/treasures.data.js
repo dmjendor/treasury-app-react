@@ -5,6 +5,7 @@
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
+import { createHoldingsEntry } from "@/app/_lib/data/holdings.data";
 import { tryCreateVaultLog } from "@/app/_lib/data/logs.data";
 
 /**
@@ -168,7 +169,10 @@ export async function updateTreasureForVaultById(vaultId, treasureId, updates) {
     .single();
 
   if (beforeError) {
-    console.error("updateTreasureForVaultById before fetch failed", beforeError);
+    console.error(
+      "updateTreasureForVaultById before fetch failed",
+      beforeError,
+    );
     return { ok: false, error: "Treasure could not be loaded.", data: null };
   }
 
@@ -230,14 +234,126 @@ export async function transferTreasureToVault({
 
   if (updateError) {
     console.error("transferTreasureToVault: update failed", updateError);
-    return { ok: false, error: "Treasure could not be transferred.", data: null };
+    return {
+      ok: false,
+      error: "Treasure could not be transferred.",
+      data: null,
+    };
   }
 
   if (!Array.isArray(afterRows) || afterRows.length !== 1) {
-    return { ok: false, error: "Treasure could not be transferred.", data: null };
+    return {
+      ok: false,
+      error: "Treasure could not be transferred.",
+      data: null,
+    };
   }
 
   const after = afterRows[0];
 
   return { ok: true, error: null, data: { before, after } };
+}
+
+/**
+ * - Sell a treasure by archiving it and crediting common currency holdings.
+ * @param {{ vaultId: string, treasureId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: { before: any, after: any, holdings: any, saleBaseValue: number, saleCommonValue: number, commonCurrency: any } | null }>}
+ */
+export async function sellTreasureForVaultById({ vaultId, treasureId }) {
+  if (!vaultId) return { ok: false, error: "Missing vault id.", data: null };
+  if (!treasureId)
+    return { ok: false, error: "Missing treasure id.", data: null };
+
+  const supabase = await getSupabase();
+  const { data: before, error: treasureError } = await supabase
+    .from("treasures")
+    .select("*")
+    .eq("vault_id", vaultId)
+    .eq("id", treasureId)
+    .single();
+
+  if (treasureError) {
+    console.error("sellTreasureForVaultById fetch failed", treasureError);
+    return { ok: false, error: "Could not load treasure.", data: null };
+  }
+
+  if (before?.archived) {
+    return { ok: false, error: "Treasure is already archived.", data: null };
+  }
+
+  const vault = await getVaultById(vaultId);
+  if (!vault) {
+    return { ok: false, error: "Vault could not be loaded.", data: null };
+  }
+
+  const currencies = Array.isArray(vault?.currencyList)
+    ? vault.currencyList
+    : [];
+  const commonCurrency = currencies.find(
+    (currency) => String(currency.id) === String(vault?.common_currency_id),
+  );
+
+  if (!commonCurrency) {
+    return { ok: false, error: "Common currency not found.", data: null };
+  }
+
+  const commonRate = Number(commonCurrency?.rate) || 0;
+  if (commonRate <= 0) {
+    return { ok: false, error: "Common currency has no rate.", data: null };
+  }
+
+  const baseValue = Number(before?.value) || 0;
+  const qtyRaw = Number(before?.quantity);
+  const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+  const saleBaseValue = baseValue * quantity;
+  const saleCommonValue = saleBaseValue / commonRate;
+
+  const { data: after, error: updateError } = await supabase
+    .from("treasures")
+    .update({ archived: true })
+    .eq("vault_id", vaultId)
+    .eq("id", treasureId)
+    .select("*")
+    .single();
+
+  if (updateError) {
+    console.error("sellTreasureForVaultById update failed", updateError);
+    return { ok: false, error: "Could not archive treasure.", data: null };
+  }
+
+  const holdings = await createHoldingsEntry({
+    vaultId,
+    currencyId: String(commonCurrency.id),
+    value: saleCommonValue,
+  });
+
+  if (!holdings) {
+    console.error("sellTreasureForVaultById holdings insert failed", {
+      vaultId,
+      treasureId,
+      commonCurrencyId: commonCurrency.id,
+    });
+    const { error: rollbackError } = await supabase
+      .from("treasures")
+      .update({ archived: false })
+      .eq("vault_id", vaultId)
+      .eq("id", treasureId);
+    if (rollbackError) {
+      console.error("sellTreasureForVaultById rollback failed", rollbackError);
+    }
+    return { ok: false, error: "Could not record holdings.", data: null };
+  }
+
+  return {
+    ok: true,
+    error: null,
+    data: {
+      before,
+      after,
+      holdings,
+      saleBaseValue,
+      saleCommonValue,
+      commonCurrency,
+    },
+  };
 }

@@ -4,11 +4,15 @@ import {
   createTreasureDb,
   getDefaultTreasures,
   getTreasureForVaultById,
+  sellTreasureForVaultById,
   transferTreasureToVault,
   updateTreasureForVaultById,
 } from "@/app/_lib/data/treasures.data";
 import { tryCreateVaultLog } from "@/app/_lib/data/logs.data";
-import { buildVaultLogInput } from "@/app/_lib/logging/createVaultLog";
+import {
+  buildVaultLogInput,
+  safeCreateVaultLog,
+} from "@/app/_lib/logging/createVaultLog";
 import { auth } from "@/app/_lib/auth";
 import { getContainersForVault } from "@/app/_lib/data/containers.data";
 import { getPermissionByVaultAndUserId } from "@/app/_lib/data/permissions.data";
@@ -280,7 +284,8 @@ export async function transferTreasureToVaultAction({
     }
 
     const { before, after } = transferResult.data || {};
-    const displayName = treasureName || before?.name || after?.name || "Treasure";
+    const displayName =
+      treasureName || before?.name || after?.name || "Treasure";
     const fromContainer =
       fromVault?.containerList?.find(
         (c) => String(c.id) === String(before?.container_id),
@@ -344,6 +349,99 @@ export async function transferTreasureToVaultAction({
     return {
       ok: false,
       error: error?.message || "Transfer treasure failed.",
+      data: null,
+    };
+  }
+}
+
+export async function sellTreasureAction({
+  treasureId,
+  vaultId,
+}) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { ok: false, error: "You must be logged in.", data: null };
+    }
+
+    if (!vaultId) return { ok: false, error: "Missing vault id.", data: null };
+    if (!treasureId)
+      return { ok: false, error: "Missing treasure id.", data: null };
+    const userId = session?.user?.userId || null;
+    const vault = await getVaultById(vaultId);
+    if (!vault) return { ok: false, error: "Vault not found.", data: null };
+
+    const isOwner = String(vault?.user_id) === String(userId);
+    if (!isOwner) {
+      const permRes = await getPermissionByVaultAndUserId(vaultId, userId);
+      const permission = Array.isArray(permRes?.data) ? permRes.data[0] : null;
+      if (!permission?.sell_treasures) {
+        return {
+          ok: false,
+          error: "You do not have permission to sell treasures.",
+          data: null,
+        };
+      }
+    }
+    const sellResult = await sellTreasureForVaultById({
+      vaultId,
+      treasureId,
+    });
+
+    if (!sellResult?.ok) {
+      return {
+        ok: false,
+        error: sellResult.error || "Failed to sell treasure.",
+        data: null,
+      };
+    }
+
+    const { before, after, holdings, saleCommonValue, commonCurrency } =
+      sellResult.data || {};
+    const currencyLabel =
+      commonCurrency?.code ||
+      commonCurrency?.name ||
+      commonCurrency?.abbreviation ||
+      "Common";
+    const displayValue = Number.isFinite(Number(saleCommonValue))
+      ? Number(saleCommonValue).toLocaleString()
+      : String(saleCommonValue ?? "");
+    const treasureName = after?.name || before?.name || "Treasure";
+
+    const logInput = await buildVaultLogInput({
+      vaultId,
+      source: "treasures",
+      action: "sold",
+      entityType: "treasures",
+      entityId: treasureId,
+      before,
+      after,
+      labels: {
+        name: "Name",
+        value: "Value",
+        quantity: "Quantity",
+        archived: "Archived",
+      },
+      message: `${treasureName} sold for ${displayValue} ${currencyLabel}`,
+      meta: {
+        holdingsId: holdings?.id,
+        currencyId: commonCurrency?.id,
+        value: saleCommonValue,
+      },
+    });
+
+    await safeCreateVaultLog({ tryCreateVaultLog, input: logInput });
+
+    revalidatePath(`/account/vaults/${vaultId}/treasures`);
+    revalidatePath(`/account/vaults/${vaultId}`);
+    revalidatePath(`/public/vaults/${vaultId}`);
+
+    return { ok: true, error: null, data: after || null };
+  } catch (error) {
+    console.error("sellTreasureAction failed", error);
+    return {
+      ok: false,
+      error: error?.message || "Failed to sell treasure.",
       data: null,
     };
   }

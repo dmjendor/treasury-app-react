@@ -60,4 +60,13 @@ function useVault() {
   return ctx;
 }
 
-export { VaultProvider, useVault };
+/**
+ * Read the vault context when available.
+ * @returns {{ vault: any, setVault: (next: any) => void, updateVault: (next: any) => void, holdingsVersion: number, invalidateHoldings: () => void } | null}
+ */
+function useOptionalVault() {
+  const ctx = useContext(VaultContext);
+  return ctx === undefined ? null : ctx;
+}
+
+export { VaultProvider, useOptionalVault, useVault };

@@ -9,8 +9,8 @@ import CashIcon from "@/app/_components/icons/CashIcon";
 import BackpackIcon from "@/app/_components/icons/BackpackIcon";
 import ChestIcon from "@/app/_components/icons/ChestIcon";
 import PublicContainersClient from "@/app/public/vaults/[vaultId]/PublicContainersClient";
-import PublicValueUnitToggle from "@/app/public/vaults/[vaultId]/PublicValueUnitToggle";
-import { PublicValueUnitProvider } from "@/app/public/vaults/[vaultId]/PublicValueUnitProvider";
+import ValueUnitToggle from "@/app/_components/ValueUnitToggle";
+import { ValueUnitProvider } from "@/app/_context/ValueUnitProvider";
 import { normalizeCode } from "@/app/utils/currencyUtils";
 
 const cardStyles = {
@@ -84,12 +84,6 @@ function formatAmount(value) {
   return Number.isFinite(num) ? num.toLocaleString() : "0";
 }
 
-function findCurrencyLabel(currencies, currencyId, fallbackLabel) {
-  const list = Array.isArray(currencies) ? currencies : [];
-  const match = list.find((c) => String(c.id) === String(currencyId));
-  return match?.name || fallbackLabel;
-}
-
 function EmptyState({ title, message }) {
   return (
     <div className="rounded-xl border border-border bg-primary-600 p-4 text-sm text-primary-100">
@@ -101,7 +95,7 @@ function EmptyState({ title, message }) {
 
 /**
  * Render the public vault overview.
- * @param {{ vaultId: string, vault: any, balances: any[], containers: any[], currencies: any[], treasures: any[], valuables: any[], isOwner: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean }} props
+ * @param {{ vaultId: string, vault: any, balances: any[], containers: any[], currencies: any[], treasures: any[], valuables: any[], isOwner: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean, canSellTreasure?: boolean, canSellValuable?: boolean }} props
  * @returns {JSX.Element}
  */
 export default function PublicVaultOverviewClient({
@@ -115,6 +109,8 @@ export default function PublicVaultOverviewClient({
   isOwner,
   canTransferTreasureOut = false,
   canTransferValuableOut = false,
+  canSellTreasure = false,
+  canSellValuable = false,
 }) {
   const router = useRouter();
 
@@ -140,20 +136,9 @@ export default function PublicVaultOverviewClient({
     ]),
   );
 
-  const baseLabel = findCurrencyLabel(
-    vault?.currencyList,
-    vault?.base_currency_id,
-    "Base",
-  );
-  const commonLabel = findCurrencyLabel(
-    vault?.currencyList,
-    vault?.common_currency_id,
-    "Common",
-  );
-
   return (
     <div className="space-y-6">
-      <PublicValueUnitProvider defaultUnit="common">
+      <ValueUnitProvider defaultUnit="common">
         <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
           <SectionCard
             title="Vault details"
@@ -184,10 +169,9 @@ export default function PublicVaultOverviewClient({
                   />
                 </div>
                 <div className="mt-3 font-semibold text-primary-700">
-                  <PublicValueUnitToggle
+                  <ValueUnitToggle
                     label="Displaying item values in: "
-                    commonLabel={commonLabel}
-                    baseLabel={baseLabel}
+                    vault={vault}
                   />
                 </div>
               </div>
@@ -275,10 +259,12 @@ export default function PublicVaultOverviewClient({
               isOwner={isOwner}
               canTransferTreasureOut={canTransferTreasureOut}
               canTransferValuableOut={canTransferValuableOut}
+              canSellTreasure={canSellTreasure}
+              canSellValuable={canSellValuable}
             />
           )}
         </SectionCard>
-      </PublicValueUnitProvider>
+      </ValueUnitProvider>
     </div>
   );
 }

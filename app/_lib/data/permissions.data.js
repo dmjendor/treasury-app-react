@@ -341,6 +341,8 @@ export async function getTransferVaultsForUser(userId) {
       transfer_treasures_out,
       transfer_valuables_in,
       transfer_valuables_out,
+      sell_treasures,
+      sell_valuables,
       vaults:vault_id (
         id,
         name,
@@ -366,6 +368,8 @@ export async function getTransferVaultsForUser(userId) {
     transfer_treasures_out: true,
     transfer_valuables_in: true,
     transfer_valuables_out: true,
+    sell_treasures: true,
+    sell_valuables: true,
     vaults: {
       id: vault.id,
       name: vault.name,
@@ -519,6 +523,8 @@ export async function getVaultMembersWithPermissions(vaultId, userId) {
       transfer_treasures_out,
       transfer_valuables_in,
       transfer_valuables_out,
+      sell_treasures,
+      sell_valuables,
       accepted_at,
       users:user_id (
         id,
@@ -569,8 +575,10 @@ export async function createOwnerPermission({ vaultId, userId }) {
       transfer_treasures_out: true,
       transfer_valuables_in: true,
       transfer_valuables_out: true,
+      sell_treasures: true,
+      sell_valuables: true,
       created_by: userId,
-      invited_at: null,
+      invited_at: acceptedAt,
       accepted_at: acceptedAt,
     })
     .select("*")

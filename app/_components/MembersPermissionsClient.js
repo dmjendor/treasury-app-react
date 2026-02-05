@@ -42,6 +42,16 @@ const FIELDS = [
     label: "Valuables out",
     hint: "Allow transfering valuables from the vault",
   },
+  {
+    key: "sell_treasures",
+    label: "Sell treasure",
+    hint: "Allow selling treasures",
+  },
+  {
+    key: "sell_valuables",
+    label: "Sell valuables",
+    hint: "Allow selling valuables",
+  },
 ];
 
 function safeBool(v) {
@@ -66,6 +76,8 @@ export default function MembersPermissionsClient({ vaultId, members }) {
         transfer_treasures_out: safeBool(m.transfer_treasures_out),
         transfer_valuables_in: safeBool(m.transfer_valuables_in),
         transfer_valuables_out: safeBool(m.transfer_valuables_out),
+        sell_treasures: safeBool(m.sell_treasures),
+        sell_valuables: safeBool(m.sell_valuables),
       };
     }
     return map;
@@ -156,6 +168,8 @@ export default function MembersPermissionsClient({ vaultId, members }) {
           transfer_treasures_out: safeBool(activeMember.transfer_treasures_out),
           transfer_valuables_in: safeBool(activeMember.transfer_valuables_in),
           transfer_valuables_out: safeBool(activeMember.transfer_valuables_out),
+          sell_treasures: safeBool(activeMember.sell_treasures),
+          sell_valuables: safeBool(activeMember.sell_valuables),
         }
       : null);
 

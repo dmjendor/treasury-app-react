@@ -92,7 +92,7 @@ export const getVaultCurrencyBalances = async function (vaultId) {
 /**
  * - List unarchived holdings entries for a vault.
  * - @param {string} vaultId
- * - @returns {Promise<Array<{id:string,value:number,currency_id:string,timestamp:string,changeby:string|null}>>}
+ * - @returns {Promise<Array<{id:string,value:number,currency_id:string,timestamp:string,change_by:string|null}>>}
  */
 export const listUnarchivedHoldingsEntries = async function (vaultId) {
   const session = await auth();
@@ -104,7 +104,7 @@ export const listUnarchivedHoldingsEntries = async function (vaultId) {
   const supabase = await getSupabase();
   const { data, error } = await supabase
     .from("holdings")
-    .select("id,value,currency_id,timestamp,changeby")
+    .select("id,value,currency_id,timestamp,change_by")
     .eq("vault_id", vaultId)
     .eq("archived", false)
     .order("timestamp", { ascending: false });
@@ -148,7 +148,7 @@ export const createHoldingsEntry = async function ({
       currency_id: currencyId,
       value: numericValue,
       archived: false,
-      changeby: userId,
+      change_by: userId,
       timestamp: new Date().toISOString(),
     })
     .select("id,value,currency_id,vault_id,archived,timestamp")
@@ -312,7 +312,7 @@ export const splitVaultHoldings = async function ({
           currency_id: r.currency_id,
           value: r.share_amount,
           archived: false,
-          changeby: userId,
+          change_by: userId,
           timestamp: new Date().toISOString(),
         });
       }
@@ -322,7 +322,7 @@ export const splitVaultHoldings = async function ({
           currency_id: r.currency_id,
           value: r.remainder,
           archived: false,
-          changeby: userId,
+          change_by: userId,
           timestamp: new Date().toISOString(),
         });
       }
@@ -469,7 +469,7 @@ export const splitVaultHoldings = async function ({
           currency_id: r.currency_id,
           value: r.share_amount,
           archived: false,
-          changeby: userId,
+          change_by: userId,
           timestamp: new Date().toISOString(),
         });
       }
@@ -482,7 +482,7 @@ export const splitVaultHoldings = async function ({
       currency_id: baseCurrency.id,
       value: totalRemainderBase,
       archived: false,
-      changeby: userId,
+      change_by: userId,
       timestamp: new Date().toISOString(),
     });
   }

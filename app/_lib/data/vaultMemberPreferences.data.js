@@ -115,6 +115,38 @@ export async function getVaultMemberPreferenceForUserAndVault({
 }
 
 /**
+ * - Fetch vault member preferences for a vault and user list.
+ * @param {{ vaultId: string, userIds: string[] }} input
+ * @returns {Promise<Array<{id:string,vault_id:string,user_id:string,display_name:string|null,theme_key:string|null}>>}
+ */
+export async function getVaultMemberPreferencesForVaultAndUsers({
+  vaultId,
+  userIds,
+}) {
+  if (!vaultId || !Array.isArray(userIds) || userIds.length === 0) return [];
+  const session = await auth();
+  if (!session) {
+    console.error(
+      "getVaultMemberPreferencesForVaultAndUsers failed: no session",
+    );
+    return [];
+  }
+
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("vault_member_preferences")
+    .select("id,vault_id,user_id,display_name,theme_key")
+    .eq("vault_id", vaultId)
+    .in("user_id", userIds);
+
+  if (error) {
+    console.error("getVaultMemberPreferencesForVaultAndUsers failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
  * - Delete vault member preferences for a user.
  * @param {{ userId:string }} input
  * @returns {Promise<number>}

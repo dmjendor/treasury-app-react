@@ -3,9 +3,15 @@
 import { Button } from "@/app/_components/Button";
 import { useRouter } from "next/navigation";
 
-export default function Modal({ title, children, themeKey }) {
+export default function Modal({ title, children, themeKey, size = "lg" }) {
   const router = useRouter();
   const theme = `theme-${themeKey ?? "light"}`;
+  const sizeClass =
+    size === "sm"
+      ? "max-w-md"
+      : size === "md"
+        ? "max-w-xl"
+        : "max-w-2xl";
 
   return (
     <div className={`fixed inset-0 z-50, ${theme}, bg-overlay text-fg`}>
@@ -23,7 +29,7 @@ export default function Modal({ title, children, themeKey }) {
         <div
           role="dialog"
           aria-modal="true"
-          className={`w-full max-w-2xl rounded-2xl border border-border bg-card shadow-xl max-h-[calc(100vh-2rem)] flex flex-col`}
+          className={`w-full ${sizeClass} rounded-2xl border border-border bg-card shadow-xl max-h-[calc(100vh-2rem)] flex flex-col`}
         >
           {/* Header (sticky so you always have Close) */}
           <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-primary-600 px-6 py-4">

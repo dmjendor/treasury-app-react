@@ -66,6 +66,25 @@ export async function getUserById(userId) {
 }
 
 /**
+ * - Fetch users by id list.
+ * @param {string[]} userIds
+ * @returns {Promise<Array<any>>}
+ */
+export async function getUsersByIds(userIds) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return [];
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .in("id", userIds);
+  if (error) {
+    console.error("getUsersByIds failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+/**
  * - Update the auth source for a user by email.
  * @param {{ email: string, source: string }} input
  * @returns {Promise<void>}

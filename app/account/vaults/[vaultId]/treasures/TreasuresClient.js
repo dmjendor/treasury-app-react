@@ -85,13 +85,6 @@ export default function TreasuresClient({ vaultId, containers, treasures }) {
           >
             Add treasure
           </LinkButton>
-
-          <Link
-            href={`/account/vaults/${vaultId}`}
-            className="text-sm text-muted-fg hover:text-fg transition-colors self-center"
-          >
-            Back to vault
-          </Link>
         </div>
       </header>
 

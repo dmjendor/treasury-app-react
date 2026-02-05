@@ -48,6 +48,10 @@ export default async function PublicVaultPage({ params }) {
   const canTransferValuableOut =
     allowTransfersOut &&
     (Boolean(isOwner) || Boolean(permission?.transfer_valuables_out));
+  const canSellTreasure =
+    Boolean(isOwner) || Boolean(permission?.sell_treasures);
+  const canSellValuable =
+    Boolean(isOwner) || Boolean(permission?.sell_valuables);
 
   const containers = (vault?.containerList ?? [])
     .slice()
@@ -68,6 +72,8 @@ export default async function PublicVaultPage({ params }) {
       isOwner={Boolean(isOwner)}
       canTransferTreasureOut={canTransferTreasureOut}
       canTransferValuableOut={canTransferValuableOut}
+      canSellTreasure={canSellTreasure}
+      canSellValuable={canSellValuable}
     />
   );
 }

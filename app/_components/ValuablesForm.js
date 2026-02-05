@@ -306,8 +306,14 @@ export default function ValuablesForm({
 
     const qty = Math.max(1, Math.trunc(asNumber(generateCount) || 1));
     const rate = Number(commonRate) || 1;
-    const lowValue = Math.round(selectedRange.low * rate);
-    const highValue = Math.round(selectedRange.high * rate);
+    const lowValue =
+      valueUnit === "common"
+        ? Math.round(selectedRange.low)
+        : Math.round(selectedRange.low * rate);
+    const highValue =
+      valueUnit === "common"
+        ? Math.round(selectedRange.high)
+        : Math.round(selectedRange.high * rate);
 
     setGeneratorBusy(true);
     const valuableObj = {
@@ -317,6 +323,8 @@ export default function ValuablesForm({
       low_value: lowValue,
       high_value: highValue,
       quantity: qty,
+      value_unit: valueUnit,
+      common_rate: rate,
     };
 
     try {

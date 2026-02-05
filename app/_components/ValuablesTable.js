@@ -1,7 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { LinkButton } from "@/app/_components/LinkButton";
+import { Button } from "@/app/_components/Button";
+import ValueUnitToggle from "@/app/_components/ValueUnitToggle";
+import { useVault } from "@/app/_context/VaultProvider";
+import { useValueUnit } from "@/app/_context/ValueUnitProvider";
+import { sellValuableAction } from "@/app/_lib/actions/valuables";
+import IconComponent from "@/app/_components/IconComponent";
+import { HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2";
 
 function fmtMoney(value) {
   const n = Number(value);
@@ -9,12 +18,106 @@ function fmtMoney(value) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function normalizeCode(code) {
+  return String(code ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
+
+function resolveCurrency({ currencies, baseCurrencyId, commonCurrencyId }) {
+  const list = Array.isArray(currencies) ? currencies : [];
+  const base =
+    list.find((c) => String(c.id) === String(baseCurrencyId)) ||
+    list.find((c) => Number(c.rate) === 1) ||
+    null;
+  const common =
+    list.find((c) => String(c.id) === String(commonCurrencyId)) || null;
+
+  return {
+    baseRate: Number(base?.rate) || 1,
+    baseCode: normalizeCode(base?.code || base?.abbreviation || ""),
+    commonRate: Number(common?.rate) || 0,
+    commonCode: normalizeCode(common?.code || common?.abbreviation || ""),
+  };
+}
+
 export default function ValuablesTable({
   vaultId,
   valuables,
   activeContainerId,
 }) {
+  const router = useRouter();
+  const { vault, invalidateHoldings } = useVault();
+  const { valueUnit } = useValueUnit();
+  const [sellingIds, setSellingIds] = useState(() => new Set());
   const rows = Array.isArray(valuables) ? valuables : [];
+
+  const currencyInfo = resolveCurrency({
+    currencies: vault?.currencyList ?? [],
+    baseCurrencyId: vault?.base_currency_id,
+    commonCurrencyId: vault?.common_currency_id,
+  });
+
+  function displayValue(value) {
+    const baseValue = Number(value) || 0;
+    if (valueUnit === "base" || currencyInfo.commonRate <= 0) {
+      return {
+        amount: fmtMoney(baseValue),
+        code: currencyInfo.baseCode || "BASE",
+      };
+    }
+
+    return {
+      amount: fmtMoney(baseValue / currencyInfo.commonRate),
+      code: currencyInfo.commonCode || "COMMON",
+    };
+  }
+
+  function updateSelling(id, next) {
+    setSellingIds((prev) => {
+      const nextSet = new Set(prev);
+      if (next) nextSet.add(id);
+      else nextSet.delete(id);
+      return nextSet;
+    });
+  }
+
+  async function handleSellValuable(valuable) {
+    if (!vaultId) {
+      toast.error("Missing vault id.");
+      return;
+    }
+    if (!valuable?.id) {
+      toast.error("Missing valuable.");
+      return;
+    }
+
+    const id = String(valuable.id);
+    if (sellingIds.has(id)) return;
+
+    updateSelling(id, true);
+
+    try {
+      const res = await sellValuableAction({
+        vaultId: String(vaultId),
+        valuableId: id,
+      });
+
+      if (!res?.ok) {
+        toast.error(res?.error || "Failed to sell valuable.");
+        return;
+      }
+
+      toast.success(`${valuable?.name || "Valuable"} sold.`);
+      invalidateHoldings?.();
+      router.refresh();
+    } catch (error) {
+      toast.error(error?.message || "Failed to sell valuable.");
+    } finally {
+      updateSelling(id, false);
+    }
+  }
 
   return (
     <div className="rounded-2xl border border-primary-700 overflow-hidden bg-primary-700 text-primary-50">
@@ -22,6 +125,7 @@ export default function ValuablesTable({
         <div className="text-sm opacity-90">
           {rows.length} valuable item{rows.length === 1 ? "" : "s"}
         </div>
+        <ValueUnitToggle label="Display Values in: " />
 
         <LinkButton
           href={`/account/vaults/${vaultId}/valuables/new${
@@ -66,16 +170,36 @@ export default function ValuablesTable({
                   >
                     {t.name}
                   </td>
-                  <td className="px-4 py-3">{fmtMoney(t.value)}</td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const display = displayValue(t.value);
+                      return (
+                        <>
+                          {display.amount} {display.code}
+                        </>
+                      );
+                    })()}
+                  </td>
                   <td className="px-4 py-3">{t.quantity ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
+                      <Button
+                        variant="accent"
+                        onClick={() => handleSellValuable(t)}
+                        className="px-4"
+                        title="Sell Valuable"
+                        disabled={sellingIds.has(String(t.id))}
+                      >
+                        <span className="text-lg">
+                          {sellingIds.has(String(t.id)) ? "..." : "$"}
+                        </span>
+                      </Button>
                       <LinkButton
                         href={`/account/vaults/${vaultId}/valuables/${t.id}/edit`}
-                        variant="outline"
+                        variant="primary"
                         size="sm"
                       >
-                        Edit
+                        <IconComponent icon={HiOutlinePencilSquare} />
                       </LinkButton>
 
                       <LinkButton
@@ -83,7 +207,7 @@ export default function ValuablesTable({
                         variant="danger"
                         size="sm"
                       >
-                        Delete
+                        <IconComponent icon={HiOutlineTrash} />
                       </LinkButton>
                     </div>
                   </td>

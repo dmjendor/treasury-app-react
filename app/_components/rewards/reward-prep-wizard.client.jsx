@@ -3,6 +3,7 @@
  */
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Card from "@/app/_components/Card";
@@ -17,7 +18,10 @@ import {
   rewardPrepFinalizeSchema,
   rewardPrepStepFieldNames,
 } from "@/app/_lib/validation/reward-prep.schema";
-import { submitRewardPrepAction } from "@/app/_lib/actions/reward-prep";
+import {
+  submitRewardPrepAction,
+  updateRewardPrepAction,
+} from "@/app/_lib/actions/reward-prep";
 import RewardPrepStepDetails from "@/app/_components/rewards/steps/reward-prep-step-1-details";
 import RewardPrepStepHoldings from "@/app/_components/rewards/steps/reward-prep-step-2-holdings";
 import RewardPrepStepTreasures from "@/app/_components/rewards/steps/reward-prep-step-3-treasures";
@@ -36,22 +40,50 @@ const defaultValues = {
 
 /**
  * Render the reward prep wizard.
+ * @param {{ isModal?: boolean, initialValues?: any, initialStep?: number, lockStep?: boolean }} props
  * @returns {JSX.Element}
  */
-export default function RewardPrepWizard() {
+export default function RewardPrepWizard({
+  isModal = false,
+  initialValues,
+  initialStep = 1,
+  lockStep = false,
+}) {
   const { vault } = useVault();
+  const router = useRouter();
+  const mergedDefaults = useMemo(() => {
+    const initialHoldings = Array.isArray(initialValues?.holdings)
+      ? initialValues.holdings
+      : defaultValues.holdings;
+    const initialTreasures = Array.isArray(initialValues?.treasures)
+      ? initialValues.treasures
+      : defaultValues.treasures;
+    const initialValuables = Array.isArray(initialValues?.valuables)
+      ? initialValues.valuables
+      : defaultValues.valuables;
+
+    return {
+      ...defaultValues,
+      ...initialValues,
+      holdings: initialHoldings,
+      treasures: initialTreasures,
+      valuables: initialValuables,
+    };
+  }, [initialValues]);
+
   const form = useForm({
     resolver: zodResolver(rewardPrepDraftSchema),
     shouldUnregister: false,
-    defaultValues,
+    defaultValues: mergedDefaults,
     mode: "onBlur",
   });
   const { submitCount, isSubmitSuccessful } = form.formState;
 
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(initialStep);
   const [submitError, setSubmitError] = useState("");
   const [submitStatus, setSubmitStatus] = useState("idle");
   const [submitLocked, setSubmitLocked] = useState(false);
+  const isEditing = Boolean(mergedDefaults?.reward_prep_id);
 
   const stepTitles = useMemo(
     () => ({
@@ -87,6 +119,7 @@ export default function RewardPrepWizard() {
   }, [step]);
 
   const goNext = async () => {
+    if (lockStep) return;
     const fields = rewardPrepStepFieldNames[step] || [];
     const valid = await form.trigger(fields);
     if (valid) {
@@ -95,6 +128,7 @@ export default function RewardPrepWizard() {
   };
 
   const goBack = () => {
+    if (lockStep) return;
     setStep((current) => Math.max(1, current - 1));
   };
 
@@ -111,8 +145,12 @@ export default function RewardPrepWizard() {
       setSubmitStatus("error");
       return;
     }
-    const result = await submitRewardPrepAction({
+    const action = isEditing
+      ? updateRewardPrepAction
+      : submitRewardPrepAction;
+    const result = await action({
       vaultId: vault?.id,
+      rewardPrepId: values.reward_prep_id,
       name: values.name,
       description: values.description,
       value_unit: values.value_unit,
@@ -126,6 +164,7 @@ export default function RewardPrepWizard() {
       return;
     }
     setSubmitStatus("success");
+    router.refresh();
   });
 
   const handleSubmit = (event) => {
@@ -155,6 +194,25 @@ export default function RewardPrepWizard() {
     setStep(1);
   };
 
+  const isSuccess =
+    submitStatus === "success" &&
+    step === 5 &&
+    submitCount > 0 &&
+    isSubmitSuccessful;
+  const showStartAnother = isSuccess && !isEditing;
+
+  const closeWizard = () => {
+    if (isModal) {
+      router.back();
+      return;
+    }
+    if (vault?.id) {
+      router.replace(`/account/vaults/${vault.id}/preprewards`);
+      return;
+    }
+    router.back();
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -179,31 +237,42 @@ export default function RewardPrepWizard() {
 
         {submitError ? <ErrorMessage error={submitError} /> : null}
 
-        {submitStatus === "success" &&
-        step === 5 &&
-        submitCount > 0 &&
-        isSubmitSuccessful ? (
+        {isSuccess ? (
           <SubCard>
-            Reward prepared. You can create another one or head back to the
-            list.
+            {isEditing
+              ? "Reward updated. You can close this window or keep reviewing."
+              : "Reward prepared. You can create another one or head back to the list."}
           </SubCard>
         ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={goBack}
-            disabled={step === 1}
-          >
-            Back
-          </Button>
+          {!lockStep ? (
+            isSuccess ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={closeWizard}
+              >
+                Close
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={goBack}
+                disabled={step === 1}
+              >
+                Back
+              </Button>
+            )
+          ) : (
+            <span />
+          )}
 
           <div className="flex items-center gap-2">
-            {submitStatus === "success" &&
-            submitCount > 0 &&
-            isSubmitSuccessful ? (
+            {showStartAnother ? (
               <Button
                 type="button"
                 variant="primary"
@@ -214,7 +283,7 @@ export default function RewardPrepWizard() {
               </Button>
             ) : null}
 
-            {step < 5 ? (
+            {!lockStep && step < 5 ? (
               <Button
                 type="button"
                 variant="accent"
@@ -233,7 +302,7 @@ export default function RewardPrepWizard() {
                 size="sm"
                 disabled={submitLocked || !canSubmit}
               >
-                Submit
+                {isEditing ? "Save changes" : "Submit"}
               </TimelockedButton>
             ) : null}
           </div>

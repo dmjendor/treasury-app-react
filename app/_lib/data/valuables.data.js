@@ -5,6 +5,7 @@
 import "server-only";
 import { getSupabase } from "@/app/_lib/supabase";
 import { getVaultById } from "@/app/_lib/data/vaults.data";
+import { createHoldingsEntry } from "@/app/_lib/data/holdings.data";
 
 /**
  * Fetch valuables for a vault.
@@ -18,6 +19,7 @@ export async function getValuablesForVault(vaultId) {
     .from("valuables")
     .select("*")
     .eq("vault_id", vaultId)
+    .or("archived.is.null,archived.eq.false")
     .order("name", { ascending: true });
 
   if (error) {
@@ -41,6 +43,7 @@ export async function getValuablesForContainer(vaultId, containerId) {
     .select("*")
     .eq("vault_id", vaultId)
     .eq("container_id", containerId)
+    .or("archived.is.null,archived.eq.false")
     .order("name", { ascending: true });
 
   if (error) {
@@ -93,29 +96,6 @@ export async function createValuablesDb(valuableList) {
 }
 
 /**
- * Create multiple prep valuables.
- * @param {Array<object>} valuableList
- * @returns {Promise<Array<object>>}
- */
-export async function createPrepValuablesDb(valuableList) {
-  const supabase = await getSupabase();
-  const rows = Array.isArray(valuableList) ? valuableList : [];
-
-  if (rows.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from("prepvaluables")
-    .insert(rows)
-    .select();
-
-  if (error) {
-    console.error("createPrepValuablesDb failed", error);
-    return [];
-  }
-  return data ?? [];
-}
-
-/**
  * Fetch default valuables for a vault.
  * @param {string} vaultId
  * @returns {Promise<Array<object>>}
@@ -150,6 +130,7 @@ export async function getValuableForVaultById(vaultId, valuableId) {
     .select("*")
     .eq("vault_id", vaultId)
     .eq("id", valuableId)
+    .or("archived.is.null,archived.eq.false")
     .maybeSingle();
 
   if (error?.code === "PGRST116") return null;
@@ -284,4 +265,108 @@ export async function transferValuableToVault({
   const after = afterRows[0];
 
   return { ok: true, error: null, data: { before, after } };
+}
+
+/**
+ * - Sell a valuable by archiving it and crediting common currency holdings.
+ * @param {{ vaultId: string, valuableId: string }} input
+ * @returns {Promise<{ ok: boolean, error: string|null, data: { before: any, after: any, holdings: any, saleBaseValue: number, saleCommonValue: number, commonCurrency: any } | null }>}
+ */
+export async function sellValuableForVaultById({ vaultId, valuableId }) {
+  if (!vaultId) return { ok: false, error: "Missing vault id.", data: null };
+  if (!valuableId)
+    return { ok: false, error: "Missing valuable id.", data: null };
+
+  const supabase = await getSupabase();
+  const { data: before, error: valuableError } = await supabase
+    .from("valuables")
+    .select("*")
+    .eq("vault_id", vaultId)
+    .eq("id", valuableId)
+    .single();
+
+  if (valuableError) {
+    console.error("sellValuableForVaultById fetch failed", valuableError);
+    return { ok: false, error: "Could not load valuable.", data: null };
+  }
+
+  if (before?.archived) {
+    return { ok: false, error: "Valuable is already archived.", data: null };
+  }
+
+  const vault = await getVaultById(vaultId);
+  if (!vault) {
+    return { ok: false, error: "Vault could not be loaded.", data: null };
+  }
+
+  const currencies = Array.isArray(vault?.currencyList)
+    ? vault.currencyList
+    : [];
+  const commonCurrency = currencies.find(
+    (currency) => String(currency.id) === String(vault?.common_currency_id),
+  );
+
+  if (!commonCurrency) {
+    return { ok: false, error: "Common currency not found.", data: null };
+  }
+
+  const commonRate = Number(commonCurrency?.rate) || 0;
+  if (commonRate <= 0) {
+    return { ok: false, error: "Common currency has no rate.", data: null };
+  }
+
+  const baseValue = Number(before?.value) || 0;
+  const qtyRaw = Number(before?.quantity);
+  const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+  const saleBaseValue = baseValue * quantity;
+  const saleCommonValue = saleBaseValue / commonRate;
+
+  const { data: after, error: updateError } = await supabase
+    .from("valuables")
+    .update({ archived: true })
+    .eq("vault_id", vaultId)
+    .eq("id", valuableId)
+    .select("*")
+    .single();
+
+  if (updateError) {
+    console.error("sellValuableForVaultById update failed", updateError);
+    return { ok: false, error: "Could not archive valuable.", data: null };
+  }
+
+  const holdings = await createHoldingsEntry({
+    vaultId,
+    currencyId: String(commonCurrency.id),
+    value: saleCommonValue,
+  });
+
+  if (!holdings) {
+    console.error("sellValuableForVaultById holdings insert failed", {
+      vaultId,
+      valuableId,
+      commonCurrencyId: commonCurrency.id,
+    });
+    const { error: rollbackError } = await supabase
+      .from("valuables")
+      .update({ archived: false })
+      .eq("vault_id", vaultId)
+      .eq("id", valuableId);
+    if (rollbackError) {
+      console.error("sellValuableForVaultById rollback failed", rollbackError);
+    }
+    return { ok: false, error: "Could not record holdings.", data: null };
+  }
+
+  return {
+    ok: true,
+    error: null,
+    data: {
+      before,
+      after,
+      holdings,
+      saleBaseValue,
+      saleCommonValue,
+      commonCurrency,
+    },
+  };
 }

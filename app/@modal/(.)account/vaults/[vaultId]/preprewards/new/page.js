@@ -8,7 +8,7 @@ export default function RewardPrepWizardModal() {
   return (
     <Modal title="Prepare reward">
       <div className="p-6 text-fg">
-        <RewardPrepWizard />
+        <RewardPrepWizard isModal={true} />
       </div>
     </Modal>
   );

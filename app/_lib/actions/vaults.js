@@ -7,11 +7,13 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/app/_lib/auth";
-import { formDataToObject, requireUserId } from "@/app/_lib/actions/_utils";
+import { formDataToObject, requireUserId, toBool } from "@/app/_lib/actions/_utils";
 import {
+  createVault,
   getMemberVaultsForUser,
   updateVaultSettingsDb,
 } from "@/app/_lib/data/vaults.data";
+import { createOwnerPermission } from "@/app/_lib/data/permissions.data";
 
 /**
  * Create a vault.
@@ -24,27 +26,59 @@ export async function createVaultAction(formData) {
     if (!userId) return { ok: false, error: "You must be logged in." };
     const data = await formDataToObject(formData);
 
-    // Add owner to object before creating vault.
-    data.owner = userId;
+    function toNumber(v, fallback = 0) {
+      if (v === "" || v == null) return fallback;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
+    }
 
-    const res = await fetch("/api/vaults", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify(data),
+    if (!data?.name || String(data.name).trim().length < 2) {
+      return {
+        ok: false,
+        error: "Vault name must be at least 2 characters.",
+      };
+    }
+
+    const payload = {
+      name: String(data.name).trim(),
+      user_id: userId,
+      system_id: data.system_id || null,
+      theme_id: data.theme_id || null,
+      allow_xfer_in: await toBool(data.allow_xfer_in),
+      allow_xfer_out: await toBool(data.allow_xfer_out),
+      base_currency_id: data.base_currency_id || null,
+      common_currency_id: data.common_currency_id || null,
+      merge_split: data.merge_split === "base" ? "base" : "per_currency",
+      treasury_split_enabled: await toBool(data.treasury_split_enabled),
+      reward_prep_enabled: await toBool(data.reward_prep_enabled),
+      vo_buy_markup: toNumber(data.vo_buy_markup, 0),
+      vo_sell_markup: toNumber(data.vo_sell_markup, 0),
+      item_buy_markup: toNumber(data.item_buy_markup, 0),
+      item_sell_markup: toNumber(data.item_sell_markup, 0),
+    };
+
+    const created = await createVault(payload);
+    if (!created?.id) {
+      return { ok: false, error: "Failed to create vault." };
+    }
+
+    const permissionRes = await createOwnerPermission({
+      vaultId: created.id,
+      userId,
     });
 
-    const body = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      return { ok: false, error: body?.error || "Failed to create vault." };
+    if (!permissionRes?.ok) {
+      return {
+        ok: false,
+        error: permissionRes?.error || "Failed to add owner permission.",
+      };
     }
 
     // Refresh list page cache
     revalidatePath("/account/vaults");
 
     // Return created vault so caller can navigate.
-    return { ok: true, data: body?.vault || body?.data || body };
+    return { ok: true, data: created };
   } catch (err) {
     return { ok: false, error: err?.message || "Failed to create vault." };
   }
