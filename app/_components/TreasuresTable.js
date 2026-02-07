@@ -9,6 +9,7 @@ import {
   HiCurrencyDollar,
   HiOutlineCurrencyDollar,
   HiOutlineDocumentCurrencyDollar,
+  HiOutlineMagnifyingGlass,
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
@@ -193,6 +194,13 @@ export default function TreasuresTable({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
+                      <LinkButton
+                        href={`/account/vaults/${vaultId}/treasures/${t.id}/view`}
+                        variant="primary"
+                        size="sm"
+                      >
+                        <IconComponent icon={HiOutlineMagnifyingGlass} />
+                      </LinkButton>
                       <Button
                         variant="accent"
                         onClick={() => handleSellTreasure(t)}

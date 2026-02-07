@@ -24,6 +24,7 @@ function normalizeItems(treasures, valuables) {
     name: t.name || "Unnamed treasure",
     genericname: t.genericname || "",
     value: Number(t.value) || 0,
+    quantity: Number(t.quantity) || 1,
     container_id: t.container_id ? String(t.container_id) : "",
     magical: t.magical,
     identified: t.identified,
@@ -35,6 +36,7 @@ function normalizeItems(treasures, valuables) {
     container_id: v.container_id ? String(v.container_id) : "",
     type: "valuable",
     value: Number(v.value) || 0,
+    quantity: Number(v.quantity) || 1,
   }));
   return [...treasureItems, ...valuableItems];
 }
@@ -70,7 +72,7 @@ function formatAmount(value) {
 
 /**
  * Render container cards with draggable item lists.
- * @param {{ vaultId: string, containers: Array<any>, treasures: Array<any>, valuables: Array<any>, currencies?: Array<any>, baseCurrencyId?: string, commonCurrencyId?: string, isOwner?: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean, canSellTreasure?: boolean, canSellValuable?: boolean }} props
+ * @param {{ vaultId: string, containers: Array<any>, treasures: Array<any>, valuables: Array<any>, currencies?: Array<any>, baseCurrencyId?: string, commonCurrencyId?: string, isOwner?: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean, canSellTreasure?: boolean, canSellValuable?: boolean, readOnly?: boolean, demoMode?: boolean, onDemoSell?: (payload: { currencyId: string, amount: number }) => void }} props
  * @returns {JSX.Element}
  */
 export default function PublicContainersClient({
@@ -86,6 +88,9 @@ export default function PublicContainersClient({
   canTransferValuableOut = false,
   canSellTreasure = false,
   canSellValuable = false,
+  readOnly = false,
+  demoMode = false,
+  onDemoSell,
 }) {
   const { valueUnit } = useValueUnit();
   const [items, setItems] = useState(() =>
@@ -94,8 +99,9 @@ export default function PublicContainersClient({
   const [sellingIds, setSellingIds] = useState(() => new Set());
 
   useEffect(() => {
+    if (demoMode) return;
     setItems(normalizeItems(treasures, valuables));
-  }, [treasures, valuables]);
+  }, [demoMode, treasures, valuables]);
 
   const itemsByContainer = useMemo(() => {
     const map = new Map();
@@ -145,6 +151,7 @@ export default function PublicContainersClient({
   }
 
   async function handleSellItem(item) {
+    if (readOnly) return;
     if (!vaultId) {
       toast.error("Missing vault id.");
       return;
@@ -160,6 +167,34 @@ export default function PublicContainersClient({
     updateSelling(id, true);
 
     try {
+      if (demoMode) {
+        const baseValue = Number(item.value) || 0;
+        const qtyRaw = Number(item.quantity);
+        const quantity = Number.isFinite(qtyRaw) && qtyRaw > 0 ? qtyRaw : 1;
+        const saleBaseValue = baseValue * quantity;
+        const saleCommonValue =
+          currencyInfo.commonRate > 0
+            ? saleBaseValue / currencyInfo.commonRate
+            : saleBaseValue;
+
+        setItems((prev) =>
+          prev.filter(
+            (row) =>
+              !(String(row.id) === String(item.id) && row.type === item.type),
+          ),
+        );
+
+        if (typeof onDemoSell === "function") {
+          onDemoSell({
+            currencyId: String(commonCurrencyId || ""),
+            amount: saleCommonValue,
+          });
+        }
+
+        toast.success(`${item?.name || "Item"} sold (demo).`);
+        return;
+      }
+
       const res =
         item.type === "treasure"
           ? await sellTreasureAction({
@@ -199,6 +234,7 @@ export default function PublicContainersClient({
   }
 
   function handleDragStart(event, item) {
+    if (readOnly) return;
     const displayName =
       item.type === "treasure" && item.magical && !item.identified
         ? item.genericname || item.name
@@ -216,11 +252,13 @@ export default function PublicContainersClient({
   }
 
   function handleDragOver(event) {
+    if (readOnly) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
   }
 
   async function handleDrop(event, containerId) {
+    if (readOnly) return;
     event.preventDefault();
     if (!vaultId) return;
 
@@ -242,6 +280,8 @@ export default function PublicContainersClient({
           : item,
       ),
     );
+
+    if (demoMode) return;
 
     const actionInput = {
       vaultId,
@@ -293,8 +333,10 @@ export default function PublicContainersClient({
           return (
             <article
               key={container.id}
-              onDragOver={handleDragOver}
-              onDrop={(event) => handleDrop(event, containerId)}
+              onDragOver={readOnly ? undefined : handleDragOver}
+              onDrop={
+                readOnly ? undefined : (event) => handleDrop(event, containerId)
+              }
               className="rounded-2xl border border-border bg-primary-600 p-5 text-primary-50"
             >
               <div className="flex items-start justify-between gap-3">
@@ -340,8 +382,12 @@ export default function PublicContainersClient({
                     return (
                       <li
                         key={`${item.type}-${item.id}`}
-                        draggable
-                        onDragStart={(event) => handleDragStart(event, item)}
+                        draggable={!readOnly}
+                        onDragStart={
+                          readOnly
+                            ? undefined
+                            : (event) => handleDragStart(event, item)
+                        }
                         className={`flex items-center gap-2 rounded-lg border border-border bg-primary-700 px-3 py-2 cursor-move ${
                           item.type === "treasure" && item.magical
                             ? "text-accent-400"
@@ -356,7 +402,7 @@ export default function PublicContainersClient({
                         <span className="ml-auto text-primary-200 whitespace-nowrap">
                           {display.amount} {display.code}
                         </span>
-                        {canSell ? (
+                        {canSell && !readOnly ? (
                           <Button
                             variant="accent"
                             size="sm"
@@ -368,7 +414,7 @@ export default function PublicContainersClient({
                             {sellingIds.has(sellId) ? "..." : "$"}
                           </Button>
                         ) : null}
-                        {canTransfer ? (
+                        {canTransfer && !readOnly ? (
                           <LinkButton
                             href={transferHref}
                             size="sm"

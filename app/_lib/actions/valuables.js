@@ -174,6 +174,65 @@ export async function getValuableForVaultByIdAction({ vaultId, valuableId }) {
 }
 
 /**
+ * - Update a valuable in a vault.
+ * @param {{ id: string, vaultId: string, patch: object }} input
+ * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}
+ */
+export async function updateValuableAction({ id, vaultId, patch }) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return { ok: false, error: "You must be logged in.", data: null };
+    }
+
+    if (!id) return { ok: false, error: "Missing valuable id.", data: null };
+    if (!vaultId) return { ok: false, error: "Missing vault id.", data: null };
+    if (!patch || typeof patch !== "object") {
+      return { ok: false, error: "Missing valuable updates.", data: null };
+    }
+
+    const updateResult = await updateValuableForVaultById(vaultId, id, patch);
+
+    if (!updateResult.ok) {
+      return {
+        ok: false,
+        error: updateResult.error || "Update valuable failed.",
+        data: null,
+      };
+    }
+
+    const { before, after } = updateResult.data;
+
+    const logInput = await buildVaultLogInput({
+      vaultId,
+      source: "valuables",
+      action: "update",
+      entityType: "valuables",
+      entityId: id,
+      before,
+      after,
+      labels: {
+        name: "Name",
+        description: "Description",
+        value: "Value",
+        container_id: "Container",
+      },
+      message: `Valuable ${after.name} updated`,
+    });
+
+    await safeCreateVaultLog({ tryCreateVaultLog, input: logInput });
+
+    return { ok: true, error: null, data: after };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.message || "Update valuable failed.",
+      data: null,
+    };
+  }
+}
+
+/**
  * - Move a valuable to a new container.
  * @param {{ vaultId: string, valuableId: string, containerId: string, valuableName?: string, fromContainerName?: string, toContainerName?: string }} input
  * @returns {Promise<{ ok: boolean, error: string | null, data: any }>}

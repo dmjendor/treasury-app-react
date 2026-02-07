@@ -95,7 +95,7 @@ function EmptyState({ title, message }) {
 
 /**
  * Render the public vault overview.
- * @param {{ vaultId: string, vault: any, balances: any[], containers: any[], currencies: any[], treasures: any[], valuables: any[], isOwner: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean, canSellTreasure?: boolean, canSellValuable?: boolean }} props
+ * @param {{ vaultId: string, vault: any, balances: any[], containers: any[], currencies: any[], treasures: any[], valuables: any[], isOwner: boolean, canTransferTreasureOut?: boolean, canTransferValuableOut?: boolean, canSellTreasure?: boolean, canSellValuable?: boolean, hideHoldingsAction?: boolean, readOnly?: boolean, demoMode?: boolean, holdingsAction?: React.ReactNode, onDemoSell?: (payload: { currencyId: string, amount: number }) => void }} props
  * @returns {JSX.Element}
  */
 export default function PublicVaultOverviewClient({
@@ -111,6 +111,11 @@ export default function PublicVaultOverviewClient({
   canTransferValuableOut = false,
   canSellTreasure = false,
   canSellValuable = false,
+  hideHoldingsAction = false,
+  readOnly = false,
+  demoMode = false,
+  holdingsAction,
+  onDemoSell,
 }) {
   const router = useRouter();
 
@@ -198,13 +203,17 @@ export default function PublicVaultOverviewClient({
             title="Holdings"
             icon={CashIcon}
             action={
-              <LinkButton
-                href={`/account/vaults/${vaultId}/holdings/split`}
-                variant="accent"
-                size="sm"
-              >
-                Split Holdings
-              </LinkButton>
+              holdingsAction ? (
+                holdingsAction
+              ) : hideHoldingsAction ? null : (
+                <LinkButton
+                  href={`/account/vaults/${vaultId}/holdings/split`}
+                  variant="accent"
+                  size="sm"
+                >
+                  Split Holdings
+                </LinkButton>
+              )
             }
           >
             {currencies.length === 0 ? (
@@ -261,6 +270,9 @@ export default function PublicVaultOverviewClient({
               canTransferValuableOut={canTransferValuableOut}
               canSellTreasure={canSellTreasure}
               canSellValuable={canSellValuable}
+              readOnly={readOnly}
+              demoMode={demoMode}
+              onDemoSell={onDemoSell}
             />
           )}
         </SectionCard>

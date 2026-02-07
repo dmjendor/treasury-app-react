@@ -10,7 +10,11 @@ import { useVault } from "@/app/_context/VaultProvider";
 import { useValueUnit } from "@/app/_context/ValueUnitProvider";
 import { sellValuableAction } from "@/app/_lib/actions/valuables";
 import IconComponent from "@/app/_components/IconComponent";
-import { HiOutlinePencilSquare, HiOutlineTrash } from "react-icons/hi2";
+import {
+  HiOutlineMagnifyingGlass,
+  HiOutlinePencilSquare,
+  HiOutlineTrash,
+} from "react-icons/hi2";
 
 function fmtMoney(value) {
   const n = Number(value);
@@ -183,6 +187,13 @@ export default function ValuablesTable({
                   <td className="px-4 py-3">{t.quantity ?? 0}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
+                      <LinkButton
+                        href={`/account/vaults/${vaultId}/valuables/${t.id}/view`}
+                        variant="primary"
+                        size="sm"
+                      >
+                        <IconComponent icon={HiOutlineMagnifyingGlass} />
+                      </LinkButton>
                       <Button
                         variant="accent"
                         onClick={() => handleSellValuable(t)}

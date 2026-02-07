@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
 import InputComponent from "@/app/_components/InputComponent";
+import Textarea from "@/app/_components/Textarea";
 import {
   createValuableAction,
   generateValuablesAction,
@@ -37,6 +39,11 @@ export default function ValuablesForm({
   const router = useRouter();
   const isEdit = mode === "edit";
   const vaultId = vault?.id != null ? String(vault.id) : "";
+  const { data: session } = useSession();
+  const isOwner =
+    session?.user?.userId &&
+    vault?.user_id &&
+    String(session.user.userId) === String(vault.user_id);
 
   const currencyList = useMemo(() => {
     return Array.isArray(vault?.currencyList) ? vault.currencyList : [];
@@ -81,6 +88,8 @@ export default function ValuablesForm({
 
   const [containerId, setContainerId] = useState("");
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [gmNotes, setGmNotes] = useState("");
 
   const [valueBase, setValueBase] = useState(0);
   const [valueUnit, setValueUnit] = useState("common"); // "common" | "base"
@@ -162,6 +171,8 @@ export default function ValuablesForm({
 
         setContainerId(v?.container_id != null ? String(v.container_id) : "");
         setName(v?.name ?? "");
+        setDescription(v?.description ?? "");
+        setGmNotes(v?.gm_notes ?? "");
 
         const base = Number(v?.value) || 0;
         setValueBase(base);
@@ -362,9 +373,13 @@ export default function ValuablesForm({
       vault_id: vaultId,
       container_id: containerId,
       name: name.trim(),
+      description: description.trim() || null,
       value: Number(valueBase) || 0,
       quantity: Number(quantity) || 0,
     };
+    if (isOwner) {
+      payload.gm_notes = gmNotes.trim() || null;
+    }
 
     if (onSaved) {
       onSaved(payload);
@@ -580,6 +595,26 @@ export default function ValuablesForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
+
+        <Textarea
+          label="Description"
+          hint="Optional notes, inscriptions, etc."
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={4}
+        />
+
+        {isOwner ? (
+          <Textarea
+            label="GM notes"
+            hint="Private notes for the GM only."
+            id="gm_notes"
+            value={gmNotes}
+            onChange={(e) => setGmNotes(e.target.value)}
+            rows={4}
+          />
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <InputComponent

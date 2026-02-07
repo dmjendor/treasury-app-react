@@ -15,30 +15,25 @@ async function Header() {
         </a>
         {!session?.user && (
           <nav className="hidden items-center gap-6 text-sm text-muted-fg md:flex">
-            <a
+            <Link
               className="hover:text-fg"
-              href="#features"
+              href="/#features"
             >
               Features
-            </a>
-            <a
+            </Link>
+            <Link
               className="hover:text-fg"
-              href="#how"
+              href="/#how"
             >
               How it works
-            </a>
-            <a
+            </Link>
+
+            <Link
               className="hover:text-fg"
-              href="#preview"
-            >
-              Preview
-            </a>
-            <a
-              className="hover:text-fg"
-              href="#faq"
+              href="/#faq"
             >
               FAQ
-            </a>
+            </Link>
           </nav>
         )}
 
@@ -46,7 +41,7 @@ async function Header() {
           {session?.user ? (
             <LinkButton
               variant="primary"
-              href="/account"
+              href="/account/vaults"
               className="hover:text-fg transition-colors flex items-center gap-4 text-fg"
             >
               <img

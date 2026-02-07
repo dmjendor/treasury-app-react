@@ -10,60 +10,6 @@ export default function Home() {
       {/* Background image layer (swap this with your RandomBackground component if you have one) */}
       <RandomBackground />
 
-      {/* Nav */}
-      {/* <header className="sticky top-0 z-20 border-b border-white/10 bg-black/20 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a
-            href="#top"
-            className="text-sm font-semibold tracking-tight"
-          >
-            Party Treasury
-          </a>
-
-          <nav className="hidden items-center gap-6 text-sm text-white/80 md:flex">
-            <a
-              className="hover:text-white"
-              href="#features"
-            >
-              Features
-            </a>
-            <a
-              className="hover:text-white"
-              href="#how"
-            >
-              How it works
-            </a>
-            <a
-              className="hover:text-white"
-              href="#preview"
-            >
-              Preview
-            </a>
-            <a
-              className="hover:text-white"
-              href="#faq"
-            >
-              FAQ
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/demo"
-              className="rounded-xl bg-white/10 px-4 py-2 text-sm backdrop-blur hover:bg-white/15"
-            >
-              View demo
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </header> */}
-
       {/* Hero */}
       <section
         id="top"
@@ -117,19 +63,19 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-2">
             <GlassCard
               title="Shared ledger"
-              desc="A single place to record gold, loot, and notes between sessions."
+              desc="Track coins, items, and notes in one timeline so the whole table knows what was found, sold, or spent."
             />
             <GlassCard
               title="Split rules"
-              desc="Track shares, party fund, and expenses without mental math."
+              desc="Support party shares, GM shares, and leftover remainder handling without sticky note math."
             />
             <GlassCard
               title="Item history"
-              desc="See when an item was added and who claimed it."
+              desc="See when an item appeared, where it lives, and who is carrying it right now."
             />
             <GlassCard
               title="Export summaries"
-              desc="Grab a clean recap for your notes or group chat."
+              desc="Generate a clean session recap for your notes, group chat, or campaign doc."
             />
           </div>
         </section>
@@ -175,9 +121,18 @@ export default function Home() {
 
           <div className="grid gap-6 md:grid-cols-2 md:items-center">
             <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
-              <div className="aspect-16/10 rounded-xl bg-white/10" />
+              <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                <Image
+                  src="/screenshot.jpg"
+                  alt="Screenshot preview of Party Treasury"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
               <p className="mt-3 text-xs text-white/60">
-                Drop in a real screenshot later. This frame is ready for it.
+                Real vault view with containers, items, and balances.
               </p>
             </div>
 
@@ -221,11 +176,19 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-2">
             <GlassCard
               title="Do I need everyone to sign up?"
-              desc="No. One person can run the ledger, inviting others just makes it smoother."
+              desc="No. One person can run the ledger. Invites just make it easier for players to view and update."
             />
             <GlassCard
               title="Does it work for any system?"
-              desc="Yes. If your game has loot and expenses, it fits."
+              desc="Yes. It is system-agnostic and works for any campaign with shared treasure."
+            />
+            <GlassCard
+              title="What about private notes?"
+              desc="Hidden containers keep GM-only or secret items out of the player view."
+            />
+            <GlassCard
+              title="How do splits work?"
+              desc="You can split by currency or merge to base, then keep a party share if you want."
             />
           </div>
         </section>
@@ -234,7 +197,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/10 bg-black/20 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-8 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Party Treasury</p>
+          <p>(c) {new Date().getFullYear()} Party Treasury</p>
           <div className="flex gap-5">
             <a
               className="hover:text-white"

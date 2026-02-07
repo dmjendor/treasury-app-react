@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import Select from "@/app/_components/Select";
 import { Button } from "@/app/_components/Button";
 import DefaultTreasurePicker from "@/app/_components/DefaultTreasurePicker";
@@ -32,6 +33,11 @@ export default function TreasuresForm({
 }) {
   const isEdit = mode === "edit";
   const vaultId = vault?.id != null ? String(vault.id) : "";
+  const { data: session } = useSession();
+  const isOwner =
+    session?.user?.userId &&
+    vault?.user_id &&
+    String(session.user.userId) === String(vault.user_id);
 
   const currencyList = useMemo(() => {
     return Array.isArray(vault?.currencyList) ? vault.currencyList : [];
@@ -81,6 +87,7 @@ export default function TreasuresForm({
   const [name, setName] = useState("");
   const [genericname, setGenericname] = useState("");
   const [description, setDescription] = useState("");
+  const [gmNotes, setGmNotes] = useState("");
 
   const [valueBase, setValueBase] = useState(0);
   const [valueUnit, setValueUnit] = useState("common"); // "common" | "base"
@@ -138,6 +145,7 @@ export default function TreasuresForm({
         setName(t?.name ?? "");
         setGenericname(t?.genericname ?? "");
         setDescription(t?.description ?? "");
+        setGmNotes(t?.gm_notes ?? "");
 
         const base = Number(t?.value) || 0;
         setValueBase(base);
@@ -241,6 +249,9 @@ export default function TreasuresForm({
       magical: !!magical,
       archived: !!archived,
     };
+    if (isOwner) {
+      payload.gm_notes = gmNotes.trim() || null;
+    }
 
     onSaved?.(payload);
   }
@@ -355,6 +366,17 @@ export default function TreasuresForm({
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
         />
+
+        {isOwner ? (
+          <Textarea
+            label="GM notes"
+            hint="Private notes for the GM only."
+            id="gm_notes"
+            value={gmNotes}
+            onChange={(e) => setGmNotes(e.target.value)}
+            rows={4}
+          />
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <InputComponent
