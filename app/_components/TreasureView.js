@@ -141,9 +141,6 @@ export default function TreasureView({ vaultId, treasureId, onClose }) {
     <div className="space-y-4 p-6 text-fg">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-fg">
-            Treasure
-          </div>
           <h2 className="text-xl font-semibold">{displayName}</h2>
         </div>
       </header>
@@ -168,10 +165,14 @@ export default function TreasureView({ vaultId, treasureId, onClose }) {
               <div className="text-xs uppercase tracking-wide text-muted-fg">
                 Value (total)
               </div>
-              <div className="mt-1 text-sm font-semibold">
+              <div
+                className={`mt-1 text-sm font-semibold ${treasure?.magical && !treasure?.identified ? "hidden" : ""}`}
+              >
                 {formatAmount(totalCommon)} {currencyInfo.commonCode}
               </div>
-              <div className="text-xs text-muted-fg">
+              <div
+                className={`text-xs text-muted-fg ${treasure?.magical && !treasure?.identified ? "hidden" : ""}`}
+              >
                 {formatAmount(totalBase)} {currencyInfo.baseCode}
               </div>
             </div>

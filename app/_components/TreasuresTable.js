@@ -175,17 +175,21 @@ export default function TreasuresTable({
                   <td
                     className={`px-4 py-3 font-medium ${t.magical ? "text-accent-600" : ""}`}
                   >
-                    {t.name}
+                    {t.magical && !t.identified ? t.genericname : t.name}
                   </td>
-                  <td className="px-4 py-3">
-                    {(() => {
-                      const display = displayValue(t.value);
-                      return (
-                        <>
-                          {display.amount} {display.code}
-                        </>
-                      );
-                    })()}
+                  <td className={`px-4 py-3`}>
+                    <span
+                      className={` ${t.magical && !t.identified ? "hidden" : ""}`}
+                    >
+                      {(() => {
+                        const display = displayValue(t.value);
+                        return (
+                          <>
+                            {display.amount} {display.code}
+                          </>
+                        );
+                      })()}
+                    </span>
                   </td>
                   <td className="px-4 py-3">{t.quantity ?? 0}</td>
                   <td className="px-4 py-3">{t.magical && "🪄"}</td>

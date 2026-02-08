@@ -357,7 +357,6 @@ export default function TreasuresForm({
           onChange={(e) => setName(e.target.value)}
         />
 
-
         <Textarea
           label="Description"
           hint="Optional notes, inscriptions, etc."
